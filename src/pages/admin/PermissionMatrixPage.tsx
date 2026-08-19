@@ -202,7 +202,7 @@ export default function PermissionMatrixPage() {
                                   className="text-center p-3 border-l border-slate-200"
                                 >
                                   {isGranted ? (
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" />
+                                    <CheckCircle2 className="w-4 h-4 text-green-600 mx-auto" />
                                   ) : (
                                     <XCircle className="w-4 h-4 text-slate-200 mx-auto" />
                                   )}
@@ -222,3 +222,4 @@ export default function PermissionMatrixPage() {
     </div>
   );
 }
+

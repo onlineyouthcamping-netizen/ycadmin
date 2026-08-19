@@ -90,9 +90,9 @@ export default function AllocationPreviewModal({
             <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">Room Capacity</span>
             <span className="text-base font-black text-blue-800">{roomCapacity} Beds</span>
           </div>
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
-            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Proposed Rooms</span>
-            <span className="text-base font-black text-emerald-800">{Object.keys(roomGroups).length} Rooms</span>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+            <span className="text-[10px] font-bold text-green-600 uppercase tracking-wider block">Proposed Rooms</span>
+            <span className="text-base font-black text-green-700">{Object.keys(roomGroups).length} Rooms</span>
           </div>
         </div>
 
@@ -113,9 +113,9 @@ export default function AllocationPreviewModal({
           ))}
 
           {unassigned.length > 0 && (
-            <div className="bg-rose-50 border border-rose-200 rounded-md p-2.5">
-              <span className="text-xs font-black text-rose-800 block">Unassigned Passengers ({unassigned.length})</span>
-              <span className="text-xs text-rose-700 font-medium">
+            <div className="bg-red-50 border border-red-200 rounded-md p-2.5">
+              <span className="text-xs font-black text-red-700 block">Unassigned Passengers ({unassigned.length})</span>
+              <span className="text-xs text-red-700 font-medium">
                 {unassigned.map((m) => m.name).join(", ")}
               </span>
             </div>
@@ -140,3 +140,4 @@ export default function AllocationPreviewModal({
     </Dialog>
   );
 }
+

@@ -46,7 +46,7 @@ const TYPE_ICONS: Record<string, any> = {
 const TYPE_COLORS: Record<string, string> = {
   hotel: "bg-blue-100 text-blue-700",
   transport: "bg-amber-100 text-amber-700",
-  guide: "bg-emerald-100 text-emerald-700",
+  guide: "bg-green-100 text-green-700",
   meals: "bg-orange-100 text-orange-700",
   equipment: "bg-orange-100 text-orange-700",
   other: "bg-gray-100 text-gray-700",
@@ -194,11 +194,11 @@ export default function TripVendorsPanel({
         <div className="px-8 pb-8 space-y-6">
           {/* ─── Profit Summary ─── */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-              <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">
+            <div className="text-center p-4 bg-green-50 rounded-2xl border border-green-100">
+              <p className="text-[9px] font-black uppercase tracking-wider text-green-600">
                 Per Person Price
               </p>
-              <p className="text-lg font-black text-emerald-700">
+              <p className="text-lg font-black text-green-700">
                 ₹{tripPrice.toLocaleString()}
               </p>
             </div>
@@ -214,14 +214,14 @@ export default function TripVendorsPanel({
               className={cn(
                 "text-center p-4 rounded-2xl border",
                 estimatedProfit >= 0
-                  ? "bg-emerald-50 border-emerald-200"
+                  ? "bg-green-50 border-green-200"
                   : "bg-red-50 border-red-200",
               )}
             >
               <p
                 className={cn(
                   "text-[9px] font-black uppercase tracking-wider",
-                  estimatedProfit >= 0 ? "text-emerald-600" : "text-red-600",
+                  estimatedProfit >= 0 ? "text-green-600" : "text-red-600",
                 )}
               >
                 Est. Profit/Person
@@ -229,7 +229,7 @@ export default function TripVendorsPanel({
               <p
                 className={cn(
                   "text-lg font-black",
-                  estimatedProfit >= 0 ? "text-emerald-700" : "text-red-700",
+                  estimatedProfit >= 0 ? "text-green-700" : "text-red-700",
                 )}
               >
                 ₹{estimatedProfit.toLocaleString()}
@@ -441,3 +441,4 @@ export default function TripVendorsPanel({
     </Dialog>
   );
 }
+

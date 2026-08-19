@@ -86,8 +86,8 @@ function ApprovalPill({ status }: { status?: string }) {
   const s = (status || "DRAFT").toUpperCase();
   if (s === "APPROVED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-green-50 text-green-700 border border-green-200">
+        <CheckCircle2 className="w-2.5 h-2.5 text-green-600" />
         Approved
       </span>
     );
@@ -102,8 +102,8 @@ function ApprovalPill({ status }: { status?: string }) {
   }
   if (s === "REJECTED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-        <XCircle className="w-2.5 h-2.5 text-rose-600" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-red-50 text-red-700 border border-red-200">
+        <XCircle className="w-2.5 h-2.5 text-red-600" />
         Rejected
       </span>
     );
@@ -854,7 +854,7 @@ export default function TrainTicketsPanel({
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+              <span className="bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[11px] font-semibold">
                 {depCounts.CONFIRMED} confirmed
               </span>
               <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold">
@@ -881,7 +881,7 @@ export default function TrainTicketsPanel({
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+              <span className="bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[11px] font-semibold">
                 {retCounts.CONFIRMED} confirmed
               </span>
               <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold">
@@ -1119,7 +1119,7 @@ export default function TrainTicketsPanel({
                 value={form.ticketAmount}
                 onChange={(e) => setForm({ ...form, ticketAmount: e.target.value })}
                 placeholder="e.g. 1850"
-                className="h-8 text-xs font-semibold text-emerald-600"
+                className="h-8 text-xs font-semibold text-green-600"
               />
             </div>
 
@@ -1317,7 +1317,7 @@ export default function TrainTicketsPanel({
                           </span>
                         </div>
                         {t.ticketStatus === "CANCELLED" && (
-                          <div className="text-[10px] text-rose-600 font-semibold space-y-0.5">
+                          <div className="text-[10px] text-red-600 font-semibold space-y-0.5">
                             <div>Cancelled: {t.cancellationReason || "No reason"}</div>
                             {Number(t.railwayCancellationCharge || 0) > 0 && (
                               <div className="text-[9px] text-slate-500 font-normal">
@@ -1326,14 +1326,14 @@ export default function TrainTicketsPanel({
                             )}
                             {Number(t.refundAmount || 0) > 0 && (
                               <div className="flex items-center gap-1 mt-0.5">
-                                <span className="font-semibold text-emerald-700">
+                                <span className="font-semibold text-green-700">
                                   Refund: ₹{Number(t.refundAmount)}
                                 </span>
                                 <span
                                   className={cn(
                                     "px-1 py-0.2 rounded text-[8px] font-semibold uppercase",
                                     t.refundStatus === "COMPLETED"
-                                      ? "bg-emerald-100 text-emerald-800"
+                                      ? "bg-green-100 text-green-700"
                                       : "bg-amber-100 text-amber-800",
                                   )}
                                 >
@@ -1384,7 +1384,7 @@ export default function TrainTicketsPanel({
                               <Button
                                 size="sm"
                                 onClick={() => handleApproveTicket(t)}
-                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-2 py-0 gap-1 rounded"
+                                className="h-6 text-[9px] bg-green-600 hover:bg-green-700 text-white font-semibold px-2 py-0 gap-1 rounded"
                                 title="Approve Ticket"
                               >
                                 <Check className="w-3 h-3" /> Approve
@@ -1393,7 +1393,7 @@ export default function TrainTicketsPanel({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenReject(t)}
-                                className="h-6 text-[9px] text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold px-2 py-0 gap-1 rounded"
+                                className="h-6 text-[9px] text-red-600 border-red-200 hover:bg-red-50 font-semibold px-2 py-0 gap-1 rounded"
                                 title="Reject Ticket"
                               >
                                 <Ban className="w-3 h-3" /> Reject
@@ -1444,7 +1444,7 @@ export default function TrainTicketsPanel({
                                 </button>
                                 <button
                                   onClick={() => handleOpenCancel(t)}
-                                  className="text-rose-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
+                                  className="text-red-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                 >
                                   Cancel
                                 </button>
@@ -1453,7 +1453,7 @@ export default function TrainTicketsPanel({
                             {t.ticketStatus === "CANCELLED" && Number(t.refundAmount || 0) > 0 && t.refundStatus !== "COMPLETED" && (
                               <button
                                 onClick={() => handleOpenRefund(t)}
-                                className="text-emerald-700 hover:underline font-semibold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                                className="text-green-700 hover:underline font-semibold text-[10px] bg-green-50 px-1.5 py-0.5 rounded border border-green-200"
                               >
                                 Record Refund
                               </button>
@@ -1550,7 +1550,7 @@ export default function TrainTicketsPanel({
                           </span>
                         </div>
                         {t.ticketStatus === "CANCELLED" && (
-                          <div className="text-[10px] text-rose-600 font-semibold space-y-0.5">
+                          <div className="text-[10px] text-red-600 font-semibold space-y-0.5">
                             <div>Cancelled: {t.cancellationReason || "No reason"}</div>
                             {Number(t.railwayCancellationCharge || 0) > 0 && (
                               <div className="text-[9px] text-slate-500 font-normal">
@@ -1559,14 +1559,14 @@ export default function TrainTicketsPanel({
                             )}
                             {Number(t.refundAmount || 0) > 0 && (
                               <div className="flex items-center gap-1 mt-0.5">
-                                <span className="font-semibold text-emerald-700">
+                                <span className="font-semibold text-green-700">
                                   Refund: ₹{Number(t.refundAmount)}
                                 </span>
                                 <span
                                   className={cn(
                                     "px-1 py-0.2 rounded text-[8px] font-semibold uppercase",
                                     t.refundStatus === "COMPLETED"
-                                      ? "bg-emerald-100 text-emerald-800"
+                                      ? "bg-green-100 text-green-700"
                                       : "bg-amber-100 text-amber-800",
                                   )}
                                 >
@@ -1617,7 +1617,7 @@ export default function TrainTicketsPanel({
                               <Button
                                 size="sm"
                                 onClick={() => handleApproveTicket(t)}
-                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-2 py-0 gap-1 rounded"
+                                className="h-6 text-[9px] bg-green-600 hover:bg-green-700 text-white font-semibold px-2 py-0 gap-1 rounded"
                                 title="Approve Ticket"
                               >
                                 <Check className="w-3 h-3" /> Approve
@@ -1626,7 +1626,7 @@ export default function TrainTicketsPanel({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenReject(t)}
-                                className="h-6 text-[9px] text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold px-2 py-0 gap-1 rounded"
+                                className="h-6 text-[9px] text-red-600 border-red-200 hover:bg-red-50 font-semibold px-2 py-0 gap-1 rounded"
                                 title="Reject Ticket"
                               >
                                 <Ban className="w-3 h-3" /> Reject
@@ -1677,7 +1677,7 @@ export default function TrainTicketsPanel({
                                 </button>
                                 <button
                                   onClick={() => handleOpenCancel(t)}
-                                  className="text-rose-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
+                                  className="text-red-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                 >
                                   Cancel
                                 </button>
@@ -1686,7 +1686,7 @@ export default function TrainTicketsPanel({
                             {t.ticketStatus === "CANCELLED" && Number(t.refundAmount || 0) > 0 && t.refundStatus !== "COMPLETED" && (
                               <button
                                 onClick={() => handleOpenRefund(t)}
-                                className="text-emerald-700 hover:underline font-semibold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                                className="text-green-700 hover:underline font-semibold text-[10px] bg-green-50 px-1.5 py-0.5 rounded border border-green-200"
                               >
                                 Record Refund
                               </button>
@@ -1715,7 +1715,7 @@ export default function TrainTicketsPanel({
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-              <Ban className="w-4 h-4 text-rose-600" /> Cancel Train Ticket
+              <Ban className="w-4 h-4 text-red-600" /> Cancel Train Ticket
             </DialogTitle>
           </DialogHeader>
           {ticketToCancel && (
@@ -1728,7 +1728,7 @@ export default function TrainTicketsPanel({
                 <div className="text-[11px] text-slate-500">
                   {ticketToCancel.trainName} ({ticketToCancel.trainNumber}) • Coach {ticketToCancel.coach || "-"}-{ticketToCancel.seatNumber || "-"}
                 </div>
-                <div className="text-[11px] font-semibold text-emerald-700 pt-1 border-t border-[#E8EEF4] mt-1 flex justify-between">
+                <div className="text-[11px] font-semibold text-green-700 pt-1 border-t border-[#E8EEF4] mt-1 flex justify-between">
                   <span>Current Ticket Internal Cost:</span>
                   <span>₹{Number(ticketToCancel.ticketAmount || 0).toLocaleString("en-IN")}</span>
                 </div>
@@ -1744,7 +1744,7 @@ export default function TrainTicketsPanel({
                     value={cancelRailwayCharge}
                     onChange={(e) => setCancelRailwayCharge(e.target.value)}
                     placeholder="e.g. 500"
-                    className="h-8 text-xs font-mono font-semibold text-rose-600"
+                    className="h-8 text-xs font-mono font-semibold text-red-600"
                   />
                 </div>
                 <div className="space-y-1">
@@ -1762,9 +1762,9 @@ export default function TrainTicketsPanel({
               </div>
 
               {/* Real-time refund due calculation */}
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded flex justify-between items-center">
-                <span className="font-semibold text-emerald-800 text-[11px]">Net Refund Due / Credit:</span>
-                <span className="font-semibold text-sm text-emerald-700 font-mono">
+              <div className="p-2.5 bg-green-50 border border-green-200 rounded flex justify-between items-center">
+                <span className="font-semibold text-green-700 text-[11px]">Net Refund Due / Credit:</span>
+                <span className="font-semibold text-sm text-green-700 font-mono">
                   ₹{Math.max(
                     0,
                     Number(ticketToCancel.ticketAmount || 0) -
@@ -1816,7 +1816,7 @@ export default function TrainTicketsPanel({
               disabled={actionBusy || !cancelReason.trim()}
               onClick={handleSubmitCancel}
               size="sm"
-              className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white font-semibold"
+              className="h-8 text-xs bg-red-600 hover:bg-red-600 text-white font-semibold"
             >
               {actionBusy ? "Processing..." : "Confirm Cancellation"}
             </Button>
@@ -1854,7 +1854,7 @@ export default function TrainTicketsPanel({
                     value={reticketRailwayCharge}
                     onChange={(e) => setReticketRailwayCharge(e.target.value)}
                     placeholder="0"
-                    className="h-8 text-xs font-mono font-semibold text-rose-600"
+                    className="h-8 text-xs font-mono font-semibold text-red-600"
                   />
                 </div>
                 <div className="space-y-1">
@@ -1866,7 +1866,7 @@ export default function TrainTicketsPanel({
                     value={reticketNewCost}
                     onChange={(e) => setReticketNewCost(e.target.value)}
                     placeholder="e.g. 2100"
-                    className="h-8 text-xs font-mono font-semibold text-emerald-700"
+                    className="h-8 text-xs font-mono font-semibold text-green-700"
                   />
                 </div>
               </div>
@@ -1992,14 +1992,14 @@ export default function TrainTicketsPanel({
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-emerald-600" /> Record Refund in Finance
+              <Receipt className="w-4 h-4 text-green-600" /> Record Refund in Finance
             </DialogTitle>
           </DialogHeader>
           {ticketForRefund && (
             <div className="space-y-3 py-2 text-xs">
               <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] space-y-1">
                 <div className="font-semibold text-[#0B1528]">{ticketForRefund.travelerName}</div>
-                <div className="flex justify-between font-semibold text-emerald-700">
+                <div className="flex justify-between font-semibold text-green-700">
                   <span>Refund Due:</span>
                   <span>₹{Number(ticketForRefund.refundAmount || 0).toLocaleString("en-IN")}</span>
                 </div>
@@ -2041,7 +2041,7 @@ export default function TrainTicketsPanel({
                   type="number"
                   value={refundCustomAmount}
                   onChange={(e) => setRefundCustomAmount(e.target.value)}
-                  className="h-8 text-xs font-mono font-semibold text-emerald-700"
+                  className="h-8 text-xs font-mono font-semibold text-green-700"
                 />
               </div>
 
@@ -2074,7 +2074,7 @@ export default function TrainTicketsPanel({
               disabled={actionBusy}
               onClick={handleSubmitRefund}
               size="sm"
-              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+              className="h-8 text-xs bg-green-600 hover:bg-green-600 text-white font-semibold"
             >
               {actionBusy ? "Saving..." : "Save Refund Record"}
             </Button>
@@ -2134,16 +2134,16 @@ export default function TrainTicketsPanel({
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-              <Ban className="w-4 h-4 text-rose-600" /> Reject Train Ticket
+              <Ban className="w-4 h-4 text-red-600" /> Reject Train Ticket
             </DialogTitle>
           </DialogHeader>
           {ticketToReject && (
             <div className="space-y-3 py-2 text-xs">
-              <div className="bg-rose-50 border border-rose-200 p-2.5 rounded text-rose-900 space-y-0.5">
+              <div className="bg-red-50 border border-red-200 p-2.5 rounded text-red-900 space-y-0.5">
                 <div className="font-semibold">
                   {ticketToReject.travelerName} • PNR: {ticketToReject.pnr || "—"}
                 </div>
-                <div className="text-[11px] text-rose-700">
+                <div className="text-[11px] text-red-700">
                   {ticketToReject.trainName} ({ticketToReject.trainNumber || "N/A"})
                 </div>
               </div>
@@ -2177,7 +2177,7 @@ export default function TrainTicketsPanel({
               disabled={isRejecting || !rejectionNotes.trim()}
               onClick={handleConfirmReject}
               size="sm"
-              className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white font-semibold"
+              className="h-8 text-xs bg-red-600 hover:bg-red-600 text-white font-semibold"
             >
               {isRejecting ? "Rejecting..." : "Confirm Rejection"}
             </Button>
@@ -2187,3 +2187,5 @@ export default function TrainTicketsPanel({
     </div>
   );
 }
+
+

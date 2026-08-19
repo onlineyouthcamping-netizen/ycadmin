@@ -278,12 +278,12 @@ export default function DepartureTicketing({
           <p className="text-[10px] text-slate-400 font-medium">On departure date</p>
         </div>
 
-        <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-lg p-3.5 shadow-2xs space-y-1">
-          <p className="text-2xl font-black text-emerald-600">{kpiStats.confirmed}</p>
-          <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Confirmed
+        <div className="bg-green-50/50 border border-green-200/60 rounded-lg p-3.5 shadow-2xs space-y-1">
+          <p className="text-2xl font-black text-green-600">{kpiStats.confirmed}</p>
+          <p className="text-[10px] font-bold text-green-700 uppercase tracking-wider flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3 text-green-600" /> Confirmed
           </p>
-          <p className="text-[10px] text-emerald-600 font-medium">
+          <p className="text-[10px] text-green-600 font-medium">
             {kpiStats.total > 0
               ? `${Math.round((kpiStats.confirmed / kpiStats.total) * 100)}% verified`
               : "0%"}
@@ -298,12 +298,12 @@ export default function DepartureTicketing({
           <p className="text-[10px] text-amber-600 font-medium">Under queue verification</p>
         </div>
 
-        <div className="bg-rose-50/50 border border-rose-200/60 rounded-lg p-3.5 shadow-2xs space-y-1">
-          <p className="text-2xl font-black text-rose-600">{kpiStats.pending}</p>
-          <p className="text-[10px] font-bold text-rose-700 uppercase tracking-wider flex items-center gap-1">
-            <AlertCircle className="w-3 h-3 text-rose-500" /> Pending PNR
+        <div className="bg-red-50/50 border border-red-200/60 rounded-lg p-3.5 shadow-2xs space-y-1">
+          <p className="text-2xl font-black text-red-600">{kpiStats.pending}</p>
+          <p className="text-[10px] font-bold text-red-700 uppercase tracking-wider flex items-center gap-1">
+            <AlertCircle className="w-3 h-3 text-red-600" /> Pending PNR
           </p>
-          <p className="text-[10px] text-rose-600 font-medium">Requires senior booking</p>
+          <p className="text-[10px] text-red-600 font-medium">Requires senior booking</p>
         </div>
 
         <div className="bg-blue-50/50 border border-blue-200/60 rounded-lg p-3.5 shadow-2xs space-y-1">
@@ -348,9 +348,9 @@ export default function DepartureTicketing({
             <Button
               onClick={handleBulkConfirm}
               variant="outline"
-              className="h-8 text-xs font-bold border-emerald-300 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-100"
+              className="h-8 text-xs font-bold border-green-300 text-green-700 bg-green-50/50 hover:bg-green-100"
             >
-              <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Confirm All Pending
+              <Check className="w-3.5 h-3.5 mr-1 text-green-600" /> Confirm All Pending
             </Button>
           )}
 
@@ -467,13 +467,13 @@ export default function DepartureTicketing({
                         className={cn(
                           "text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border text-center outline-none cursor-pointer transition-all",
                           t.status === "CONFIRMED" &&
-                            "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+                            "bg-green-50 text-green-700 border-green-200 hover:bg-green-100",
                           t.status === "RAC" &&
                             "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
                           t.status === "WAITLISTED" &&
                             "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100",
                           t.status === "PENDING" &&
-                            "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
+                            "bg-red-50 text-red-700 border-red-200 hover:bg-red-100",
                           t.status === "SELF_BOOKED" &&
                             "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
                         )}
@@ -633,7 +633,7 @@ export default function DepartureTicketing({
                 </Button>
                 <Button
                   type="submit"
-                  className="h-8 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white"
+                  className="h-8 text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white"
                 >
                   Save Ticket Details
                 </Button>
@@ -645,3 +645,5 @@ export default function DepartureTicketing({
     </div>
   );
 }
+
+

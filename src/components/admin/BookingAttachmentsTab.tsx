@@ -133,7 +133,7 @@ export default function BookingAttachmentsTab({
     if (type.includes("pdf") || ext === "pdf") {
       return {
         icon: FileText,
-        color: "text-red-500",
+        color: "text-red-600",
         bg: "bg-red-50 border-red-100",
         label: "PDF",
       };
@@ -168,8 +168,8 @@ export default function BookingAttachmentsTab({
     ) {
       return {
         icon: FileSpreadsheet,
-        color: "text-emerald-500",
-        bg: "bg-emerald-50 border-emerald-100",
+        color: "text-green-600",
+        bg: "bg-green-50 border-green-100",
         label: "EXCEL",
       };
     }
@@ -487,7 +487,7 @@ export default function BookingAttachmentsTab({
                 onClick={() => handleOpenSend(Array.from(selectedIds))}
                 className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-3.5 py-2 rounded-lg flex items-center gap-2 shadow-xs transition-all animate-fade-in"
               >
-                <Send className="w-4 h-4 text-emerald-400" />
+                <Send className="w-4 h-4 text-green-500" />
                 Send Selected ({selectedIds.size})
               </button>
             )}
@@ -652,7 +652,7 @@ export default function BookingAttachmentsTab({
                             className={cn(
                               "text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider",
                               att.sentStatus === "SENT_BOTH"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                ? "bg-green-50 text-green-700 border-green-200"
                                 : att.sentStatus === "SENT_EMAIL"
                                   ? "bg-blue-50 text-blue-700 border-blue-200"
                                   : "bg-amber-50 text-amber-700 border-amber-200",
@@ -718,7 +718,7 @@ export default function BookingAttachmentsTab({
                         <button
                           onClick={() => handleOpenSend([att.id])}
                           title="Send to Customer"
-                          className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                         >
                           <Send className="w-4 h-4" />
                         </button>
@@ -1103,7 +1103,7 @@ export default function BookingAttachmentsTab({
                     className={cn(
                       "p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all",
                       sendChannel === "WHATSAPP"
-                        ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-xs"
+                        ? "bg-green-50 border-green-500 text-green-700 shadow-xs"
                         : "bg-white border-slate-200 text-slate-600",
                     )}
                   >
@@ -1174,7 +1174,7 @@ export default function BookingAttachmentsTab({
               <button
                 disabled={sending}
                 onClick={handleConfirmSend}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs hover:bg-emerald-700 flex items-center gap-1.5 shadow-xs"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-xs hover:bg-green-700 flex items-center gap-1.5 shadow-xs"
               >
                 {sending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 Send Now
@@ -1271,3 +1271,5 @@ export default function BookingAttachmentsTab({
     </div>
   );
 }
+
+

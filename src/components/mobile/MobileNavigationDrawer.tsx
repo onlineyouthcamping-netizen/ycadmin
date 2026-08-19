@@ -132,7 +132,7 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
               logout();
               navigate("/admin/login");
             }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 transition-all border border-rose-500/20"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 bg-red-600/10 hover:bg-red-600/20 transition-all border border-red-500/20"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout Account</span>
@@ -144,3 +144,5 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
 };
 
 export default MobileNavigationDrawer;
+
+

@@ -66,15 +66,15 @@ const STATUS_STYLES: Record<
     label: "Changes Requested",
   },
   VERIFIED: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    dot: "bg-emerald-500",
+    bg: "bg-green-50",
+    text: "text-green-700",
+    dot: "bg-green-500",
     label: "Verified",
   },
   APPROVED: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    dot: "bg-emerald-500",
+    bg: "bg-green-50",
+    text: "text-green-700",
+    dot: "bg-green-500",
     label: "Verified",
   },
   REJECTED: {
@@ -135,8 +135,8 @@ function StatusBadge({ status }: { status: string }) {
             ? "border-amber-200"
             : s.bg === "bg-blue-50"
               ? "border-blue-200"
-              : s.bg === "bg-emerald-50"
-                ? "border-emerald-200"
+              : s.bg === "bg-green-50"
+                ? "border-green-200"
                 : "border-red-200",
         s.text,
       )}
@@ -587,7 +587,7 @@ export default function VerificationQueuePage({
                 placeholder="Search booking ID, customer, trip, PNR..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#F97316] outline-none"
+                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#FF4D00] outline-none"
               />
             </div>
             <Button
@@ -607,14 +607,14 @@ export default function VerificationQueuePage({
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
                   activeQueue === "booking"
-                    ? "bg-white text-[#F97316] shadow-sm"
+                    ? "bg-white text-[#FF4D00] shadow-sm"
                     : "text-slate-600 hover:text-slate-900",
                 )}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Bookings
                 {bookingPendingCount > 0 && (
-                  <span className="ml-1 text-[9px] bg-orange-100 text-[#F97316] px-1.5 py-0.2 rounded font-black">
+                  <span className="ml-1 text-[9px] bg-orange-100 text-[#FF4D00] px-1.5 py-0.2 rounded font-black">
                     {bookingPendingCount}
                   </span>
                 )}
@@ -629,7 +629,7 @@ export default function VerificationQueuePage({
                 placeholder="Search booking ID, customer, trip, PNR..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#F97316] outline-none"
+                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#FF4D00] outline-none"
               />
             </div>
             <Button
@@ -651,8 +651,8 @@ export default function VerificationQueuePage({
               label: "Booking Verification",
               icon: <ShieldCheck className="w-3.5 h-3.5" />,
               count: bookingPendingCount,
-              countColor: "bg-orange-100 text-[#F97316]",
-              activeColor: "bg-white border-[#F97316] text-[#F97316] shadow-sm",
+              countColor: "bg-orange-100 text-[#FF4D00]",
+              activeColor: "bg-white border-[#FF4D00] text-[#FF4D00] shadow-sm",
               inactiveColor: "text-[#74839A] hover:text-[#162B45] hover:bg-white/70",
             },
             {
@@ -747,7 +747,7 @@ export default function VerificationQueuePage({
           <p className="text-[9px] text-[#74839A] font-semibold leading-none">
             Completed successfully
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-emerald-50 flex items-center justify-center text-[#16A34A] border border-emerald-100 shrink-0">
+          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-green-50 flex items-center justify-center text-[#16A34A] border border-green-100 shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -758,14 +758,14 @@ export default function VerificationQueuePage({
             <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
               Rejected Today
             </p>
-            <h3 className="text-[20px] font-extrabold text-rose-500 leading-none mt-1">
+            <h3 className="text-[20px] font-extrabold text-red-600 leading-none mt-1">
               {loading ? "..." : rejectedCount}
             </h3>
           </div>
           <p className="text-[9px] text-[#74839A] font-semibold leading-none">
             Declined with reason
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-rose-50 flex items-center justify-center text-rose-500 border border-rose-100 shrink-0">
+          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100 shrink-0">
             <XCircle className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -841,7 +841,7 @@ export default function VerificationQueuePage({
                     return (
                       <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors text-[11px] font-semibold text-[#162B45] group h-[46px]">
                         <td className="px-3.5 py-2">
-                          <div className="font-bold text-[#F97316] font-mono text-[10px]">{item.bookingId}</div>
+                          <div className="font-bold text-[#FF4D00] font-mono text-[10px]">{item.bookingId}</div>
                           <div className="text-[11px] font-semibold text-[#162B45] truncate max-w-[130px]">{item.customerName}</div>
                           {item.customerPhone && (
                             <div className="text-[9px] text-[#74839A]">{item.customerPhone}</div>
@@ -856,7 +856,7 @@ export default function VerificationQueuePage({
                             {isUpi ? (
                               <Smartphone className="w-3 h-3 text-teal-500 shrink-0" />
                             ) : (
-                              <Banknote className="w-3 h-3 text-emerald-500 shrink-0" />
+                              <Banknote className="w-3 h-3 text-green-600 shrink-0" />
                             )}
                             <span className="text-[10px] font-bold uppercase">{item.paymentMode}</span>
                           </div>
@@ -871,12 +871,12 @@ export default function VerificationQueuePage({
                           <span className={cn(
                             "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border",
                             isApproved
-                              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                              ? "bg-green-50 border-green-200 text-green-700"
                               : item.status === "REJECTED"
                                 ? "bg-red-50 border-red-200 text-red-600"
                                 : "bg-amber-50 border-amber-200 text-amber-700",
                           )}>
-                            <span className={cn("w-1 h-1 rounded-full", isApproved ? "bg-emerald-500" : item.status === "REJECTED" ? "bg-red-500" : "bg-amber-500")} />
+                            <span className={cn("w-1 h-1 rounded-full", isApproved ? "bg-green-500" : item.status === "REJECTED" ? "bg-red-500" : "bg-amber-500")} />
                             {isApproved ? "Verified" : item.status === "REJECTED" ? "Rejected" : "Pending FC Review"}
                           </span>
                         </td>
@@ -889,13 +889,13 @@ export default function VerificationQueuePage({
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleStationAction(item.id, "VERIFY")}
-                                className="flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded text-[9px] font-bold transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 rounded text-[9px] font-bold transition-colors"
                               >
                                 <Check className="w-3 h-3" /> Verify
                               </button>
                               <button
                                 onClick={() => handleStationAction(item.id, "REJECT")}
-                                className="flex items-center gap-1 px-2 py-1 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded text-[9px] font-bold transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 rounded text-[9px] font-bold transition-colors"
                               >
                                 <X className="w-3 h-3" /> Reject
                               </button>
@@ -991,11 +991,11 @@ export default function VerificationQueuePage({
                         <td className="px-3.5 py-2 font-bold text-[#162B45]">
                           ₹{Number(item.agreedTariff || 0).toLocaleString("en-IN")}
                         </td>
-                        <td className="px-3.5 py-2 text-emerald-600 font-semibold">
+                        <td className="px-3.5 py-2 text-green-600 font-semibold">
                           ₹{Number(item.paidAmount || 0).toLocaleString("en-IN")}
                         </td>
                         <td className="px-3.5 py-2">
-                          <span className={cn("font-black", item.outstandingAmount > 0 ? "text-red-500" : "text-emerald-600")}>
+                          <span className={cn("font-black", item.outstandingAmount > 0 ? text-red-600" : "text-green-600")}>
                             ₹{Number(item.outstandingAmount || 0).toLocaleString("en-IN")}
                           </span>
                         </td>
@@ -1006,12 +1006,12 @@ export default function VerificationQueuePage({
                           <span className={cn(
                             "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border",
                             isApproved
-                              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                              ? "bg-green-50 border-green-200 text-green-700"
                               : item.paymentStatus === "partial"
                                 ? "bg-amber-50 border-amber-200 text-amber-700"
                                 : "bg-violet-50 border-violet-200 text-violet-700",
                           )}>
-                            <span className={cn("w-1 h-1 rounded-full", isApproved ? "bg-emerald-500" : item.paymentStatus === "partial" ? "bg-amber-500" : "bg-violet-500")} />
+                            <span className={cn("w-1 h-1 rounded-full", isApproved ? "bg-green-500" : item.paymentStatus === "partial" ? "bg-amber-500" : "bg-violet-500")} />
                             {isApproved ? "Approved" : item.paymentStatus === "partial" ? "Partial" : "Pending Approval"}
                           </span>
                         </td>
@@ -1020,13 +1020,13 @@ export default function VerificationQueuePage({
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleOutgoingAction(item.id, "APPROVE")}
-                                className="flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded text-[9px] font-bold transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 rounded text-[9px] font-bold transition-colors"
                               >
                                 <Check className="w-3 h-3" /> Approve
                               </button>
                               <button
                                 onClick={() => handleOutgoingAction(item.id, "REJECT")}
-                                className="flex items-center gap-1 px-2 py-1 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded text-[9px] font-bold transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 rounded text-[9px] font-bold transition-colors"
                               >
                                 <X className="w-3 h-3" /> Reject
                               </button>
@@ -1060,7 +1060,7 @@ export default function VerificationQueuePage({
                 className={cn(
                   "w-full h-10 px-2.5 rounded text-left flex items-center justify-between text-[11.5px] font-[600] transition-all",
                   activeQueue === "booking"
-                    ? "bg-slate-50 text-[#162B45] border-l-[3px] border-[#F97316] font-bold shadow-xs"
+                    ? "bg-slate-50 text-[#162B45] border-l-[3px] border-[#FF4D00] font-bold shadow-xs"
                     : "text-[#74839A] hover:bg-slate-50/70 hover:text-[#162B45]",
                 )}
               >
@@ -1069,7 +1069,7 @@ export default function VerificationQueuePage({
                     className={cn(
                       "w-4 h-4",
                       activeQueue === "booking"
-                        ? "text-[#F97316]"
+                        ? "text-[#FF4D00]"
                         : "text-[#74839A]",
                     )}
                   />
@@ -1080,7 +1080,7 @@ export default function VerificationQueuePage({
                     className={cn(
                       "text-[9px] px-1.5 py-0.2 rounded font-black",
                       activeQueue === "booking"
-                        ? "bg-[#F97316] text-white"
+                        ? "bg-[#FF4D00] text-white"
                         : "bg-[#E3EAF2] text-[#162B45]",
                     )}
                   >
@@ -1098,7 +1098,7 @@ export default function VerificationQueuePage({
           {/* 4. REDESIGN THE QUEUE HEADER */}
           <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2.5 shrink-0">
-              <div className="w-7 h-7 rounded bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F97316] shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF4D00] shrink-0 mt-0.5">
                 {activeQueue === "booking" ? (
                   <ShieldCheck className="w-4 h-4" />
                 ) : (
@@ -1149,7 +1149,7 @@ export default function VerificationQueuePage({
           <div className="flex-1 overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-10">
-                <div className="w-6 h-6 border-2 border-[#F97316] border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-[#FF4D00] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : filteredItems.length === 0 ? (
               /* 8. COMPACT EMPTY STATE (180px - 220px height) */
@@ -1166,7 +1166,7 @@ export default function VerificationQueuePage({
                 </p>
                 <button
                   onClick={() => setActiveTab("")}
-                  className="text-[10px] font-bold text-[#F97316] hover:underline mt-2 uppercase tracking-wider"
+                  className="text-[10px] font-bold text-[#FF4D00] hover:underline mt-2 uppercase tracking-wider"
                 >
                   View Verified Requests
                 </button>
@@ -1261,7 +1261,7 @@ export default function VerificationQueuePage({
                           : false;
 
                         if (isTicketIncomplete) {
-                          priorityColor = "bg-rose-500 animate-pulse"; // Red = blocked / incomplete
+                          priorityColor = "bg-red-600 animate-pulse"; // Red = blocked / incomplete
                         } else if (
                           isUrgent ||
                           item.approvalStatus === "SUBMITTED"
@@ -1270,13 +1270,13 @@ export default function VerificationQueuePage({
                         } else if (item.approvalStatus === "REOPENED") {
                           priorityColor = "bg-blue-500"; // Blue = in progress
                         } else if (item.approvalStatus === "APPROVED") {
-                          priorityColor = "bg-emerald-500"; // Green = ready / verified
+                          priorityColor = "bg-green-500"; // Green = ready / verified
                         } else if (item.ticketStatus === "CANCELLED") {
                           priorityColor = "bg-slate-400"; // Gray = normal
                         }
                       } else {
                         priorityColor = isHighPriority
-                          ? "bg-rose-500 animate-pulse"
+                          ? "bg-red-600 animate-pulse"
                           : "bg-slate-300";
                       }
 
@@ -1298,7 +1298,7 @@ export default function VerificationQueuePage({
 
                           {/* Booking ID (clickable orange text, sticky) */}
                           <td
-                            className="px-3.5 py-2 font-bold font-mono text-[#F97316] hover:underline sticky left-0 bg-white group-hover:bg-[#F8FAFD] z-10"
+                            className="px-3.5 py-2 font-bold font-mono text-[#FF4D00] hover:underline sticky left-0 bg-white group-hover:bg-[#F8FAFD] z-10"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRowClick(item);
@@ -1346,7 +1346,7 @@ export default function VerificationQueuePage({
                               {/* Documents checklist summary */}
                               <td className="px-3.5 py-2 font-medium">
                                 {Array.isArray(b.documents) && b.documents.length > 0 ? (
-                                  <span className="inline-flex items-center gap-1 text-[#16A34A] bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                  <span className="inline-flex items-center gap-1 text-[#16A34A] bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-bold">
                                     {b.documents.length} doc{b.documents.length !== 1 ? "s" : ""} uploaded
                                   </span>
                                 ) : item.checklist ? (
@@ -1483,7 +1483,7 @@ export default function VerificationQueuePage({
                                           "VERIFY",
                                         )
                                       }
-                                      className="w-6.5 h-6.5 rounded bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 flex items-center justify-center transition-colors shrink-0"
+                                      className="w-6.5 h-6.5 rounded bg-green-50 border border-green-200 hover:bg-green-100 flex items-center justify-center transition-colors shrink-0"
                                       title="Verify Ticket"
                                     >
                                       <Check className="w-3.5 h-3.5 text-[#16A34A]" />
@@ -1515,10 +1515,10 @@ export default function VerificationQueuePage({
                                           "REJECT",
                                         )
                                       }
-                                      className="w-6.5 h-6.5 rounded bg-rose-50 border border-rose-200 hover:bg-rose-100 flex items-center justify-center transition-colors shrink-0"
+                                      className="w-6.5 h-6.5 rounded bg-red-50 border border-red-200 hover:bg-red-100 flex items-center justify-center transition-colors shrink-0"
                                       title="Reject"
                                     >
-                                      <X className="w-3.5 h-3.5 text-rose-500" />
+                                      <X className="w-3.5 h-3.5 text-red-600" />
                                     </button>
                                   </>
                                 )}
@@ -1570,14 +1570,14 @@ export default function VerificationQueuePage({
         {/* Card A: Recent Activity Feed */}
         <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[140px] flex flex-col justify-between shadow-[0_1px_2px_rgba(15,23,42,0.02)]">
           <div className="flex items-center gap-2 border-b border-[#E3EAF2] pb-1.5">
-            <Activity className="w-4 h-4 text-[#F97316]" />
+            <Activity className="w-4 h-4 text-[#FF4D00]" />
             <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-wider font-montserrat">
               Recent Activity
             </span>
           </div>
           <div className="flex-1 space-y-2 mt-2 text-[11px] overflow-y-auto no-scrollbar font-semibold">
             <div className="flex items-start gap-2">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0" />
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 shrink-0" />
               <div>
                 Suresh verified BK-MKA-115{" "}
                 <span className="text-[#74839A] font-medium">· 12 min ago</span>
@@ -1596,21 +1596,21 @@ export default function VerificationQueuePage({
         {/* Card B: Guidance Rules Panel */}
         <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[140px] flex flex-col justify-between shadow-[0_1px_2px_rgba(15,23,42,0.02)]">
           <div className="flex items-center gap-2 border-b border-[#E3EAF2] pb-1.5">
-            <HelpCircle className="w-4 h-4 text-[#F97316]" />
+            <HelpCircle className="w-4 h-4 text-[#FF4D00]" />
             <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-wider font-montserrat">
               Approval Guidance
             </span>
           </div>
           <div className="flex-1 space-y-1.5 mt-2 text-[10.5px] font-semibold text-slate-600">
             <div className="flex items-start gap-2">
-              <span className="text-[#F97316] shrink-0">▪</span>
+              <span className="text-[#FF4D00] shrink-0">▪</span>
               <div>
                 Pending requests must be reviewed before final booking
                 confirmation.
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-[#F97316] shrink-0">▪</span>
+              <span className="text-[#FF4D00] shrink-0">▪</span>
               <div>
                 Rejections and Changes Requested require entering a mandatory
                 reason message in the review drawer.
@@ -1635,3 +1635,5 @@ export default function VerificationQueuePage({
     </div>
   );
 }
+
+

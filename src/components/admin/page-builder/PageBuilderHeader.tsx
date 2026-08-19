@@ -76,8 +76,8 @@ export function PageBuilderHeader({
                 <Loader2 className="w-3 h-3 animate-spin" /> Saving...
               </span>
             ) : status === "saved" ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-green-50 text-green-700 border border-green-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
                 SAVED
               </span>
             ) : (
@@ -195,3 +195,4 @@ export function PageBuilderHeader({
     </div>
   );
 }
+

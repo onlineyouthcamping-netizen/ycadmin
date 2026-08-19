@@ -98,7 +98,7 @@ export default function VendorImportWizard({
           <Button
             onClick={handleUpload}
             disabled={loading}
-            className="h-8.5 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase flex items-center gap-1.5 rounded"
+            className="h-8.5 bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold text-xs uppercase flex items-center gap-1.5 rounded"
           >
             {loading ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -154,7 +154,7 @@ export default function VendorImportWizard({
                 size="sm"
                 onClick={handleConfirmImport}
                 disabled={loading}
-                className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-[4px]"
+                className="h-8 bg-green-600 hover:bg-green-700 text-white font-bold text-[11px] rounded-[4px]"
               >
                 {loading ? "Importing..." : "Confirm & Import to DB"}
               </Button>
@@ -169,7 +169,7 @@ export default function VendorImportWizard({
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 border-b-2 text-xs font-black uppercase tracking-wider transition-all ${
                   activeTab === tab
-                    ? "border-[#F97316] text-[#F97316]"
+                    ? "border-[#FF4D00] text-[#FF4D00]"
                     : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
@@ -362,23 +362,23 @@ export default function VendorImportWizard({
       )}
 
       {report && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-[6px] p-4 space-y-3">
+        <div className="bg-green-50 border border-green-200 rounded-[6px] p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <h4 className="text-xs font-black text-emerald-800 uppercase tracking-wider">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <h4 className="text-xs font-black text-green-700 uppercase tracking-wider">
               Import Completed Successfully
             </h4>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold mt-2">
-            <div className="bg-white p-3 rounded border border-emerald-100">
+            <div className="bg-white p-3 rounded border border-green-100">
               <span className="text-[10px] text-slate-400 block font-bold">
                 CREATED
               </span>
-              <span className="text-lg font-black text-emerald-600">
+              <span className="text-lg font-black text-green-600">
                 {report.created} Records
               </span>
             </div>
-            <div className="bg-white p-3 rounded border border-emerald-100">
+            <div className="bg-white p-3 rounded border border-green-100">
               <span className="text-[10px] text-slate-400 block font-bold">
                 DUPLICATES DRAFTED
               </span>
@@ -386,7 +386,7 @@ export default function VendorImportWizard({
                 {report.duplicates} Records
               </span>
             </div>
-            <div className="bg-white p-3 rounded border border-emerald-100">
+            <div className="bg-white p-3 rounded border border-green-100">
               <span className="text-[10px] text-slate-400 block font-bold">
                 SKIPPED / ERRORS
               </span>
@@ -401,7 +401,7 @@ export default function VendorImportWizard({
                 setReport(null);
                 setPreviewData(null);
               }}
-              className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+              className="h-8 bg-green-600 hover:bg-green-700 text-white font-bold text-xs"
             >
               Finish Import
             </Button>
@@ -411,3 +411,4 @@ export default function VendorImportWizard({
     </div>
   );
 }
+

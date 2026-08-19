@@ -65,7 +65,7 @@ export default function SettingsPage() {
     return (
       <AdminPageContainer fullWidth={true}>
         <div className="h-96 flex items-center justify-center space-x-2 text-slate-400">
-          <Loader2 className="w-6 h-6 animate-spin text-[#F97316]" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#FF4D00]" />
           <span className="text-sm font-semibold">
             Loading YouthCamping OS Settings...
           </span>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
                 toast.success("Settings saved successfully!");
               }
             }}
-            className="bg-[#F97316] hover:bg-[#EA580C] text-white h-9 px-5 rounded-lg font-semibold text-xs shadow-xs transition-all flex items-center gap-1.5"
+            className="bg-[#FF4D00] hover:bg-[#EA580C] text-white h-9 px-5 rounded-lg font-semibold text-xs shadow-xs transition-all flex items-center gap-1.5"
           >
             <Save className="w-4 h-4" />
             Save Changes
@@ -133,12 +133,12 @@ export default function SettingsPage() {
                 onClick={() => handleTabChange(tab.id as SettingsTabId)}
                 className={`flex items-center gap-2 px-4 py-3.5 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
                   isActive
-                    ? "border-[#F97316] text-[#F97316] bg-orange-50/50"
+                    ? "border-[#FF4D00] text-[#FF4D00] bg-orange-50/50"
                     : "border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50/60"
                 }`}
               >
                 <Icon
-                  className={`w-4 h-4 ${isActive ? "text-[#F97316]" : "text-slate-400"}`}
+                  className={`w-4 h-4 ${isActive ? "text-[#FF4D00]" : "text-slate-400"}`}
                 />
                 <span>{tab.label}</span>
               </button>
@@ -159,3 +159,4 @@ export default function SettingsPage() {
     </AdminPageContainer>
   );
 }
+

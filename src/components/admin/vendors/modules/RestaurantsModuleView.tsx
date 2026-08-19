@@ -97,13 +97,13 @@ export function RestaurantsModuleView({
                 >
                   <td className="py-2.5 px-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-md bg-orange-50 border border-orange-200 flex items-center justify-center text-[#F97316] font-bold shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF4D00] font-bold shrink-0">
                         <UtensilsCrossed className="w-3.5 h-3.5" />
                       </div>
                       <div>
                         <span
                           onClick={() => onSelectVendor(r)}
-                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#F97316] cursor-pointer transition-colors"
+                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#FF4D00] cursor-pointer transition-colors"
                         >
                           {r.name}
                         </span>
@@ -150,7 +150,7 @@ export function RestaurantsModuleView({
                         type="button"
                         onClick={() => onDeleteVendor(r.id)}
                         title="Deactivate"
-                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -194,3 +194,4 @@ export function RestaurantsModuleView({
     </div>
   );
 }
+

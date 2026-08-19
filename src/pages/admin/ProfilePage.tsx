@@ -167,7 +167,7 @@ export default function ProfilePage() {
               alt={profile?.name}
               className="w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm"
             />
-            <span className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
+            <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-600 border-2 border-white rounded-full" />
           </div>
           <div className="space-y-1">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -182,8 +182,8 @@ export default function ProfilePage() {
                   ? "Founder"
                   : profile?.role || "STAFF"}
               </span>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                <CheckCircle className="w-3 h-3 text-emerald-600" /> Active
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-200 flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 text-green-600" /> Active
                 Account
               </span>
             </div>
@@ -395,3 +395,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

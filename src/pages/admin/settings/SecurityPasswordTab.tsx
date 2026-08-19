@@ -181,7 +181,7 @@ export function SecurityPasswordTab({
             disabled={
               isChanging || !newPassword || newPassword !== confirmPassword
             }
-            className="h-9 px-5 text-xs font-bold uppercase tracking-wider bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xs rounded-lg flex items-center gap-1.5"
+            className="h-9 px-5 text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#EA580C] text-white shadow-xs rounded-lg flex items-center gap-1.5"
           >
             {isChanging ? (
               <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
@@ -205,3 +205,4 @@ export function SecurityPasswordTab({
     </div>
   );
 }
+

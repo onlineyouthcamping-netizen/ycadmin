@@ -100,7 +100,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
                 <div className="flex min-w-0 items-start gap-2.5">
                   <div className="mt-0.5 shrink-0">
                     {isDone ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
                     ) : isDueToday ? (
                       <AlertCircle className="h-4 w-4 text-[#FF5A1F]" />
                     ) : (
@@ -150,7 +150,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
                     className={cn(
                       "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider",
                       isDone
-                        ? "bg-emerald-50 text-emerald-700"
+                        ? "bg-green-50 text-green-700"
                         : isDueToday
                         ? "bg-orange-50 text-[#FF5A1F]"
                         : "bg-slate-100 text-slate-600"
@@ -188,3 +188,4 @@ export const teamWidgets: DashboardWidget[] = [
     component: BookingTasksWidget,
   },
 ];
+

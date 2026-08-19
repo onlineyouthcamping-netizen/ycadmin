@@ -70,8 +70,8 @@ export function VendorDashboardView({
       value: transport.length,
       sub: "Vehicles & Drivers",
       icon: Bus,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      color: "text-green-600",
+      bg: "bg-green-50",
     },
     {
       title: "Mountain Guides",
@@ -115,7 +115,7 @@ export function VendorDashboardView({
       count: transport.length,
       icon: Bus,
       desc: "Bus, Tempo Traveller, SUV & Fleet Operators",
-      color: "border-emerald-200 hover:border-emerald-400 bg-emerald-50/20",
+      color: "border-green-200 hover:border-green-400 bg-green-50/20",
     },
     {
       id: "activities",
@@ -194,7 +194,7 @@ export function VendorDashboardView({
       {/* Enterprise Categories Navigation Grid */}
       <div className="space-y-3">
         <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-          <Building2 className="w-4 h-4 text-[#F97316]" />
+          <Building2 className="w-4 h-4 text-[#FF4D00]" />
           Vendor Category Hubs
         </h3>
 
@@ -226,7 +226,7 @@ export function VendorDashboardView({
                     {c.desc}
                   </p>
                 </div>
-                <div className="mt-4 flex items-center text-xs font-bold text-[#F97316] hover:underline">
+                <div className="mt-4 flex items-center text-xs font-bold text-[#FF4D00] hover:underline">
                   Manage Directory & Rates →
                 </div>
               </div>
@@ -237,3 +237,5 @@ export function VendorDashboardView({
     </div>
   );
 }
+
+

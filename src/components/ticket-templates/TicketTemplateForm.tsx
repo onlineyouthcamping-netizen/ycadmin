@@ -417,7 +417,7 @@ export function TicketTemplateForm({
                 estimatedTicketCost: e.target.value,
               })
             }
-            className="h-8.5 text-xs rounded-[4px] border-[#E2E8F0] font-bold text-emerald-600"
+            className="h-8.5 text-xs rounded-[4px] border-[#E2E8F0] font-bold text-green-600"
           />
           <p className="text-[10px] text-slate-400">
             Package-included internal cost per person for operational costing and trip profitability.
@@ -479,3 +479,4 @@ export function TicketTemplateForm({
     </form>
   );
 }
+

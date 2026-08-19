@@ -385,13 +385,13 @@ export default function EmailComposerDrawer({
                   {bulkProgress.total}
                 </span>
               </div>
-              <div className="flex justify-between text-emerald-600">
+              <div className="flex justify-between text-green-600">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4" /> Sent:
                 </span>
                 <span className="font-bold">{bulkProgress.sent}</span>
               </div>
-              <div className="flex justify-between text-rose-600">
+              <div className="flex justify-between text-red-600">
                 <span className="flex items-center gap-1.5">
                   <XCircle className="h-4 w-4" /> Failed:
                 </span>
@@ -646,7 +646,7 @@ export default function EmailComposerDrawer({
                   onClick={() => formatDoc("removeFormat")}
                   title="Clear formatting"
                 >
-                  <Trash2 className="h-4 w-4 text-rose-500" />
+                  <Trash2 className="h-4 w-4 text-red-600" />
                 </Button>
               </div>
 
@@ -729,3 +729,4 @@ export default function EmailComposerDrawer({
     </Sheet>
   );
 }
+

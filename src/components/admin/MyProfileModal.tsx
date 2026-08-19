@@ -210,8 +210,8 @@ export function MyProfileModal({
                     <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
                       Account Status
                     </span>
-                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 mt-0.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-xs font-bold text-green-600 flex items-center gap-1 mt-0.5">
+                      <CheckCircle className="w-3.5 h-3.5 text-green-600" />
                       Active & Authorized
                     </span>
                   </div>
@@ -417,3 +417,4 @@ export function MyProfileModal({
     </Dialog>
   );
 }
+

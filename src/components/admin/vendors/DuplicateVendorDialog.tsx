@@ -88,7 +88,7 @@ export function DuplicateVendorDialog({
         <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
           <Button
             onClick={() => onUseExisting(existingVendor)}
-            className="w-full sm:w-auto bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto bg-[#FF4D00] hover:bg-[#E05E00] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center justify-center gap-1.5"
           >
             <CheckCircle2 className="w-4 h-4" />
             Link Existing Vendor
@@ -105,3 +105,4 @@ export function DuplicateVendorDialog({
     </Dialog>
   );
 }
+

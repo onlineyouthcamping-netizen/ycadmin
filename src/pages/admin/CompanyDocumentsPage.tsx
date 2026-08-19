@@ -231,7 +231,7 @@ export default function CompanyDocumentsPage() {
       {/* Top Title Bar */}
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <FileText className="w-5 h-5 text-[#F97316]" />
+          <FileText className="w-5 h-5 text-[#FF4D00]" />
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
               Company Documents
@@ -244,7 +244,7 @@ export default function CompanyDocumentsPage() {
         </div>
         <Button
           onClick={() => setUploadOpen(true)}
-          className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-[4px] h-9 px-4 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+          className="bg-[#FF4D00] hover:bg-[#EA580C] text-white rounded-[4px] h-9 px-4 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
         >
           <Plus className="w-4 h-4" /> Upload Document
         </Button>
@@ -290,14 +290,14 @@ export default function CompanyDocumentsPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search file name/ID..."
-                  className="rounded-[4px] pl-8 border-[#E2E8F0] h-8.5 text-xs font-semibold placeholder:text-slate-400 focus-visible:ring-[#F97316]"
+                  className="rounded-[4px] pl-8 border-[#E2E8F0] h-8.5 text-xs font-semibold placeholder:text-slate-400 focus-visible:ring-[#FF4D00]"
                 />
               </div>
 
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="h-8.5 rounded-[4px] border border-[#E2E8F0] text-xs font-semibold text-slate-650 bg-white px-2.5 focus-visible:ring-[#F97316]"
+                className="h-8.5 rounded-[4px] border border-[#E2E8F0] text-xs font-semibold text-slate-650 bg-white px-2.5 focus-visible:ring-[#FF4D00]"
               >
                 <option value="All">All Categories</option>
                 <option value="GST">GST</option>
@@ -363,7 +363,7 @@ export default function CompanyDocumentsPage() {
                         <td className="py-3.5 pl-6 font-bold text-xs text-slate-800">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 bg-orange-50 border border-orange-100 rounded flex items-center justify-center">
-                              <File className="w-3.5 h-3.5 text-[#F97316]" />
+                              <File className="w-3.5 h-3.5 text-[#FF4D00]" />
                             </div>
                             <div className="flex flex-col">
                               <span>{doc.name}</span>
@@ -400,14 +400,14 @@ export default function CompanyDocumentsPage() {
                             className={`${
                               doc.expiryDate !== "—" &&
                               new Date(doc.expiryDate) < new Date()
-                                ? "bg-rose-100 text-rose-800 border-rose-200"
+                                ? "bg-red-100 text-red-700 border-red-200"
                                 : doc.expiryDate !== "—" &&
                                     new Date(doc.expiryDate) <
                                       new Date(
                                         Date.now() + 30 * 24 * 60 * 60 * 1000,
                                       )
                                   ? "bg-amber-100 text-amber-800 border-amber-200"
-                                  : "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                  : "bg-green-100 text-green-700 border-green-200"
                             } px-2 py-0.5 font-bold uppercase text-[8px] tracking-wider rounded-[4px] border shadow-none`}
                           >
                             {doc.expiryDate !== "—" &&
@@ -438,9 +438,9 @@ export default function CompanyDocumentsPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDelete(doc.id)}
-                              className="w-7.5 h-7.5 rounded-[4px] hover:bg-rose-50 border border-slate-100 hover:border-rose-100"
+                              className="w-7.5 h-7.5 rounded-[4px] hover:bg-red-50 border border-slate-100 hover:border-red-100"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <Trash2 className="w-3.5 h-3.5 text-red-600" />
                             </Button>
                           </div>
                         </td>
@@ -469,7 +469,7 @@ export default function CompanyDocumentsPage() {
         <DialogContent className="sm:max-w-[450px] rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-xl">
           <DialogHeader className="border-b border-[#E2E8F0] pb-3">
             <DialogTitle className="font-bold uppercase tracking-tight text-sm flex items-center gap-2 text-slate-850">
-              <FileText className="w-4 h-4 text-[#F97316]" /> Register Legal
+              <FileText className="w-4 h-4 text-[#FF4D00]" /> Register Legal
               Document
             </DialogTitle>
           </DialogHeader>
@@ -486,7 +486,7 @@ export default function CompanyDocumentsPage() {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="e.g. MSME Registration Certificate"
-                className="h-8.5 border-slate-200 focus-visible:ring-[#F97316]"
+                className="h-8.5 border-slate-200 focus-visible:ring-[#FF4D00]"
                 required
               />
             </div>
@@ -500,7 +500,7 @@ export default function CompanyDocumentsPage() {
                   value={newIdentifier}
                   onChange={(e) => setNewIdentifier(e.target.value)}
                   placeholder="e.g. GSTIN12345"
-                  className="h-8.5 border-slate-200 focus-visible:ring-[#F97316]"
+                  className="h-8.5 border-slate-200 focus-visible:ring-[#FF4D00]"
                 />
               </div>
               <div className="space-y-1.5">
@@ -510,7 +510,7 @@ export default function CompanyDocumentsPage() {
                 <select
                   value={newType}
                   onChange={(e) => setNewType(e.target.value)}
-                  className="w-full h-8.5 rounded-[4px] border border-slate-200 bg-white px-2 focus-visible:ring-[#F97316]"
+                  className="w-full h-8.5 rounded-[4px] border border-slate-200 bg-white px-2 focus-visible:ring-[#FF4D00]"
                 >
                   <option value="PDF">PDF</option>
                   <option value="DOCX">DOCX</option>
@@ -528,7 +528,7 @@ export default function CompanyDocumentsPage() {
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full h-8.5 rounded-[4px] border border-slate-200 bg-white px-2 focus-visible:ring-[#F97316]"
+                  className="w-full h-8.5 rounded-[4px] border border-slate-200 bg-white px-2 focus-visible:ring-[#FF4D00]"
                 >
                   <option value="GST">GST</option>
                   <option value="PAN">PAN</option>
@@ -549,7 +549,7 @@ export default function CompanyDocumentsPage() {
                   type="date"
                   value={newExpiry}
                   onChange={(e) => setNewExpiry(e.target.value)}
-                  className="h-8.5 border-slate-200 focus-visible:ring-[#F97316]"
+                  className="h-8.5 border-slate-200 focus-visible:ring-[#FF4D00]"
                 />
               </div>
             </div>
@@ -565,7 +565,7 @@ export default function CompanyDocumentsPage() {
               </Button>
               <Button
                 type="submit"
-                className="bg-[#F97316] hover:bg-[#EA580C] text-white h-8.5 font-semibold text-xs rounded-[4px] px-4"
+                className="bg-[#FF4D00] hover:bg-[#EA580C] text-white h-8.5 font-semibold text-xs rounded-[4px] px-4"
               >
                 Onboard Document
               </Button>
@@ -576,3 +576,4 @@ export default function CompanyDocumentsPage() {
     </div>
   );
 }
+

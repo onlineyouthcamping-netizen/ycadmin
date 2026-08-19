@@ -276,7 +276,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "07:00 AM - 04:00 PM",
     loc: "Shimla",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
   {
     day: "Day 2",
@@ -288,7 +288,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "08:00 AM - 03:00 PM",
     loc: "Sangla",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
   {
     day: "Day 3",
@@ -300,7 +300,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "09:00 AM - 05:00 PM",
     loc: "Chitkul",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
   {
     day: "Day 4",
@@ -312,7 +312,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "07:30 AM - 05:30 PM",
     loc: "Kaza",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
   {
     day: "Day 5",
@@ -324,7 +324,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "10:00 AM - 04:00 PM",
     loc: "Key",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
   {
     day: "Day 6",
@@ -336,7 +336,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "09:30 AM - 05:00 PM",
     loc: "Hikkim",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
   {
     day: "Day 7",
@@ -348,7 +348,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "08:00 AM - 03:00 PM",
     loc: "Chandra Taal",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
   {
     day: "Day 8",
@@ -360,7 +360,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "08:00 AM - 04:00 PM",
     loc: "Manali",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
   {
     day: "Day 9",
@@ -372,7 +372,7 @@ const MOCK_SPITI_ACTIVITIES = [
     time: "06:00 PM",
     loc: "Manali",
     status: "CONFIRMED",
-    statusClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    statusClass: "bg-green-50 text-green-600 border-green-100",
   },
 ];
 
@@ -970,19 +970,19 @@ const MOCK_PARTICIPANTS = [
 
 const StatusBadge = ({ status }: { status: string }) => {
   const map: Record<string, string> = {
-    CONFIRMED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    CONFIRMED: "bg-green-50 text-green-700 border-green-200",
     PENDING: "bg-amber-50 text-amber-700 border-amber-200",
     CANCELLED: "bg-slate-100 text-slate-500 border-slate-200",
     OPTIONAL: "bg-orange-50 text-orange-700 border-orange-200",
-    PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    PAID: "bg-green-50 text-green-700 border-green-200",
     "PARTIALLY PAID": "bg-amber-50 text-amber-700 border-amber-200",
     UNPAID: "bg-red-50 text-red-600 border-red-200",
     REFUNDED: "bg-blue-50 text-blue-700 border-blue-200",
     "IN PROGRESS": "bg-blue-50 text-blue-700 border-blue-200",
-    COMPLETED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    COMPLETED: "bg-green-50 text-green-700 border-green-200",
     OVERDUE: "bg-red-50 text-red-600 border-red-200",
     "NOT STARTED": "bg-slate-100 text-slate-500 border-slate-200",
-    VERIFIED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    VERIFIED: "bg-green-50 text-green-700 border-green-200",
     "ACTION REQUIRED": "bg-red-50 text-red-600 border-red-200",
   };
   return (
@@ -1003,7 +1003,7 @@ const TypeBadge = ({ type }: { type: string }) => {
     SIGHTSEEING: "bg-orange-100 text-orange-700",
     ADVENTURE: "bg-orange-100 text-orange-700",
     COMMUNICATION: "bg-pink-100 text-pink-700",
-    PAYMENTS: "bg-emerald-100 text-emerald-700",
+    PAYMENTS: "bg-green-100 text-green-700",
     DOCUMENTS: "bg-orange-100 text-orange-700",
     HOTELS: "bg-amber-100 text-amber-700",
     TRANSPORT: "bg-cyan-100 text-cyan-700",
@@ -1050,7 +1050,7 @@ const Avatar = ({
   <div
     className={cn(
       "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black text-white shrink-0",
-      className || "bg-[#F97316]",
+      className || "bg-[#FF4D00]",
     )}
   >
     {initials}
@@ -4330,7 +4330,7 @@ useEffect(() => {
             ? `${raw?.totalPax || allPassengers.length} Pax`
             : "Not booked",
           capacityPercent: 100,
-          capacityColor: assignment ? "bg-emerald-500" : "bg-slate-300",
+          capacityColor: assignment ? "bg-green-600" : "bg-slate-300",
           nights: night.nights, // use itinerary-defined nights (Kaza = 2)
           status: assignment
             ? raw?.confirmed === "CONFIRMED" ||
@@ -4394,7 +4394,7 @@ useEffect(() => {
           allocations: [{ text: `${roomsCount} Rooms`, color: "blue" }],
           totalPaxText: `${raw?.totalPax || allPassengers.length} Pax`,
           capacityPercent: 100,
-          capacityColor: "bg-emerald-500",
+          capacityColor: "bg-green-600",
           nights: raw?.nights || 1,
           status:
             raw?.confirmed === "CONFIRMED" || v.paymentStatus === "paid"
@@ -8053,7 +8053,7 @@ useEffect(() => {
                   </Button>
                   <Button
                     type="submit"
-                    className="h-8 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded"
+                    className="h-8 text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded"
                   >
                     Save Changes
                   </Button>
@@ -8232,7 +8232,7 @@ useEffect(() => {
                   </Button>
                   <Button
                     type="submit"
-                    className="h-8 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
+                    className="h-8 bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
                   >
                     Add Activity
                   </Button>
@@ -8312,7 +8312,7 @@ useEffect(() => {
                                 );
                               }
                             }}
-                            className="h-7 text-[10px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded px-3"
+                            className="h-7 text-[10px] font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded px-3"
                           >
                             Restore
                           </Button>
@@ -8363,7 +8363,7 @@ useEffect(() => {
               <div className="overflow-y-auto pr-1 flex-1 space-y-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
-                    <span className="text-[10px] font-black uppercase text-[#F97316] tracking-wider block">
+                    <span className="text-[10px] font-black uppercase text-[#FF4D00] tracking-wider block">
                       {selectedStayForDrawer?.day} •{" "}
                       {selectedStayForDrawer?.destCity}
                     </span>
@@ -8374,7 +8374,7 @@ useEffect(() => {
                       Supplied by {selectedStayForDrawer?.vendor}
                     </p>
                   </div>
-                  <span className="text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full uppercase">
+                  <span className="text-xs font-black bg-green-50 text-green-600 border border-green-200 px-2.5 py-1 rounded-full uppercase">
                     {selectedStayForDrawer?.status || "Hotel Confirmed"}
                   </span>
                 </div>
@@ -8441,7 +8441,7 @@ useEffect(() => {
                       onClick={() =>
                         toast.success("Voucher file uploaded successfully!")
                       }
-                      className="flex-1 h-8 bg-[#FFF7ED] border border-[#F97316] text-[#F97316] hover:bg-[#FFEEDE] font-bold rounded flex items-center justify-center gap-1.5 text-xs shadow-xxs"
+                      className="flex-1 h-8 bg-[#FFF7ED] border border-[#FF4D00] text-[#FF4D00] hover:bg-[#FFEEDE] font-bold rounded flex items-center justify-center gap-1.5 text-xs shadow-xxs"
                     >
                       <Upload className="w-3.5 h-3.5" /> Upload Signed Voucher
                     </button>
@@ -8457,11 +8457,11 @@ useEffect(() => {
                     <span>Vendor Agreed Rate:</span>
                     <span>₹{selectedStayForDrawer?.amt || "18,400"}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-emerald-600">
+                  <div className="flex justify-between font-bold text-green-600">
                     <span>Advance Paid:</span>
                     <span>₹9,200</span>
                   </div>
-                  <div className="flex justify-between font-black text-rose-600 border-t border-slate-100 pt-1.5">
+                  <div className="flex justify-between font-black text-red-600 border-t border-slate-100 pt-1.5">
                     <span>Remaining Balance:</span>
                     <span>₹9,200</span>
                   </div>
@@ -8509,7 +8509,7 @@ useEffect(() => {
                             className={cn(
                               "w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black",
                               item.completed
-                                ? "bg-emerald-500 text-white"
+                                ? "bg-green-600 text-white"
                                 : "bg-slate-200 text-slate-500",
                             )}
                           >
@@ -9019,7 +9019,7 @@ useEffect(() => {
                                   "px-2 py-0.5 rounded-[3px] text-[9px] font-black uppercase tracking-wider border",
                                   g.assignmentStatus === "CONFIRMED" ||
                                     g.assignmentStatus === "ACCEPTED"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    ? "bg-green-50 text-green-700 border-green-200"
                                     : g.assignmentStatus === "ASSIGNED"
                                       ? "bg-blue-50 text-blue-700 border-blue-200"
                                       : g.assignmentStatus === "CANCELLED"
@@ -9039,7 +9039,7 @@ useEffect(() => {
                                 "en-IN",
                               )}
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-semibold text-emerald-700">
+                            <td className="p-3 border-r border-slate-100 text-right font-semibold text-green-700">
                               ₹
                               {Number(g.advancePaid || 0).toLocaleString(
                                 "en-IN",
@@ -9051,7 +9051,7 @@ useEffect(() => {
                                   "font-bold",
                                   Number(g.balanceAmount || 0) > 0
                                     ? "text-red-600"
-                                    : "text-emerald-600",
+                                    : "text-green-600",
                                 )}
                               >
                                 ₹
@@ -9321,7 +9321,7 @@ useEffect(() => {
                             <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-800">
                               ₹{Number(exp.agreedAmount || 0).toLocaleString("en-IN")}
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-semibold text-emerald-700">
+                            <td className="p-3 border-r border-slate-100 text-right font-semibold text-green-700">
                               ₹{Number(exp.advancePaid || 0).toLocaleString("en-IN")}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right">
@@ -9526,7 +9526,7 @@ useEffect(() => {
                       placeholder="Confirm guide SIM cards"
                       value={newTaskName}
                       onChange={(e) => setNewTaskName(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -9555,7 +9555,7 @@ useEffect(() => {
                       value={newTaskNotes}
                       onChange={(e) => setNewTaskNotes(e.target.value)}
                       rows={3}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
@@ -9568,7 +9568,7 @@ useEffect(() => {
                     </button>
                     <button
                       type="submit"
-                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                      className="text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
                     >
                       Save Task
                     </button>
@@ -9607,7 +9607,7 @@ useEffect(() => {
                       placeholder="e.g. Dikshu Sharma"
                       value={editGuideName}
                       onChange={(e) => setEditGuideName(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -9634,7 +9634,7 @@ useEffect(() => {
                     </button>
                     <button
                       type="submit"
-                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                      className="text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
                     >
                       Save Changes
                     </button>
@@ -9670,7 +9670,7 @@ useEffect(() => {
                       placeholder="e.g. Ramesh Patel"
                       value={newPaxName}
                       onChange={(e) => setNewPaxName(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -9683,7 +9683,7 @@ useEffect(() => {
                       placeholder="e.g. 9876543210"
                       value={newPaxPhone}
                       onChange={(e) => setNewPaxPhone(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -9695,7 +9695,7 @@ useEffect(() => {
                         type="number"
                         value={newPaxAge}
                         onChange={(e) => setNewPaxAge(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -9720,7 +9720,7 @@ useEffect(() => {
                       type="number"
                       value={newPaxAmount}
                       onChange={(e) => setNewPaxAmount(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
@@ -9733,7 +9733,7 @@ useEffect(() => {
                     </button>
                     <button
                       type="submit"
-                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                      className="text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
                     >
                       Add Passenger
                     </button>
@@ -9772,7 +9772,7 @@ useEffect(() => {
                         required
                         value={vehicleTypeForm}
                         onChange={(e) => setVehicleTypeForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -9785,7 +9785,7 @@ useEffect(() => {
                         onChange={(e) =>
                           setCapacityForm(Number(e.target.value))
                         }
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -9798,7 +9798,7 @@ useEffect(() => {
                       required
                       value={routeForm}
                       onChange={(e) => setRouteForm(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -9810,7 +9810,7 @@ useEffect(() => {
                         type="text"
                         value={driverNameForm}
                         onChange={(e) => setDriverNameForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -9821,7 +9821,7 @@ useEffect(() => {
                         type="text"
                         value={driverPhoneForm}
                         onChange={(e) => setDriverPhoneForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -9836,7 +9836,7 @@ useEffect(() => {
                         onChange={(e) =>
                           setTransportCostForm(Number(e.target.value))
                         }
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -9849,7 +9849,7 @@ useEffect(() => {
                         onChange={(e) =>
                           setTransportPaidForm(Number(e.target.value))
                         }
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -9860,7 +9860,7 @@ useEffect(() => {
                     <textarea
                       value={transportNotesForm}
                       onChange={(e) => setTransportNotesForm(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316] h-16 resize-none"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00] h-16 resize-none"
                     />
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
@@ -9873,7 +9873,7 @@ useEffect(() => {
                     </button>
                     <button
                       type="submit"
-                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                      className="text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
                     >
                       Save Fleet Details
                     </button>
@@ -9909,7 +9909,7 @@ useEffect(() => {
                         required
                         value={trainNameForm}
                         onChange={(e) => setTrainNameForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -9921,7 +9921,7 @@ useEffect(() => {
                         required
                         value={trainPnrForm}
                         onChange={(e) => setTrainPnrForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -9935,7 +9935,7 @@ useEffect(() => {
                         required
                         value={trainFromForm}
                         onChange={(e) => setTrainFromForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -9947,7 +9947,7 @@ useEffect(() => {
                         required
                         value={trainToForm}
                         onChange={(e) => setTrainToForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -9961,7 +9961,7 @@ useEffect(() => {
                         required
                         value={trainDepTimeForm}
                         onChange={(e) => setTrainDepTimeForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -9973,7 +9973,7 @@ useEffect(() => {
                         required
                         value={trainArrTimeForm}
                         onChange={(e) => setTrainArrTimeForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -9987,7 +9987,7 @@ useEffect(() => {
                         required
                         value={trainDateForm}
                         onChange={(e) => setTrainDateForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -9999,7 +9999,7 @@ useEffect(() => {
                         required
                         value={trainSeatsForm}
                         onChange={(e) => setTrainSeatsForm(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -10026,7 +10026,7 @@ useEffect(() => {
                     </button>
                     <button
                       type="submit"
-                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                      className="text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
                     >
                       Save Train Details
                     </button>
@@ -10058,7 +10058,7 @@ useEffect(() => {
                       placeholder="e.g. Room 101, Group No. 1"
                       value={shuffleRoom === "—" ? "" : shuffleRoom}
                       onChange={(e) => setShuffleRoom(e.target.value || "—")}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
 
@@ -10089,7 +10089,7 @@ useEffect(() => {
                       placeholder="e.g. 1, 12, Window"
                       value={shuffleSeat === "—" ? "" : shuffleSeat}
                       onChange={(e) => setShuffleSeat(e.target.value || "—")}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
 
@@ -10128,7 +10128,7 @@ useEffect(() => {
                         );
                         setShuffleModalOpen(false);
                       }}
-                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                      className="text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
                     >
                       Save Reshuffle
                     </button>
@@ -10159,7 +10159,7 @@ useEffect(() => {
                       placeholder="e.g. Room 105, Cottage 3"
                       value={newRoomName}
                       onChange={(e) => setNewRoomName(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
@@ -10187,7 +10187,7 @@ useEffect(() => {
                         setNewRoomName("");
                         setAddRoomModalOpen(false);
                       }}
-                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                      className="text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
                     >
                       Create Room
                     </button>
@@ -10358,3 +10358,5 @@ useEffect(() => {
     </div>
   );
 }
+
+

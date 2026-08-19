@@ -8,14 +8,14 @@ export default function UnauthorizedPage() {
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center text-center p-6 animate-fade-in">
       <div className="relative mb-6">
-        <div className="w-24 h-24 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 animate-pulse border-2 border-rose-500/20">
+        <div className="w-24 h-24 rounded-full bg-red-600/10 flex items-center justify-center text-red-600 animate-pulse border-2 border-red-500/20">
           <ShieldAlert className="w-12 h-12" />
         </div>
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-4 border-background animate-ping" />
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full border-4 border-background animate-ping" />
       </div>
 
       <h1 className="text-xl font-bold text-slate-800 mb-2">Access Denied</h1>
-      <p className="text-[10px] uppercase tracking-wider text-rose-500 font-bold mb-6">
+      <p className="text-[10px] uppercase tracking-wider text-red-600 font-bold mb-6">
         Error Code: 403 Forbidden
       </p>
 
@@ -45,3 +45,5 @@ export default function UnauthorizedPage() {
     </div>
   );
 }
+
+

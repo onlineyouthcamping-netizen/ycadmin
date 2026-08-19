@@ -205,7 +205,7 @@ export function BookingsTable({
                         <p
                           className={cn(
                             "font-semibold leading-tight",
-                            Number(b.remainingAmount || 0) > 0 ? "text-[#E04400]" : "text-emerald-600",
+                            Number(b.remainingAmount || 0) > 0 ? "text-[#E04400]" : "text-green-600",
                           )}
                         >
                           ₹{Number(b.remainingAmount || 0).toLocaleString("en-IN")}
@@ -220,11 +220,11 @@ export function BookingsTable({
                           className={cn(
                             "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold",
                             flowStatus === "Confirmed"
-                              ? "bg-emerald-50 text-emerald-700"
+                              ? "bg-green-50 text-green-700"
                               : flowStatus === "Completed"
                                 ? "bg-teal-50 text-teal-700"
                                 : flowStatus === "Cancelled"
-                                  ? "bg-rose-50 text-rose-700"
+                                  ? "bg-red-50 text-red-700"
                                   : "bg-amber-50 text-amber-700",
                           )}
                         >
@@ -269,7 +269,7 @@ export function BookingsTable({
                           </button>
                           {isFounder && (
                             <button
-                              className="relative h-7 w-7 rounded-md flex items-center justify-center text-rose-500 hover:bg-rose-50"
+                              className="relative h-7 w-7 rounded-md flex items-center justify-center text-red-600 hover:bg-red-50"
                               title="Delete booking"
                               onClick={() => onDelete(b.id)}
                             >
@@ -326,3 +326,4 @@ export function BookingsTable({
     </div>
   );
 }
+

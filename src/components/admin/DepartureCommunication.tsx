@@ -125,7 +125,7 @@ export default function DepartureCommunication({
                 className={cn(
                   "w-full text-left p-2.5 rounded-[4px] flex items-start gap-2.5 transition-all hover:bg-slate-100",
                   activeChannel === ch.key
-                    ? "bg-[#F97316]/5 text-[#F97316] font-bold border-l-2 border-[#F97316] pl-2"
+                    ? "bg-[#FF4D00]/5 text-[#FF4D00] font-bold border-l-2 border-[#FF4D00] pl-2"
                     : "text-slate-700",
                 )}
               >
@@ -133,7 +133,7 @@ export default function DepartureCommunication({
                   className={cn(
                     "w-4 h-4 mt-0.5",
                     activeChannel === ch.key
-                      ? "text-[#F97316]"
+                      ? "text-[#FF4D00]"
                       : "text-slate-400",
                   )}
                 />
@@ -235,7 +235,7 @@ export default function DepartureCommunication({
           />
           <button
             type="submit"
-            className="h-9 w-9 bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] flex items-center justify-center shadow-xs"
+            className="h-9 w-9 bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] flex items-center justify-center shadow-xs"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -244,3 +244,4 @@ export default function DepartureCommunication({
     </div>
   );
 }
+

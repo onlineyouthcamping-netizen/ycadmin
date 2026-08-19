@@ -56,7 +56,7 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
       label: "Collect Payment",
       desc: "Record UPI / Cash collection",
       icon: CreditCard,
-      color: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      color: "bg-green-50 text-green-600 border-green-100",
       onClick: () => {
         setIsOpen(false);
         navigate("/admin/accounting");
@@ -158,3 +158,4 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
 };
 
 export default MobileQuickActionFab;
+

@@ -242,7 +242,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
 
   const getFileIcon = (mimeType?: string) => {
     if (mimeType?.includes("pdf"))
-      return <FileText className="w-4 h-4 text-rose-500" />;
+      return <FileText className="w-4 h-4 text-red-600" />;
     if (mimeType?.includes("image"))
       return <ImageIcon className="w-4 h-4 text-blue-500" />;
     return <FileIcon className="w-4 h-4 text-slate-500" />;
@@ -450,7 +450,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => onDelete(doc.id, passengerId)}
-                      className="h-7 text-[10px] font-bold text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2 gap-1 ml-auto"
+                      className="h-7 text-[10px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 gap-1 ml-auto"
                     >
                       <Trash2 className="w-3 h-3" /> Delete
                     </Button>
@@ -499,3 +499,4 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
 };
 
 export default DocumentManager;
+

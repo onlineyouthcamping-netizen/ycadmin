@@ -84,7 +84,7 @@ export const TravelDeskVendors: React.FC<TravelDeskVendorsProps> = ({
                         ? "bg-blue-100 text-blue-600"
                         : link.vendor?.type === "transport"
                           ? "bg-amber-100 text-amber-600"
-                          : "bg-emerald-100 text-emerald-600",
+                          : "bg-green-100 text-green-600",
                     )}
                   >
                     <Building2 className="w-5 h-5" />
@@ -100,7 +100,7 @@ export const TravelDeskVendors: React.FC<TravelDeskVendorsProps> = ({
                           ? "bg-blue-50 text-blue-700"
                           : link.vendor?.type === "transport"
                             ? "bg-amber-50 text-amber-700"
-                            : "bg-emerald-50 text-emerald-700",
+                            : "bg-green-50 text-green-700",
                       )}
                     >
                       {link.vendor?.type || "Other"}
@@ -171,3 +171,4 @@ export const TravelDeskVendors: React.FC<TravelDeskVendorsProps> = ({
     </div>
   );
 };
+

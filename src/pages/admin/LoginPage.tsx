@@ -150,11 +150,11 @@ export default function LoginPage() {
 
               {/* Error Alert */}
               {errorMessage && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-3 text-xs font-medium flex items-start gap-2.5 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-xs font-medium flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-bold text-rose-900">Unable to sign in</p>
-                    <p className="text-[11px] text-rose-700 mt-0.5">{errorMessage}</p>
+                    <p className="font-bold text-red-900">Unable to sign in</p>
+                    <p className="text-[11px] text-red-700 mt-0.5">{errorMessage}</p>
                   </div>
                 </div>
               )}
@@ -340,3 +340,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+

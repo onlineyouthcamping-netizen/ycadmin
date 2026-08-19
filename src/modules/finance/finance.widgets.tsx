@@ -24,7 +24,7 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
     <DashBody className="flex flex-col justify-between gap-2">
       <div
         onClick={() => navigate("/admin/finance")}
-        className="flex cursor-pointer items-center justify-between rounded-lg bg-emerald-50/70 px-2.5 py-2 hover:bg-emerald-50"
+        className="flex cursor-pointer items-center justify-between rounded-lg bg-green-50/70 px-2.5 py-2 hover:bg-green-50"
       >
         <div className="min-w-0">
           <p className="text-[10px] font-medium text-slate-500">
@@ -39,7 +39,7 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
 
       <div
         onClick={() => navigate("/admin/finance")}
-        className="flex cursor-pointer items-center justify-between rounded-lg bg-rose-50/70 px-2.5 py-2 hover:bg-rose-50"
+        className="flex cursor-pointer items-center justify-between rounded-lg bg-red-50/70 px-2.5 py-2 hover:bg-red-50"
       >
         <div className="min-w-0">
           <p className="text-[10px] font-medium text-slate-500">
@@ -75,3 +75,4 @@ export const financeWidgets: DashboardWidget[] = [
     component: CashFlowOverviewWidget,
   },
 ];
+

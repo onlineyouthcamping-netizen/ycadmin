@@ -130,7 +130,7 @@ export function AccommodationModuleView({
                   .replace(/\b\w/g, (c: string) => c.toUpperCase());
                 const badgeColor =
                   sType === "CAMP" || sType === "TENT"
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+                    ? "bg-green-50 text-green-700 border-green-200/80"
                     : sType === "RESORT"
                     ? "bg-orange-50 text-orange-800 border-orange-200/80"
                     : sType === "HOMESTAY"
@@ -197,7 +197,7 @@ export function AccommodationModuleView({
                           type="button"
                           onClick={() => onDeleteVendor(h.id)}
                           title="Deactivate"
-                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -241,3 +241,4 @@ export function AccommodationModuleView({
     </div>
   );
 }
+

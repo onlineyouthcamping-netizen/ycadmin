@@ -174,7 +174,7 @@ export default function DepartureMoneySummary({
         className={cn(
           "tabular-nums",
           emphasize ? "font-semibold text-sm" : "font-medium text-xs",
-          tone === "ok" ? "text-emerald-600" : tone === "warn" ? "text-[#FF4D00]" : tone === "bad" ? "text-rose-600" : "text-[#0B1528]",
+          tone === "ok" ? "text-green-600" : tone === "warn" ? "text-[#FF4D00]" : tone === "bad" ? "text-red-600" : "text-[#0B1528]",
         )}
       >
         {viewMode === "perpax" ? fmtPax(n) : fmt(n)}
@@ -244,7 +244,7 @@ export default function DepartureMoneySummary({
             <p
               className={cn(
                 "text-sm font-semibold tabular-nums mt-0.5",
-                profitPerPax >= 0 ? "text-emerald-600" : "text-rose-600",
+                profitPerPax >= 0 ? "text-green-600" : "text-red-600",
               )}
             >
               ₹{profitPerPax.toLocaleString("en-IN")}
@@ -370,3 +370,4 @@ export default function DepartureMoneySummary({
     </div>
   );
 }
+

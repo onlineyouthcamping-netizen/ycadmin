@@ -150,7 +150,7 @@ export function VendorContractManager({ vendors, loadData }: { vendors: any[]; l
                         <td className="p-3 text-right text-slate-400">₹{c.extraBedRate || "-"}</td>
                         <td className="p-3 text-center font-mono">{c.mealPlan}</td>
                         <td className="p-3 text-right">
-                          <button onClick={() => handleDelete(c.id)} className="text-red-500 hover:text-red-700">
+                          <button onClick={() => handleDelete(c.id)} className="text-red-600 hover:text-red-700">
                             <XCircle className="w-4 h-4 inline-block" />
                           </button>
                         </td>
@@ -249,3 +249,4 @@ export function VendorContractManager({ vendors, loadData }: { vendors: any[]; l
     </div>
   );
 }
+

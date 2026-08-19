@@ -202,14 +202,14 @@ export default function InquiriesPage() {
       {
         label: "Booked",
         count: counts.booked || 18,
-        color: "text-emerald-600",
-        bg: "bg-emerald-50",
+        color: "text-green-600",
+        bg: "bg-green-50",
       },
       {
         label: "Lost",
         count: counts.lost || 6,
-        color: "text-rose-600",
-        bg: "bg-rose-50",
+        color: "text-red-600",
+        bg: "bg-red-50",
       },
     ];
   }, [inquiries]);
@@ -495,11 +495,11 @@ export default function InquiriesPage() {
                         converted: {
                           label: "BOOKED",
                           style:
-                            "bg-emerald-50 text-emerald-700 border-emerald-200",
+                            "bg-green-50 text-green-700 border-green-200",
                         },
                         closed: {
                           label: "LOST",
-                          style: "bg-rose-50 text-rose-700 border-rose-200",
+                          style: "bg-red-50 text-red-700 border-red-200",
                         },
                       };
 
@@ -605,7 +605,7 @@ export default function InquiriesPage() {
                                   href={`https://wa.me/${inq.phone.replace(/[^0-9]/g, "")}`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="w-7 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center transition-colors"
+                                  className="w-7 h-7 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 flex items-center justify-center transition-colors"
                                   title="WhatsApp Lead"
                                 >
                                   <MessageSquare className="w-3.5 h-3.5" />
@@ -640,13 +640,13 @@ export default function InquiriesPage() {
                                     onClick={() =>
                                       updateStatus(inq, "converted")
                                     }
-                                    className="cursor-pointer text-emerald-700"
+                                    className="cursor-pointer text-green-700"
                                   >
                                     Mark Won (Booked)
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => updateStatus(inq, "closed")}
-                                    className="cursor-pointer text-rose-700"
+                                    className="cursor-pointer text-red-700"
                                   >
                                     Mark Lost
                                   </DropdownMenuItem>
@@ -791,9 +791,9 @@ function InquiryDetailsDrawer({
             className={cn(
               "text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider",
               selected.status === "converted"
-                ? "bg-emerald-100 text-emerald-700"
+                ? "bg-green-100 text-green-700"
                 : selected.status === "closed"
-                  ? "bg-rose-100 text-rose-700"
+                  ? "bg-red-100 text-red-700"
                   : "bg-amber-100 text-amber-700",
             )}
           >
@@ -929,9 +929,9 @@ function InquiryDetailsDrawer({
                     href={`https://wa.me/${selected.phone.replace(/[^0-9]/g, "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-700 flex flex-col items-center gap-1 transition-all"
+                    className="p-2.5 rounded-xl border border-green-200 bg-green-50/50 hover:bg-green-100 text-green-700 flex flex-col items-center gap-1 transition-all"
                   >
-                    <MessageSquare className="w-4 h-4 text-emerald-600" />
+                    <MessageSquare className="w-4 h-4 text-green-600" />
                     <span>WhatsApp</span>
                   </a>
                 )}
@@ -944,7 +944,7 @@ function InquiryDetailsDrawer({
                 </button>
                 <button
                   onClick={() => updateStatus(selected, "converted")}
-                  className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-600 text-white hover:bg-emerald-700 flex flex-col items-center gap-1 transition-all shadow-2xs"
+                  className="p-2.5 rounded-xl border border-green-200 bg-green-600 text-white hover:bg-green-700 flex flex-col items-center gap-1 transition-all shadow-2xs"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Won</span>
@@ -1015,3 +1015,4 @@ function InquiryDetailsDrawer({
     </div>
   );
 }
+

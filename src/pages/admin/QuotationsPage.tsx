@@ -269,7 +269,7 @@ export default function QuotationsPage() {
             className={cn(
               "inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border",
               published
-                ? "bg-emerald-50/70 text-emerald-700 border-emerald-100"
+                ? "bg-green-50/70 text-green-700 border-green-100"
                 : "bg-[#F4F7FB] text-slate-600 border-[#E8EEF4]",
             )}
           >
@@ -478,3 +478,4 @@ export default function QuotationsPage() {
     </div>
   );
 }
+

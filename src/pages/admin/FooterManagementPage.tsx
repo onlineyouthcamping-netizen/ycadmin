@@ -297,7 +297,7 @@ export default function FooterManagementPage() {
     <div className="admin-page animate-fade-in">
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <Layout className="w-5 h-5 text-[#F97316]" />
+          <Layout className="w-5 h-5 text-[#FF4D00]" />
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
               Footer Management
@@ -325,7 +325,7 @@ export default function FooterManagementPage() {
             <CardContent className="p-6 space-y-6">
               <div className="flex justify-between items-center border-b pb-4">
                 <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <Layout className="w-4 h-4 text-[#F97316]" /> Footer Link
+                  <Layout className="w-4 h-4 text-[#FF4D00]" /> Footer Link
                   Columns
                 </h2>
                 <Button
@@ -369,7 +369,7 @@ export default function FooterManagementPage() {
                           {col.visible ? (
                             <Eye className="w-4 h-4" />
                           ) : (
-                            <EyeOff className="w-4 h-4 text-red-500" />
+                            <EyeOff className="w-4 h-4 text-red-600" />
                           )}
                         </button>
                         <button
@@ -391,7 +391,7 @@ export default function FooterManagementPage() {
                         <button
                           type="button"
                           onClick={() => removeColumn(colIdx)}
-                          className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg"
+                          className="p-1.5 hover:bg-red-50 text-red-600 rounded-lg"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -468,7 +468,7 @@ export default function FooterManagementPage() {
                                 {link.visible ? (
                                   <Eye className="w-3.5 h-3.5" />
                                 ) : (
-                                  <EyeOff className="w-3.5 h-3.5 text-red-500" />
+                                  <EyeOff className="w-3.5 h-3.5 text-red-600" />
                                 )}
                               </button>
                               <button
@@ -492,7 +492,7 @@ export default function FooterManagementPage() {
                               <button
                                 type="button"
                                 onClick={() => removeLink(colIdx, linkIdx)}
-                                className="p-1 hover:bg-red-50 text-red-500 rounded-md"
+                                className="p-1 hover:bg-red-50 text-red-600 rounded-md"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -527,7 +527,7 @@ export default function FooterManagementPage() {
           <Card className="bg-white rounded-md border border-slate-200 shadow-sm">
             <CardContent className="p-6 space-y-6">
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
-                <Shield className="w-4 h-4 text-[#F97316]" /> Visibility
+                <Shield className="w-4 h-4 text-[#FF4D00]" /> Visibility
                 Controls
               </h2>
 
@@ -585,7 +585,7 @@ export default function FooterManagementPage() {
             <CardContent className="p-6 space-y-6">
               <div className="flex justify-between items-center border-b pb-3">
                 <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <Share2 className="w-4 h-4 text-[#F97316]" /> Social Accounts
+                  <Share2 className="w-4 h-4 text-[#FF4D00]" /> Social Accounts
                 </h2>
                 <Button
                   variant="ghost"
@@ -610,7 +610,7 @@ export default function FooterManagementPage() {
                       <button
                         type="button"
                         onClick={() => removeSocialLink(idx)}
-                        className="text-red-500 hover:text-red-600"
+                        className="text-red-600 hover:text-red-600"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -621,7 +621,7 @@ export default function FooterManagementPage() {
                         handleSocialLinkChange(idx, e.target.value)
                       }
                       placeholder={`e.g. https://${social.platform}.com/youthcamping`}
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9 text-xs"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white h-9 text-xs"
                     />
                   </div>
                 ))}
@@ -639,7 +639,7 @@ export default function FooterManagementPage() {
           <Card className="bg-white rounded-md border border-slate-200 shadow-sm">
             <CardContent className="p-6 space-y-6">
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
-                <Globe className="w-4 h-4 text-[#F97316]" /> Contact details &
+                <Globe className="w-4 h-4 text-[#FF4D00]" /> Contact details &
                 Tagline
               </h2>
 
@@ -653,7 +653,7 @@ export default function FooterManagementPage() {
                     onChange={(e) =>
                       handleFieldChange("brandName", e.target.value)
                     }
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white h-9"
                     placeholder="YOUTHCAMPING"
                   />
                 </div>
@@ -664,7 +664,7 @@ export default function FooterManagementPage() {
                   <Input
                     value={footerConfig.phone}
                     onChange={(e) => handleFieldChange("phone", e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white h-9"
                     placeholder="+91-99242 46267"
                   />
                 </div>
@@ -675,7 +675,7 @@ export default function FooterManagementPage() {
                   <Input
                     value={footerConfig.email}
                     onChange={(e) => handleFieldChange("email", e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white h-9"
                     placeholder="info@youthcamping.com"
                   />
                 </div>
@@ -688,7 +688,7 @@ export default function FooterManagementPage() {
                     onChange={(e) =>
                       handleFieldChange("website", e.target.value)
                     }
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white h-9"
                     placeholder="youthcamping.in"
                   />
                 </div>
@@ -701,7 +701,7 @@ export default function FooterManagementPage() {
                     onChange={(e) =>
                       handleFieldChange("logoUrl", e.target.value)
                     }
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white h-9"
                     placeholder="/footer-logo.png"
                   />
                   {/* White Logo Dark Card Preview */}
@@ -725,7 +725,7 @@ export default function FooterManagementPage() {
                     onChange={(e) =>
                       handleFieldChange("copyright", e.target.value)
                     }
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white h-9"
                     placeholder="ALL RIGHTS RESERVED."
                   />
                 </div>
@@ -738,7 +738,7 @@ export default function FooterManagementPage() {
                     onChange={(e) =>
                       handleFieldChange("address", e.target.value)
                     }
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white text-xs h-20"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white text-xs h-20"
                     placeholder="Full office address..."
                   />
                 </div>
@@ -750,3 +750,4 @@ export default function FooterManagementPage() {
     </div>
   );
 }
+

@@ -110,7 +110,7 @@ export const TravelDeskCreateTripModal: React.FC<
         {/* Header */}
         <div className="bg-[#0A192F] px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-[#F97316] text-white rounded-lg">
+            <div className="p-2 bg-[#FF4D00] text-white rounded-lg">
               <Compass className="w-5 h-5" />
             </div>
             <div>
@@ -166,7 +166,7 @@ export const TravelDeskCreateTripModal: React.FC<
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full h-9 bg-white border border-[#E2E8F0] rounded-md px-3 text-xs font-medium text-[#0A192F] outline-none focus:ring-1 focus:ring-[#F97316]"
+                className="w-full h-9 bg-white border border-[#E2E8F0] rounded-md px-3 text-xs font-medium text-[#0A192F] outline-none focus:ring-1 focus:ring-[#FF4D00]"
               >
                 <option value="Domestic">Domestic</option>
                 <option value="International">International</option>
@@ -250,7 +250,7 @@ export const TravelDeskCreateTripModal: React.FC<
               disabled={isSubmitting}
               className="h-9 bg-[#0A192F] hover:bg-[#112240] text-white text-xs font-bold px-5 rounded-md flex items-center gap-1.5 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#F97316]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#FF4D00]" />
               {isSubmitting
                 ? "Creating & Initializing..."
                 : "Create & Open Workspace"}
@@ -261,3 +261,4 @@ export const TravelDeskCreateTripModal: React.FC<
     </Dialog>
   );
 };
+

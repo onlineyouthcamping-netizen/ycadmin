@@ -416,7 +416,7 @@ export default function DepartureReports({
                 onClick={handleExportCSV}
                 className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 bg-white text-slate-700 flex items-center gap-1.5 shadow-3xs"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />{" "}
+                <FileSpreadsheet className="w-3.5 h-3.5 text-green-600" />{" "}
                 Export CSV
               </button>
               <button
@@ -454,7 +454,7 @@ export default function DepartureReports({
                 className={cn(
                   "text-sm font-black mt-0.5",
                   totalRevenue - totalVendorCost >= 0
-                    ? "text-emerald-600"
+                    ? "text-green-600"
                     : "text-red-650",
                 )}
               >
@@ -508,7 +508,7 @@ export default function DepartureReports({
                         <td className="p-2.5 font-extrabold text-slate-650">
                           {b.bookingId}
                         </td>
-                        <td className="p-2.5 font-extrabold text-emerald-600 uppercase">
+                        <td className="p-2.5 font-extrabold text-green-600 uppercase">
                           {b.paymentStatus}
                         </td>
                       </tr>
@@ -542,7 +542,7 @@ export default function DepartureReports({
                       <td className="p-2.5 font-bold">
                         ₹{(b.totalAmount || 0).toLocaleString()}
                       </td>
-                      <td className="p-2.5 font-semibold text-emerald-600">
+                      <td className="p-2.5 font-semibold text-green-600">
                         ₹{(b.advancePaid || 0).toLocaleString()}
                       </td>
                       <td className="p-2.5 font-semibold text-slate-500">
@@ -572,13 +572,13 @@ export default function DepartureReports({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
-                  <tr className="bg-emerald-50/20 font-bold">
-                    <td className="p-2.5 font-black text-emerald-800">
+                  <tr className="bg-green-50/20 font-bold">
+                    <td className="p-2.5 font-black text-green-700">
                       Total Client Packages
                     </td>
-                    <td className="p-2.5 text-emerald-700">INFLOW</td>
+                    <td className="p-2.5 text-green-700">INFLOW</td>
                     <td className="p-2.5">₹{totalRevenue.toLocaleString()}</td>
-                    <td className="p-2.5 text-emerald-600">
+                    <td className="p-2.5 text-green-600">
                       ₹{totalReceived.toLocaleString()}
                     </td>
                     <td className="p-2.5">
@@ -668,7 +668,7 @@ export default function DepartureReports({
                       <td className="p-2.5">
                         ₹{h.totalAmount.toLocaleString()}
                       </td>
-                      <td className="p-2.5 text-emerald-600">
+                      <td className="p-2.5 text-green-600">
                         ₹{h.advancePaid.toLocaleString()}
                       </td>
                       <td className="p-2.5 text-red-650">
@@ -707,7 +707,7 @@ export default function DepartureReports({
                       <td className="p-2.5">
                         ₹{t.totalAmount.toLocaleString()}
                       </td>
-                      <td className="p-2.5 text-emerald-600">
+                      <td className="p-2.5 text-green-600">
                         ₹{t.advancePaid.toLocaleString()}
                       </td>
                       <td className="p-2.5 text-red-650">
@@ -741,7 +741,7 @@ export default function DepartureReports({
                       <td className="p-2.5">
                         ₹{g.agreedAmount.toLocaleString()}
                       </td>
-                      <td className="p-2.5 text-emerald-600">
+                      <td className="p-2.5 text-green-600">
                         ₹{g.advancePaid.toLocaleString()}
                       </td>
                       <td className="p-2.5 text-red-650">
@@ -808,7 +808,7 @@ export default function DepartureReports({
                         {d.originalFileName}
                       </td>
                       <td className="p-2.5 text-slate-550">{d.category}</td>
-                      <td className="p-2.5 font-extrabold text-emerald-600">
+                      <td className="p-2.5 font-extrabold text-green-600">
                         {d.verificationStatus}
                       </td>
                       <td className="p-2.5 text-slate-600">
@@ -860,3 +860,4 @@ export default function DepartureReports({
     </div>
   );
 }
+

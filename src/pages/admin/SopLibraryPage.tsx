@@ -101,7 +101,7 @@ export default function SopLibraryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 bg-orange-100 rounded-lg text-[#F97316]">
+            <span className="p-2 bg-orange-100 rounded-lg text-[#FF4D00]">
               <FileText className="w-5 h-5" />
             </span>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -115,7 +115,7 @@ export default function SopLibraryPage() {
 
         <Button
           onClick={() => setCreateModalOpen(true)}
-          className="bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold text-xs h-10 px-4 rounded-lg shadow-sm"
+          className="bg-[#FF4D00] hover:bg-[#EA580C] text-white font-semibold text-xs h-10 px-4 rounded-lg shadow-sm"
         >
           <Plus className="w-4 h-4 mr-1.5" />
           Create Trip SOP
@@ -149,7 +149,7 @@ export default function SopLibraryPage() {
           </p>
           <Button
             onClick={() => setCreateModalOpen(true)}
-            className="mt-4 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs h-9 px-3 rounded-lg"
+            className="mt-4 bg-[#FF4D00] hover:bg-[#EA580C] text-white text-xs h-9 px-3 rounded-lg"
           >
             <Plus className="w-3.5 h-3.5 mr-1" />
             Create Trip SOP
@@ -173,7 +173,7 @@ export default function SopLibraryPage() {
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-orange-50 text-[#F97316] border border-orange-200 uppercase tracking-wider">
+                    <span className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-orange-50 text-[#FF4D00] border border-orange-200 uppercase tracking-wider">
                       {tmpl.trip?.title || tmpl.name}
                     </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
@@ -219,7 +219,7 @@ export default function SopLibraryPage() {
                       navigate(`/admin/operations/sops/builder?templateId=${tmpl.id}`)
                     }
                     variant="outline"
-                    className="h-8 text-xs font-bold text-[#F97316] border-orange-200 hover:bg-orange-50 hover:text-[#EA580C]"
+                    className="h-8 text-xs font-bold text-[#FF4D00] border-orange-200 hover:bg-orange-50 hover:text-[#EA580C]"
                   >
                     Open SOP
                     <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -246,7 +246,7 @@ export default function SopLibraryPage() {
           <form onSubmit={handleCreateSop} className="space-y-4 mt-2">
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                Select Trip Type <span className="text-red-500">*</span>
+                Select Trip Type <span className="text-red-600">*</span>
               </label>
               <select
                 value={selectedTripId}
@@ -271,7 +271,7 @@ export default function SopLibraryPage() {
 
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                SOP Template Name <span className="text-red-500">*</span>
+                SOP Template Name <span className="text-red-600">*</span>
               </label>
               <Input
                 placeholder="e.g. Spiti Valley Road Trip SOP"
@@ -306,7 +306,7 @@ export default function SopLibraryPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-[#F97316] hover:bg-[#EA580C] text-white h-9 text-xs font-bold"
+                className="bg-[#FF4D00] hover:bg-[#EA580C] text-white h-9 text-xs font-bold"
               >
                 {isSubmitting ? "Creating..." : "Create & Configure SOP"}
               </Button>
@@ -317,3 +317,4 @@ export default function SopLibraryPage() {
     </div>
   );
 }
+

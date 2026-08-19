@@ -50,9 +50,9 @@ const STATUS_CONFIG: Record<
 > = {
   GUARANTEED: {
     label: "Guaranteed",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
+    bg: "bg-green-50",
+    text: "text-green-700",
+    border: "border-green-200",
   },
   FEW_SEATS: {
     label: "Few Seats",
@@ -74,9 +74,9 @@ const STATUS_CONFIG: Record<
   },
   SOLD_OUT: {
     label: "Sold Out",
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
+    bg: "bg-red-50",
+    text: "text-red-700",
+    border: "border-red-200",
   },
   CANCELLED: {
     label: "Cancelled",
@@ -330,7 +330,7 @@ export const ModernTripCalendar: React.FC<ModernTripCalendarProps> = ({
               type="button"
               size="sm"
               onClick={handleAddDepartureDate}
-              className="h-8 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-1"
+              className="h-8 text-[11px] font-bold bg-green-600 hover:bg-green-600 text-white gap-1"
             >
               <Plus className="w-3.5 h-3.5" /> + Add Departure
             </Button>
@@ -593,7 +593,7 @@ export const ModernTripCalendar: React.FC<ModernTripCalendarProps> = ({
                         offerPrice: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="h-8 text-xs font-mono font-bold text-emerald-600"
+                    className="h-8 text-xs font-mono font-bold text-green-600"
                   />
                 </div>
               </div>
@@ -791,3 +791,4 @@ export const ModernTripCalendar: React.FC<ModernTripCalendarProps> = ({
 };
 
 export default ModernTripCalendar;
+

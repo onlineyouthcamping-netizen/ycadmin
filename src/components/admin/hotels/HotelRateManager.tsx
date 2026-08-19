@@ -120,7 +120,7 @@ export default function HotelRateManager({ api }: HotelRateManagerProps) {
             <Upload className="w-4 h-4 mr-2" />
             Import CSV
           </Button>
-          <Button onClick={handleSaveAll} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+          <Button onClick={handleSaveAll} disabled={loading} className="bg-green-600 hover:bg-green-700 text-white">
             <Save className="w-4 h-4 mr-2" />
             Save Changes
           </Button>
@@ -241,3 +241,4 @@ export default function HotelRateManager({ api }: HotelRateManagerProps) {
     </div>
   );
 }
+

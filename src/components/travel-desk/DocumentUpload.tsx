@@ -223,7 +223,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="text-xs font-bold px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#F97316]"
+              className="text-xs font-bold px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00]"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -242,9 +242,9 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
           onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
             isDragging
-              ? "border-[#F97316] bg-orange-50/40 scale-[0.99]"
+              ? "border-[#FF4D00] bg-orange-50/40 scale-[0.99]"
               : selectedFile
-                ? "border-emerald-300 bg-emerald-50/20"
+                ? "border-green-300 bg-green-50/20"
                 : "border-slate-300 bg-slate-50/50 hover:bg-slate-100/50 hover:border-slate-400"
           }`}
         >
@@ -261,14 +261,14 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
           />
 
           <div
-            className={`p-3 rounded-full ${selectedFile ? "bg-emerald-100 text-emerald-600" : "bg-orange-100 text-[#F97316]"}`}
+            className={`p-3 rounded-full ${selectedFile ? "bg-green-100 text-green-600" : "bg-orange-100 text-[#FF4D00]"}`}
           >
             <UploadCloud className="w-6 h-6" />
           </div>
 
           {selectedFile ? (
             <div className="space-y-1">
-              <p className="text-xs font-bold text-emerald-800">
+              <p className="text-xs font-bold text-green-700">
                 {selectedFile.name}
               </p>
               <p className="text-[11px] text-slate-500 font-medium">
@@ -279,7 +279,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             <div className="space-y-1">
               <p className="text-xs font-bold text-slate-700">
                 Drag & drop document file here, or{" "}
-                <span className="text-[#F97316] underline">browse files</span>
+                <span className="text-[#FF4D00] underline">browse files</span>
               </p>
               <p className="text-[11px] text-slate-400 font-medium">
                 Supported: PDF, PNG, JPG, JPEG, DOCX (Up to 10MB)
@@ -293,16 +293,16 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
           <div className="space-y-1.5 pt-2">
             <div className="flex justify-between text-xs font-bold text-slate-700">
               <span className="flex items-center gap-1.5">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F97316]" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF4D00]" />
                 Uploading document...
               </span>
-              <span className="font-mono text-[#F97316]">
+              <span className="font-mono text-[#FF4D00]">
                 {uploadProgress}%
               </span>
             </div>
             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#F97316] transition-all duration-200"
+                className="h-full bg-[#FF4D00] transition-all duration-200"
                 style={{ width: `${uploadProgress}%` }}
               ></div>
             </div>
@@ -320,7 +320,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             </button>
             <button
               onClick={handleUpload}
-              className="px-5 py-2 bg-[#F97316] hover:bg-[#e06100] text-white text-xs font-bold rounded-lg shadow-xs transition-all"
+              className="px-5 py-2 bg-[#FF4D00] hover:bg-[#e06100] text-white text-xs font-bold rounded-lg shadow-xs transition-all"
             >
               Confirm Upload
             </button>
@@ -346,7 +346,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="text-xs font-bold px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#F97316]"
+              className="text-xs font-bold px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00]"
             >
               <option value="all">All Categories</option>
               {CATEGORIES.map((cat) => (
@@ -368,8 +368,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             ))}
           </div>
         ) : isError ? (
-          <div className="p-8 text-center border border-rose-200 rounded-xl bg-rose-50/20 space-y-2">
-            <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
+          <div className="p-8 text-center border border-red-200 rounded-xl bg-red-50/20 space-y-2">
+            <AlertCircle className="w-8 h-8 text-red-600 mx-auto" />
             <p className="text-xs font-bold text-slate-800">
               Failed to load documents
             </p>
@@ -403,7 +403,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   className="p-4 bg-white hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 bg-orange-50 text-[#F97316] rounded-lg shrink-0">
+                    <div className="p-2.5 bg-orange-50 text-[#FF4D00] rounded-lg shrink-0">
                       <File className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
@@ -448,7 +448,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                           deleteMutation.mutate(doc.id);
                         }
                       }}
-                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Delete document"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -465,3 +465,5 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
 };
 
 export default DocumentUpload;
+
+

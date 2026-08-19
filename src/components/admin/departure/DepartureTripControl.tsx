@@ -71,7 +71,7 @@ function statusTone(status: string) {
     return "bg-[#F4F7FB] text-[#0B1528]";
   }
   if (status === "CANCELLED") {
-    return "bg-rose-50 text-rose-700";
+    return "bg-red-50 text-red-700";
   }
   return "bg-white text-slate-500";
 }
@@ -534,14 +534,14 @@ export default function DepartureTripControl({
           <style>
             @page { size: A4 landscape; margin: 10mm; }
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; margin: 0; padding: 12px; font-size: 10px; }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f97316; padding-bottom: 8px; margin-bottom: 12px; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #FF4D00; padding-bottom: 8px; margin-bottom: 12px; }
             .logo { font-size: 18px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
-            .logo span { color: #f97316; }
+            .logo span { color: #FF4D00; }
             .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 10px; }
             .meta-item { display: flex; flex-direction: column; }
             .meta-label { font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase; }
             .meta-val { font-weight: 700; color: #0f172a; margin-top: 2px; }
-            h2 { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin: 12px 0 6px 0; border-left: 3px solid #f97316; padding-left: 6px; }
+            h2 { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin: 12px 0 6px 0; border-left: 3px solid #FF4D00; padding-left: 6px; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9px; }
             th { background: #0f172a; color: #ffffff; text-transform: uppercase; font-size: 8px; font-weight: 800; padding: 6px 4px; text-align: left; border: 1px solid #0f172a; }
             td { border: 1px solid #cbd5e1; padding: 5px 4px; vertical-align: middle; }
@@ -561,7 +561,7 @@ export default function DepartureTripControl({
             </div>
             <div style="text-align: right;">
               <div style="font-size: 11px; font-weight: 800; color: #0f172a;">${tripTitle}</div>
-              <div style="font-size: 9px; color: #f97316; font-weight: 700;">Departure Date: ${departureDateStr}</div>
+              <div style="font-size: 9px; color: #FF4D00; font-weight: 700;">Departure Date: ${departureDateStr}</div>
             </div>
           </div>
 
@@ -1310,3 +1310,4 @@ export default function DepartureTripControl({
     </div>
   );
 }
+

@@ -13,7 +13,7 @@ const badgeVariants = cva(
         secondary:
           "border-[#D8E0EC] bg-[#EEF2F8] text-[#0B1528] hover:bg-[#E2E8F0]",
         destructive:
-          "border-transparent bg-rose-600 text-white hover:bg-rose-700",
+          "border-transparent bg-red-600 text-white hover:bg-red-700",
         outline: "border-[#E8EEF4] bg-white text-[#0B1528]",
         success:
           "border-[#A7F3D0] bg-[#ECFDF5] text-[#047857]",
@@ -43,3 +43,4 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants };
+

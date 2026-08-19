@@ -214,10 +214,10 @@ export default function DeparturePayments({
           <title>Vendor Payment Voucher - ${v.vendorName}</title>
           <style>
             body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; background: #fff; }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f97316; padding-bottom: 20px; margin-bottom: 30px; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #FF4D00; padding-bottom: 20px; margin-bottom: 30px; }
             .logo { font-size: 24px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; }
-            .logo span { color: #f97316; }
-            .voucher-title { font-size: 18px; font-weight: 800; color: #f97316; text-transform: uppercase; text-align: right; }
+            .logo span { color: #FF4D00; }
+            .voucher-title { font-size: 18px; font-weight: 800; color: #FF4D00; text-transform: uppercase; text-align: right; }
             .voucher-sub { font-size: 11px; color: #64748b; margin-top: 4px; }
             .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
             .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 12px; }
@@ -244,7 +244,7 @@ export default function DeparturePayments({
         </head>
         <body>
           <div class="no-print" style="margin-bottom: 20px; text-align: right;">
-            <button onclick="window.print()" style="background: #f97316; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Print / Save as PDF</button>
+            <button onclick="window.print()" style="background: #FF4D00; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Print / Save as PDF</button>
           </div>
 
           <div class="header">
@@ -1787,7 +1787,7 @@ export default function DeparturePayments({
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-500 font-medium">Received:</span>
-                  <span className="font-extrabold text-emerald-700">
+                  <span className="font-extrabold text-green-700">
                     {formatCurrency(calculatedStats.clientAmountReceived)}
                   </span>
                 </div>
@@ -1877,7 +1877,7 @@ export default function DeparturePayments({
                   <span className="text-slate-500 font-medium">
                     Paid to Vendors:
                   </span>
-                  <span className="font-extrabold text-emerald-700">
+                  <span className="font-extrabold text-green-700">
                     {formatCurrency(calculatedStats.activityAmountPaid)}
                   </span>
                 </div>
@@ -1918,7 +1918,7 @@ export default function DeparturePayments({
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-500 font-medium">Approved:</span>
-                  <span className="font-extrabold text-emerald-700">
+                  <span className="font-extrabold text-green-700">
                     {formatCurrency(calculatedStats.miscApproved)}
                   </span>
                 </div>
@@ -1940,17 +1940,17 @@ export default function DeparturePayments({
             </div>
 
             {/* 5. Trip Profitability (Green) */}
-            <div className="bg-white border border-emerald-300 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
+            <div className="bg-white border border-green-300 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-green-600" />
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider">
+                <span className="text-[11px] font-extrabold text-green-900 uppercase tracking-wider">
                   Trip Profitability
                 </span>
                 <span
                   className={cn(
                     "text-xs font-bold px-2 py-0.5 rounded",
                     Number(calculatedStats.profitMargin) >= 0
-                      ? "bg-emerald-100 text-emerald-800"
+                      ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-800",
                   )}
                 >
@@ -1982,7 +1982,7 @@ export default function DeparturePayments({
                     className={cn(
                       "font-extrabold",
                       calculatedStats.estimatedProfit >= 0
-                        ? "text-emerald-700"
+                        ? "text-green-700"
                         : "text-red-600",
                     )}
                   >
@@ -1992,7 +1992,7 @@ export default function DeparturePayments({
               </div>
               <button
                 onClick={() => setSubTab("reconciliation")}
-                className="w-full text-center text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 py-1.5 rounded-lg border border-emerald-200 transition-all flex items-center justify-center gap-1"
+                className="w-full text-center text-xs font-bold text-green-700 hover:text-green-700 hover:bg-green-50 py-1.5 rounded-lg border border-green-200 transition-all flex items-center justify-center gap-1"
               >
                 Full P&L / Reconcile <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -2049,7 +2049,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-black text-slate-900 font-mono">
                       {formatCurrency(calculatedStats.totalClientRevenue)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-bold text-emerald-600 font-mono">
+                    <td className="py-2.5 px-4 text-right font-bold text-green-600 font-mono">
                       {formatCurrency(calculatedStats.clientAmountReceived)}
                     </td>
                     <td className="py-2.5 px-4 text-right font-bold text-amber-600 font-mono">
@@ -2145,7 +2145,7 @@ export default function DeparturePayments({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="w-2 h-2 rounded-full bg-green-600" />
                         <span className="font-bold text-slate-800">
                           Trek Leaders & Local Guides
                         </span>
@@ -2163,7 +2163,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
                       {formatCurrency(calculatedStats.totalGuidesDue)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-emerald-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-green-700 bg-orange-50/60 font-mono">
                       ₹{calculatedStats.guidesCostPerPax.toLocaleString("en-IN")}/pax
                     </td>
                     <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
@@ -2301,7 +2301,7 @@ export default function DeparturePayments({
                           className={cn(
                             "w-2.5 h-2.5 rounded-full",
                             calculatedStats.estimatedProfit >= 0
-                              ? "bg-emerald-500"
+                              ? "bg-green-600"
                               : "bg-red-500",
                           )}
                         />
@@ -2317,7 +2317,7 @@ export default function DeparturePayments({
                       className={cn(
                         "py-3 px-4 text-right font-black font-mono text-sm",
                         calculatedStats.estimatedProfit >= 0
-                          ? "text-emerald-700"
+                          ? "text-green-700"
                           : "text-red-600",
                       )}
                     >
@@ -2333,7 +2333,7 @@ export default function DeparturePayments({
                       className={cn(
                         "py-3 px-4 text-right font-black bg-orange-100/70 font-mono text-sm",
                         calculatedStats.profitPerPax >= 0
-                          ? "text-emerald-800"
+                          ? "text-green-700"
                           : "text-red-700",
                       )}
                     >
@@ -2344,7 +2344,7 @@ export default function DeparturePayments({
                         className={cn(
                           "px-2 py-0.5 rounded font-black text-xs",
                           Number(calculatedStats.profitMargin) >= 0
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-green-100 text-green-700"
                             : "bg-red-100 text-red-800",
                         )}
                       >
@@ -2483,7 +2483,7 @@ export default function DeparturePayments({
                             className={cn(
                               "text-[10px] font-bold px-2 py-0.5 rounded uppercase",
                               b.paymentStatus === "Paid"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                ? "bg-green-50 text-green-700 border border-green-200"
                                 : b.paymentStatus === "Partially Paid"
                                   ? "bg-amber-50 text-amber-700 border border-amber-200"
                                   : "bg-red-50 text-red-700 border border-red-200",
@@ -2543,7 +2543,7 @@ export default function DeparturePayments({
                           className={cn(
                             "text-[10px] font-bold px-2 py-0.5 rounded uppercase",
                             v.status === "Paid"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              ? "bg-green-50 text-green-700 border border-green-200"
                               : v.status === "Advance Paid" ||
                                   v.status === "Partially Paid"
                                 ? "bg-amber-50 text-amber-700 border border-amber-200"
@@ -2723,10 +2723,10 @@ export default function DeparturePayments({
                               </span>
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right">
-                              <span className="font-black text-emerald-700 block font-mono">
+                              <span className="font-black text-green-700 block font-mono">
                                 {formatCurrency(b.advancePaid)}
                               </span>
-                              <span className="text-[10px] text-emerald-600/70 font-mono block">
+                              <span className="text-[10px] text-green-600/70 font-mono block">
                                 {formatCurrency(
                                   Math.round(
                                     (b.advancePaid || 0) / getPassengerCount(b),
@@ -2751,7 +2751,7 @@ export default function DeparturePayments({
                                 className={cn(
                                   "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
                                   b.paymentStatus === "Paid"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    ? "bg-green-50 text-green-700 border-green-200"
                                     : b.paymentStatus === "Partially Paid"
                                       ? "bg-amber-50 text-amber-700 border-amber-200"
                                       : "bg-red-50 text-red-700 border-red-200",
@@ -2836,8 +2836,8 @@ export default function DeparturePayments({
                                           className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs"
                                         >
                                           <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-emerald-50 rounded-lg">
-                                              <Check className="w-4 h-4 text-emerald-600" />
+                                            <div className="p-2 bg-green-50 rounded-lg">
+                                              <Check className="w-4 h-4 text-green-600" />
                                             </div>
                                             <div>
                                               <div className="flex flex-wrap items-center gap-2">
@@ -2868,7 +2868,7 @@ export default function DeparturePayments({
                                           </div>
 
                                           <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                                            <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded">
                                               VERIFIED ✓
                                             </span>
                                             {h.proofUrl && (
@@ -2893,7 +2893,7 @@ export default function DeparturePayments({
                                                     status: "VERIFIED",
                                                   })
                                                 }
-                                                className="h-7 px-2.5 text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md inline-flex items-center gap-1 transition-colors cursor-pointer"
+                                                className="h-7 px-2.5 text-[11px] font-semibold bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-md inline-flex items-center gap-1 transition-colors cursor-pointer"
                                               >
                                                 <Eye className="w-3.5 h-3.5" />
                                                 Screenshot
@@ -3151,7 +3151,7 @@ export default function DeparturePayments({
                                 className={cn(
                                   "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
                                   v.status === "Paid"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    ? "bg-green-50 text-green-700 border-green-200"
                                     : v.status === "Advance Paid" ||
                                         v.status === "Partially Paid"
                                       ? "bg-amber-50 text-amber-700 border-amber-200"
@@ -3333,7 +3333,7 @@ export default function DeparturePayments({
                                                           : "PENDING_APPROVAL",
                                                     })
                                                   }
-                                                  className="h-7 px-2.5 text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md inline-flex items-center gap-1 transition-colors cursor-pointer"
+                                                  className="h-7 px-2.5 text-[11px] font-bold bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-md inline-flex items-center gap-1 transition-colors cursor-pointer"
                                                 >
                                                   <Eye className="w-3.5 h-3.5" />
                                                   View Payment Proof
@@ -3360,8 +3360,8 @@ export default function DeparturePayments({
 
                                               {/* Verification & Approval Status / Action */}
                                               {isApproved ? (
-                                                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-md flex items-center gap-1">
-                                                  <Check className="w-3 h-3 text-emerald-700" />
+                                                <span className="text-[10px] font-bold bg-green-100 text-green-700 border border-green-300 px-2.5 py-1 rounded-md flex items-center gap-1">
+                                                  <Check className="w-3 h-3 text-green-700" />
                                                   APPROVED ✓
                                                 </span>
                                               ) : isRejected ? (
@@ -3385,7 +3385,7 @@ export default function DeparturePayments({
                                                             "APPROVE",
                                                           )
                                                         }
-                                                        className="h-7 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5"
+                                                        className="h-7 text-[10px] font-bold bg-green-600 hover:bg-green-700 text-white px-2.5"
                                                       >
                                                         <Check className="w-3 h-3 mr-0.5" />
                                                         Approve
@@ -3595,7 +3595,7 @@ export default function DeparturePayments({
                       <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
                         {formatCurrency(act.totalCost)}
                       </td>
-                      <td className="p-3 border-r border-slate-100 text-right font-black text-emerald-700">
+                      <td className="p-3 border-r border-slate-100 text-right font-black text-green-700">
                         {formatCurrency(act.amountPaid)}
                       </td>
                       <td className="p-3 border-r border-slate-100 text-right font-black text-amber-600">
@@ -3606,7 +3606,7 @@ export default function DeparturePayments({
                           className={cn(
                             "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
                             act.status === "INCLUDED" || act.status === "PAID"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-green-50 text-green-700 border-green-200"
                               : act.status === "PARTIAL"
                                 ? "bg-amber-50 text-amber-700 border-amber-200"
                                 : "bg-red-50 text-red-700 border-red-200",
@@ -3649,7 +3649,7 @@ export default function DeparturePayments({
                             Record Pay
                           </Button>
                         ) : (
-                          <span className="text-[11px] text-emerald-600 font-bold">
+                          <span className="text-[11px] text-green-600 font-bold">
                             Settled ✓
                           </span>
                         )}
@@ -3737,7 +3737,7 @@ export default function DeparturePayments({
                           className={cn(
                             "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
                             m.status === "APPROVED" || m.status === "PAID"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-green-50 text-green-700 border-green-200"
                               : m.status === "PENDING"
                                 ? "bg-amber-50 text-amber-700 border-amber-200"
                                 : "bg-red-50 text-red-700 border-red-200",
@@ -3770,7 +3770,7 @@ export default function DeparturePayments({
                                 } catch {}
                                 toast.success("Expense approved & saved!");
                               }}
-                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
+                              className="h-7 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
                             >
                               Approve
                             </Button>
@@ -3894,7 +3894,7 @@ export default function DeparturePayments({
                           className={cn(
                             "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
                             a.status === "APPROVED" || a.status === "COMPLETED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-green-50 text-green-700 border-green-200"
                               : a.status === "PENDING"
                                 ? "bg-amber-50 text-amber-700 border-amber-200"
                                 : "bg-red-50 text-red-700 border-red-200",
@@ -3928,7 +3928,7 @@ export default function DeparturePayments({
                                 } catch {}
                                 toast.success("Adjustment approved & saved!");
                               }}
-                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
+                              className="h-7 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
                             >
                               Approve
                             </Button>
@@ -4002,7 +4002,7 @@ export default function DeparturePayments({
             {!selectedBooking ? (
               <div>
                 <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                  Select Booking / Passenger <span className="text-red-500">*</span>
+                  Select Booking / Passenger <span className="text-red-600">*</span>
                 </label>
                 <select
                   required
@@ -4059,7 +4059,7 @@ export default function DeparturePayments({
                   </div>
                   <div>
                     <span className="text-slate-500 block">Already Paid:</span>
-                    <span className="font-bold text-emerald-700 font-mono">
+                    <span className="font-bold text-green-700 font-mono">
                       ₹{(selectedBooking.advancePaid || 0).toLocaleString("en-IN")}
                     </span>
                   </div>
@@ -4077,7 +4077,7 @@ export default function DeparturePayments({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[11px] font-bold text-slate-700">
-                  Amount Received (₹) <span className="text-red-500">*</span>
+                  Amount Received (₹) <span className="text-red-600">*</span>
                 </label>
                 {selectedBooking && (
                   <button
@@ -4113,7 +4113,7 @@ export default function DeparturePayments({
             {/* Credited Account (Finance Module Sync) */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Credited Account (Finance Module Sync) <span className="text-red-500">*</span>
+                Credited Account (Finance Module Sync) <span className="text-red-600">*</span>
               </label>
               <select
                 value={clientPaymentForm.collectionAccountId}
@@ -4332,7 +4332,7 @@ export default function DeparturePayments({
                   ₹{(editingVendorPayment.agreedAmount || 0).toLocaleString("en-IN")}
                 </span>
               </div>
-              <div className="flex justify-between font-bold text-emerald-700">
+              <div className="flex justify-between font-bold text-green-700">
                 <span>Already Paid:</span>
                 <span className="font-mono">
                   ₹{(editingVendorPayment.advancePaid || 0).toLocaleString("en-IN")}
@@ -4542,7 +4542,7 @@ export default function DeparturePayments({
             {/* Paid From Account (Finance Bank / Cash Accounts / Someone Else) */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Paid From Account / Payer Type <span className="text-red-500">*</span>
+                Paid From Account / Payer Type <span className="text-red-600">*</span>
               </label>
               <select
                 value={vendorPaymentForm.collectionAccountId}
@@ -4619,7 +4619,7 @@ export default function DeparturePayments({
               <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
                 <div>
                   <label className="text-[11px] font-bold text-orange-950 block mb-1">
-                    Payer Name / Personal Account Details <span className="text-red-500">*</span>
+                    Payer Name / Personal Account Details <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -4812,7 +4812,7 @@ export default function DeparturePayments({
                     ₹{computedTotal.toLocaleString("en-IN")}
                   </span>
                 </div>
-                <div className="flex justify-between font-bold text-emerald-700">
+                <div className="flex justify-between font-bold text-green-700">
                   <span>Already Paid:</span>
                   <span className="font-mono">
                     ₹{alreadyPaid.toLocaleString("en-IN")}
@@ -4993,7 +4993,7 @@ export default function DeparturePayments({
             {/* Paid From Account / Payer Type */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Paid From Account / Payer Type <span className="text-red-500">*</span>
+                Paid From Account / Payer Type <span className="text-red-600">*</span>
               </label>
               <select
                 value={activityPaymentForm.collectionAccountId}
@@ -5070,7 +5070,7 @@ export default function DeparturePayments({
               <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
                 <div>
                   <label className="text-[11px] font-bold text-orange-950 block mb-1">
-                    Payer Name / Personal Account Details <span className="text-red-500">*</span>
+                    Payer Name / Personal Account Details <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -5518,7 +5518,7 @@ export default function DeparturePayments({
                     "text-[10px] font-bold px-2 py-0.5 rounded border",
                     proofPreviewModal.status === "APPROVED" ||
                       proofPreviewModal.status === "VERIFIED"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      ? "bg-green-50 text-green-700 border-green-200"
                       : proofPreviewModal.status === "REJECTED"
                         ? "bg-red-50 text-red-700 border-red-200"
                         : "bg-amber-50 text-amber-700 border-amber-200",
@@ -5571,3 +5571,5 @@ export default function DeparturePayments({
     </div>
   );
 }
+
+

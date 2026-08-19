@@ -456,14 +456,14 @@ export default function TripTrainTicketTemplateTab({
 
           {/* Quick Active Expected Cost Badge */}
           <div className="bg-white border border-orange-200 rounded-xl px-4 py-2.5 flex items-center gap-3 shrink-0 shadow-xs">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+            <div className="p-2 bg-green-50 text-green-600 rounded-lg">
               <Coins className="w-4 h-4" />
             </div>
             <div>
               <div className="text-[10px] uppercase font-bold text-slate-400">
                 {activeTier.name} Expected
               </div>
-              <div className="text-base font-black text-emerald-600">
+              <div className="text-base font-black text-green-600">
                 {formatINR(calculatedActiveTotal)}
                 <span className="text-[10px] text-slate-500 font-normal ml-1">
                   / passenger
@@ -535,7 +535,7 @@ export default function TripTrainTicketTemplateTab({
                   >
                     {tier.name}
                   </div>
-                  <div className="text-[11px] font-bold text-emerald-600">
+                  <div className="text-[11px] font-bold text-green-600">
                     {formatINR(tierTotal)}
                     <span className="text-[9px] font-normal text-slate-400 ml-1">
                       / pax
@@ -550,7 +550,7 @@ export default function TripTrainTicketTemplateTab({
                       handleDeleteTier(tier.id);
                     }}
                     title="Delete this class tier"
-                    className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-1"
+                    className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors ml-1"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -760,7 +760,7 @@ export default function TripTrainTicketTemplateTab({
             {/* Expected Cost & Provider */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                <Label className="text-[11px] font-bold text-green-700 flex items-center gap-1">
                   Expected Cost / Pax (₹) *
                 </Label>
                 <div className="relative">
@@ -778,7 +778,7 @@ export default function TripTrainTicketTemplateTab({
                       )
                     }
                     placeholder={activeTier.classCode === "SL" ? "950" : "1850"}
-                    className="h-8 pl-6 text-xs font-bold text-emerald-600 bg-emerald-50/40 border-emerald-300"
+                    className="h-8 pl-6 text-xs font-bold text-green-600 bg-green-50/40 border-green-300"
                   />
                 </div>
               </div>
@@ -1013,7 +1013,7 @@ export default function TripTrainTicketTemplateTab({
             {/* Expected Cost & Provider */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                <Label className="text-[11px] font-bold text-green-700 flex items-center gap-1">
                   Expected Cost / Pax (₹) *
                 </Label>
                 <div className="relative">
@@ -1031,7 +1031,7 @@ export default function TripTrainTicketTemplateTab({
                       )
                     }
                     placeholder={activeTier.classCode === "SL" ? "950" : "1750"}
-                    className="h-8 pl-6 text-xs font-bold text-emerald-600 bg-emerald-50/40 border-emerald-300"
+                    className="h-8 pl-6 text-xs font-bold text-green-600 bg-green-50/40 border-green-300"
                   />
                 </div>
               </div>
@@ -1135,10 +1135,10 @@ export default function TripTrainTicketTemplateTab({
           <div className="text-slate-300 font-light text-xl">=</div>
 
           <div>
-            <div className="text-[10px] uppercase font-black text-emerald-700">
+            <div className="text-[10px] uppercase font-black text-green-700">
               Total {activeTier.name} Expected
             </div>
-            <div className="text-lg font-black text-emerald-600">
+            <div className="text-lg font-black text-green-600">
               {formatINR(calculatedActiveTotal)}
             </div>
           </div>
@@ -1160,3 +1160,5 @@ export default function TripTrainTicketTemplateTab({
     </div>
   );
 }
+
+

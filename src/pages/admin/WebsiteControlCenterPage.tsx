@@ -64,7 +64,7 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     description:
       "Featured trip cards carousel with duration, price & View Trip CTA.",
     icon: Megaphone,
-    color: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    color: "bg-green-50 text-green-600 border-green-100",
   },
   {
     id: "destinations",
@@ -373,12 +373,12 @@ export default function WebsiteControlCenterPage() {
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${
                         isPublished
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          ? "bg-green-50 text-green-700 border-green-200"
                           : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                     >
                       <CheckCircle2
-                        className={`w-3 h-3 ${isPublished ? "text-emerald-600" : "text-amber-500"}`}
+                        className={`w-3 h-3 ${isPublished ? "text-green-600" : "text-amber-500"}`}
                       />
                       <span>{isPublished ? "Live" : "Draft"}</span>
                     </span>
@@ -562,13 +562,13 @@ export default function WebsiteControlCenterPage() {
         {/* System Revalidation & Status */}
         <div
           onClick={handlePublish}
-          className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:border-emerald-500 transition-all cursor-pointer flex items-center gap-3.5 group"
+          className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:border-green-500 transition-all cursor-pointer flex items-center gap-3.5 group"
         >
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0 border border-emerald-100">
+          <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center font-bold shrink-0 border border-green-100">
             <Zap className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-sm font-extrabold text-[#0B1528] group-hover:text-emerald-600 transition-colors">
+            <h4 className="text-sm font-extrabold text-[#0B1528] group-hover:text-green-600 transition-colors">
               Flush & Sync Cache
             </h4>
             <p className="text-xs text-slate-500 font-medium">
@@ -590,3 +590,5 @@ export default function WebsiteControlCenterPage() {
     </div>
   );
 }
+
+

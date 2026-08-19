@@ -610,7 +610,7 @@ export default function BookingLinksPage() {
           <div className="flex items-center gap-2 text-xs font-semibold text-[#74839A] pb-1">
             <button
               onClick={() => setWorkflowPage("directory")}
-              className="hover:text-[#F97316] flex items-center gap-1"
+              className="hover:text-[#FF4D00] flex items-center gap-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Booking Forms
             </button>
@@ -741,13 +741,13 @@ export default function BookingLinksPage() {
                             className={cn(
                               "text-[8.5px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border",
                               dep.status === "Open for Booking"
-                                ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200"
+                                ? "bg-[#ECFDF3] text-[#16A34A] border-green-200"
                                 : dep.status === "Closing Soon"
                                   ? "bg-[#FFF7E6] text-[#D97706] border-amber-200"
                                   : dep.status === "Full"
                                     ? "bg-slate-100 text-slate-700 border-slate-300"
                                     : dep.status === "Cancelled"
-                                      ? "bg-[#FFF1F3] text-[#E23D4D] border-rose-200"
+                                      ? "bg-[#FFF1F3] text-[#E23D4D] border-red-200"
                                       : "bg-slate-50 text-[#74839A] border-slate-200",
                             )}
                           >
@@ -785,7 +785,7 @@ export default function BookingLinksPage() {
                               setSelectedDate(dep.date);
                               setWorkflowPage("workspace");
                             }}
-                            className="h-7 text-[10px] font-bold bg-[#F97316] hover:bg-[#EA580C] text-white px-2.5 rounded"
+                            className="h-7 text-[10px] font-bold bg-[#FF4D00] hover:bg-[#EA580C] text-white px-2.5 rounded"
                           >
                             Manage Links
                           </Button>
@@ -807,14 +807,14 @@ export default function BookingLinksPage() {
           <div className="flex items-center gap-2 text-xs font-semibold text-[#74839A] pb-1">
             <button
               onClick={() => setWorkflowPage("directory")}
-              className="hover:text-[#F97316] flex items-center gap-1"
+              className="hover:text-[#FF4D00] flex items-center gap-1"
             >
               Booking Forms
             </button>
             <span className="text-slate-300">/</span>
             <button
               onClick={() => setWorkflowPage("departures")}
-              className="hover:text-[#F97316] truncate max-w-[150px]"
+              className="hover:text-[#FF4D00] truncate max-w-[150px]"
             >
               {selectedTrip.title}
             </button>
@@ -840,7 +840,7 @@ export default function BookingLinksPage() {
 
             <Button
               onClick={checkAndOpenGenerate}
-              className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-md h-8 px-3.5 font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all"
+              className="bg-[#FF4D00] hover:bg-[#EA580C] text-white rounded-md h-8 px-3.5 font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all"
             >
               <Plus className="h-3.5 w-3.5" /> Generate Booking Link
             </Button>
@@ -895,7 +895,7 @@ export default function BookingLinksPage() {
               {linkFilterTab === "active" && (
                 <Button
                   onClick={checkAndOpenGenerate}
-                  className="bg-[#F97316] hover:bg-[#EA580C] text-white text-[11px] font-bold h-8 rounded-md px-3.5"
+                  className="bg-[#FF4D00] hover:bg-[#EA580C] text-white text-[11px] font-bold h-8 rounded-md px-3.5"
                 >
                   Generate Booking Link
                 </Button>
@@ -938,7 +938,7 @@ export default function BookingLinksPage() {
                           className={cn(
                             "text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border",
                             status === "Active"
-                              ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200"
+                              ? "bg-[#ECFDF3] text-[#16A34A] border-green-200"
                               : status === "Used"
                                 ? "bg-[#EFF6FF] text-[#2563EB] border-blue-200"
                                 : "bg-slate-50 text-slate-500 border-slate-200",
@@ -995,14 +995,14 @@ export default function BookingLinksPage() {
                         Copy
                       </Button>
                       <Button
-                        className="h-8 rounded text-[10px] font-bold uppercase bg-[#16A34A] hover:bg-emerald-700 text-white"
+                        className="h-8 rounded text-[10px] font-bold uppercase bg-[#16A34A] hover:bg-green-700 text-white"
                         onClick={() => openShare(form)}
                       >
                         Share
                       </Button>
                       <Button
                         variant="outline"
-                        className="h-8 rounded text-[10px] font-bold uppercase border-rose-200 text-[#E23D4D] hover:bg-rose-50"
+                        className="h-8 rounded text-[10px] font-bold uppercase border-red-200 text-[#E23D4D] hover:bg-red-50"
                         onClick={() => confirmDelete(form.id!)}
                       >
                         Revoke
@@ -1110,7 +1110,7 @@ export default function BookingLinksPage() {
               size="sm"
               onClick={handleGenerate}
               disabled={generating}
-              className="text-xs bg-[#F97316] hover:bg-[#EA580C] text-white font-bold px-4 h-9 rounded"
+              className="text-xs bg-[#FF4D00] hover:bg-[#EA580C] text-white font-bold px-4 h-9 rounded"
             >
               {generating ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1186,7 +1186,7 @@ export default function BookingLinksPage() {
                 setDuplicateWarningOpen(false);
                 setCreateOpen(true);
               }}
-              className="text-[10px] font-bold uppercase tracking-wider text-[#74839A] hover:text-[#F97316] underline"
+              className="text-[10px] font-bold uppercase tracking-wider text-[#74839A] hover:text-[#FF4D00] underline"
             >
               Generate Another Link Anyway
             </button>
@@ -1215,7 +1215,7 @@ export default function BookingLinksPage() {
                   className="h-10 rounded-md text-xs bg-slate-50 flex-1 font-mono"
                 />
                 <Button
-                  className="h-10 rounded-md px-3 bg-[#F97316] hover:bg-[#EA580C] text-white font-bold"
+                  className="h-10 rounded-md px-3 bg-[#FF4D00] hover:bg-[#EA580C] text-white font-bold"
                   onClick={() => copyToClipboard(shareUrl, "Booking link")}
                 >
                   Copy
@@ -1230,7 +1230,7 @@ export default function BookingLinksPage() {
               <textarea
                 value={shareMsg}
                 onChange={(e) => setShareMsg(e.target.value)}
-                className="w-full h-32 text-xs border border-slate-200 rounded-md p-2 outline-none font-mono focus:ring-1 focus:ring-[#F97316]"
+                className="w-full h-32 text-xs border border-slate-200 rounded-md p-2 outline-none font-mono focus:ring-1 focus:ring-[#FF4D00]"
               />
             </div>
           </div>
@@ -1258,7 +1258,7 @@ export default function BookingLinksPage() {
                 const url = `https://wa.me/?text=${encodeURIComponent(shareMsg)}`;
                 window.open(url, "_blank");
               }}
-              className="text-xs bg-[#16A34A] hover:bg-emerald-700 text-white font-bold px-4 h-9 rounded-md flex items-center gap-1"
+              className="text-xs bg-[#16A34A] hover:bg-green-700 text-white font-bold px-4 h-9 rounded-md flex items-center gap-1"
             >
               <MessageCircle className="w-4 h-4" /> Share on WhatsApp
             </Button>
@@ -1294,3 +1294,4 @@ export default function BookingLinksPage() {
     </div>
   );
 }
+

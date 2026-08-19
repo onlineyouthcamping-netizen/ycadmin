@@ -416,7 +416,7 @@ export default function TripsPage() {
             className={cn(
               "cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors",
               isPub
-                ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
+                ? "bg-green-50 text-green-600 border-green-100 hover:bg-green-100"
                 : "bg-orange-50 text-[#FF5400] border-orange-100 hover:bg-orange-100",
             )}
             title="Click to toggle status"
@@ -424,7 +424,7 @@ export default function TripsPage() {
             <span
               className={cn(
                 "w-1.5 h-1.5 rounded-full",
-                isPub ? "bg-emerald-500" : "bg-[#FF5400]",
+                isPub ? "bg-green-600" : "bg-[#FF5400]",
               )}
             />
             {isPub ? "ACTIVE" : "DRAFT"}
@@ -552,9 +552,9 @@ export default function TripsPage() {
           {
             label: "Published",
             value: metrics.published,
-            valueClass: "text-emerald-600",
+            valueClass: "text-green-600",
             badge: "LIVE",
-            badgeClass: "bg-emerald-50 border-emerald-100 text-emerald-600",
+            badgeClass: "bg-green-50 border-green-100 text-green-600",
           },
           {
             label: "Drafts",
@@ -718,14 +718,14 @@ export default function TripsPage() {
                             className={cn(
                               "shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
                               isPub
-                                ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                ? "bg-green-50 text-green-600 border-green-100"
                                 : "bg-orange-50 text-[#FF5400] border-orange-100",
                             )}
                           >
                             <span
                               className={cn(
                                 "w-1.5 h-1.5 rounded-full",
-                                isPub ? "bg-emerald-500" : "bg-[#FF5400]",
+                                isPub ? "bg-green-600" : "bg-[#FF5400]",
                               )}
                             />
                             {isPub ? "Active" : "Draft"}
@@ -845,3 +845,4 @@ export default function TripsPage() {
     </div>
   );
 }
+

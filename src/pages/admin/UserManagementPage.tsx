@@ -74,7 +74,7 @@ const ROLES: {
     value: "superadmin",
     label: "Super Admin",
     desc: "Full unrestricted system access",
-    color: "bg-rose-50 text-rose-700 border-rose-200",
+    color: "bg-red-50 text-red-700 border-red-200",
   },
   {
     value: "admin",
@@ -86,7 +86,7 @@ const ROLES: {
     value: "sales",
     label: "Sales",
     desc: "View and manage leads & quotes",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    color: "bg-green-50 text-green-700 border-green-200",
   },
   {
     value: "operations",
@@ -789,7 +789,7 @@ export default function UserManagementPage() {
   if (isLoading) {
     return (
       <div className="h-96 flex items-center justify-center space-x-2 text-slate-400">
-        <Loader2 className="w-6 h-6 animate-spin text-[#F97316]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#FF4D00]" />
         <span className="text-xs font-semibold">Loading Staff Profiles...</span>
       </div>
     );
@@ -817,7 +817,7 @@ export default function UserManagementPage() {
 
         <Button
           onClick={() => setCreateOpen(true)}
-          className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg h-9 px-4 text-xs font-semibold shadow-xs flex items-center gap-1.5 shrink-0 self-start md:self-auto"
+          className="bg-[#FF4D00] hover:bg-[#EA580C] text-white rounded-lg h-9 px-4 text-xs font-semibold shadow-xs flex items-center gap-1.5 shrink-0 self-start md:self-auto"
         >
           <Plus className="w-4 h-4" /> Create User
         </Button>
@@ -840,14 +840,14 @@ export default function UserManagementPage() {
         </Card>
 
         <Card className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
             <UserCheck className="w-5 h-5" />
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Active Users
             </p>
-            <p className="text-xl font-extrabold text-emerald-600">
+            <p className="text-xl font-extrabold text-green-600">
               {stats.active}
             </p>
           </div>
@@ -868,14 +868,14 @@ export default function UserManagementPage() {
         </Card>
 
         <Card className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
             <Shield className="w-5 h-5" />
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Super Admins
             </p>
-            <p className="text-xl font-extrabold text-rose-600">
+            <p className="text-xl font-extrabold text-red-600">
               {stats.superAdmins}
             </p>
           </div>
@@ -892,7 +892,7 @@ export default function UserManagementPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or email..."
-              className="h-9 pl-9 text-xs border-slate-200 rounded-lg text-[#17233C] placeholder:text-slate-400 focus-visible:ring-[#F97316]"
+              className="h-9 pl-9 text-xs border-slate-200 rounded-lg text-[#17233C] placeholder:text-slate-400 focus-visible:ring-[#FF4D00]"
             />
           </div>
 
@@ -901,7 +901,7 @@ export default function UserManagementPage() {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer"
+              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
             >
               <option value="all">All Roles</option>
               {ROLES.map((r) => (
@@ -914,7 +914,7 @@ export default function UserManagementPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer"
+              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
             >
               <option value="all">All Status</option>
               <option value="active">Active Accounts</option>
@@ -924,7 +924,7 @@ export default function UserManagementPage() {
             <select
               value={loginFilter}
               onChange={(e) => setLoginFilter(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer"
+              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
             >
               <option value="all">All Login Times</option>
               <option value="recent">Logged In Recently</option>
@@ -958,7 +958,7 @@ export default function UserManagementPage() {
                 onClick={() => setViewMode("list")}
                 className={`p-1.5 rounded-md text-slate-600 transition-all ${
                   viewMode === "list"
-                    ? "bg-white text-[#F97316] shadow-xs font-bold"
+                    ? "bg-white text-[#FF4D00] shadow-xs font-bold"
                     : "hover:text-slate-900"
                 }`}
                 title="List View"
@@ -970,7 +970,7 @@ export default function UserManagementPage() {
                 onClick={() => setViewMode("grid")}
                 className={`p-1.5 rounded-md text-slate-600 transition-all ${
                   viewMode === "grid"
-                    ? "bg-white text-[#F97316] shadow-xs font-bold"
+                    ? "bg-white text-[#FF4D00] shadow-xs font-bold"
                     : "hover:text-slate-900"
                 }`}
                 title="Grid View"
@@ -1020,8 +1020,8 @@ export default function UserManagementPage() {
                             <div
                               className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
                                 user.role === "superadmin"
-                                  ? "bg-rose-100 text-rose-700"
-                                  : "bg-orange-100 text-[#F97316]"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-orange-100 text-[#FF4D00]"
                               }`}
                             >
                               {user.avatarUrl ? (
@@ -1063,13 +1063,13 @@ export default function UserManagementPage() {
 
                         <td className="px-4 py-3">
                           {user.isActive ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[9px] uppercase">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" />{" "}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 font-bold text-[9px] uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-600 block" />{" "}
                               Active
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[9px] uppercase">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 block" />{" "}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-bold text-[9px] uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-600 block" />{" "}
                               Inactive
                             </span>
                           )}
@@ -1090,7 +1090,7 @@ export default function UserManagementPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => openPermissionDrawer(user)}
-                              className="h-8 px-2.5 text-xs font-semibold text-slate-700 border-slate-200 hover:bg-orange-50 hover:text-[#F97316] hover:border-orange-200 rounded-lg flex items-center gap-1"
+                              className="h-8 px-2.5 text-xs font-semibold text-slate-700 border-slate-200 hover:bg-orange-50 hover:text-[#FF4D00] hover:border-orange-200 rounded-lg flex items-center gap-1"
                             >
                               <ShieldCheck className="w-3.5 h-3.5" /> Manage
                               Access
@@ -1142,7 +1142,7 @@ export default function UserManagementPage() {
                                     </>
                                   ) : (
                                     <>
-                                      <UserCheck className="w-3.5 h-3.5 mr-2 text-emerald-600" />{" "}
+                                      <UserCheck className="w-3.5 h-3.5 mr-2 text-green-600" />{" "}
                                       Enable Account
                                     </>
                                   )}
@@ -1152,9 +1152,9 @@ export default function UserManagementPage() {
 
                                 <DropdownMenuItem
                                   onClick={() => setDeleteConfirmUser(user)}
-                                  className="text-xs font-semibold py-1.5 cursor-pointer text-rose-600 focus:bg-rose-50"
+                                  className="text-xs font-semibold py-1.5 cursor-pointer text-red-600 focus:bg-red-50"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-600" />{" "}
+                                  <Trash2 className="w-3.5 h-3.5 mr-2 text-red-600" />{" "}
                                   Permanently Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -1192,8 +1192,8 @@ export default function UserManagementPage() {
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
                           user.role === "superadmin"
-                            ? "bg-rose-100 text-rose-700"
-                            : "bg-orange-100 text-[#F97316]"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-orange-100 text-[#FF4D00]"
                         }`}
                       >
                         {user.avatarUrl ? (
@@ -1257,9 +1257,9 @@ export default function UserManagementPage() {
                         <DropdownMenuSeparator className="my-1 border-slate-100" />
                         <DropdownMenuItem
                           onClick={() => setDeleteConfirmUser(user)}
-                          className="text-xs font-semibold py-1.5 cursor-pointer text-rose-600 focus:bg-rose-50"
+                          className="text-xs font-semibold py-1.5 cursor-pointer text-red-600 focus:bg-red-50"
                         >
-                          <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-600" />{" "}
+                          <Trash2 className="w-3.5 h-3.5 mr-2 text-red-600" />{" "}
                           Permanently Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -1275,13 +1275,13 @@ export default function UserManagementPage() {
                     </Badge>
 
                     {user.isActive ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[9px] uppercase">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" />{" "}
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 font-bold text-[9px] uppercase">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-600 block" />{" "}
                         Active
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[9px] uppercase">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 block" />{" "}
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-bold text-[9px] uppercase">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 block" />{" "}
                         Inactive
                       </span>
                     )}
@@ -1314,7 +1314,7 @@ export default function UserManagementPage() {
                     <Button
                       variant="outline"
                       onClick={() => openPermissionDrawer(user)}
-                      className="w-full h-8 text-xs font-semibold text-[#F97316] border-orange-200 bg-orange-50/50 hover:bg-orange-100/50 rounded-lg flex items-center justify-center gap-1.5"
+                      className="w-full h-8 text-xs font-semibold text-[#FF4D00] border-orange-200 bg-orange-50/50 hover:bg-orange-100/50 rounded-lg flex items-center justify-center gap-1.5"
                     >
                       <ShieldCheck className="w-4 h-4" /> Manage Access
                     </Button>
@@ -1335,7 +1335,7 @@ export default function UserManagementPage() {
           {/* Drawer Header */}
           <div className="p-6 border-b border-slate-100 bg-slate-50/70 shrink-0">
             <SheetTitle className="text-lg font-extrabold text-[#17233C] flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-[#F97316]" />
+              <ShieldCheck className="w-5 h-5 text-[#FF4D00]" />
               Manage Access & Permissions
             </SheetTitle>
             <SheetDescription className="text-xs text-slate-500 font-medium mt-1">
@@ -1357,7 +1357,7 @@ export default function UserManagementPage() {
                 onChange={(e) =>
                   handleRoleChangeInDrawer(e.target.value as AdminRole)
                 }
-                className="h-10 w-full rounded-lg border border-slate-300 text-xs font-bold text-slate-800 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#F97316] cursor-pointer"
+                className="h-10 w-full rounded-lg border border-slate-300 text-xs font-bold text-slate-800 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF4D00] cursor-pointer"
               >
                 {ROLES.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -1486,7 +1486,7 @@ export default function UserManagementPage() {
               type="button"
               onClick={handleSavePermissions}
               disabled={isSavingPerms}
-              className="h-9 px-5 bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold text-xs rounded-lg shadow-xs flex items-center gap-1.5"
+              className="h-9 px-5 bg-[#FF4D00] hover:bg-[#EA580C] text-white font-semibold text-xs rounded-lg shadow-xs flex items-center gap-1.5"
             >
               {isSavingPerms ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -1579,7 +1579,7 @@ export default function UserManagementPage() {
               <Button
                 type="submit"
                 disabled={isCreating}
-                className="h-8 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold rounded-lg shadow-xs"
+                className="h-8 bg-[#FF4D00] hover:bg-[#EA580C] text-white text-xs font-semibold rounded-lg shadow-xs"
               >
                 {isCreating ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1631,7 +1631,7 @@ export default function UserManagementPage() {
               <Button
                 type="submit"
                 disabled={isResetting}
-                className="h-8 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold rounded-lg shadow-xs"
+                className="h-8 bg-[#FF4D00] hover:bg-[#EA580C] text-white text-xs font-semibold rounded-lg shadow-xs"
               >
                 {isResetting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1651,7 +1651,7 @@ export default function UserManagementPage() {
       >
         <DialogContent className="max-w-md p-6 bg-white rounded-2xl border border-slate-200 shadow-xl">
           <DialogHeader className="space-y-2">
-            <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-1">
+            <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-1">
               <Trash2 className="w-5 h-5" />
             </div>
             <DialogTitle className="text-base font-extrabold text-[#17233C]">
@@ -1681,7 +1681,7 @@ export default function UserManagementPage() {
               type="button"
               onClick={handleDeleteUser}
               disabled={isDeleting}
-              className="h-8 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5"
+              className="h-8 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5"
             >
               {isDeleting ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1696,3 +1696,4 @@ export default function UserManagementPage() {
     </div>
   );
 }
+

@@ -126,7 +126,7 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
                     className={cn(
                       "text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider inline-block mb-1",
                       b.balance <= 0
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-green-100 text-green-700"
                         : "bg-amber-100 text-amber-700",
                     )}
                   >
@@ -155,7 +155,7 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
                       href={`https://wa.me/${b.phone.replace(/[^0-9]/g, "")}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center active:scale-95"
+                      className="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center active:scale-95"
                       aria-label="WhatsApp"
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -191,3 +191,4 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
 };
 
 export default MobileBookingsView;
+

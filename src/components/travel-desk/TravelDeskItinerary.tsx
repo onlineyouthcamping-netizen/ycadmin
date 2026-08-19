@@ -180,7 +180,7 @@ export const TravelDeskItinerary: React.FC<TravelDeskItineraryProps> = ({
 
             <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2 mb-3 border-b border-slate-100 pb-2">
-                <XCircle className="w-4 h-4 text-red-500" /> Exclusions
+                <XCircle className="w-4 h-4 text-red-600" /> Exclusions
               </h3>
               <ul className="space-y-2">
                 {defaultItinerary.exclusions?.map((exc: any) => (
@@ -188,7 +188,7 @@ export const TravelDeskItinerary: React.FC<TravelDeskItineraryProps> = ({
                     key={exc.id}
                     className="text-[11px] font-semibold text-slate-600 flex items-start gap-2 leading-relaxed"
                   >
-                    <span className="text-red-500 mt-1 shrink-0">●</span>
+                    <span className="text-red-600 mt-1 shrink-0">●</span>
                     <span className="flex-1 break-words">{exc.text}</span>
                   </li>
                 ))}
@@ -206,3 +206,4 @@ export const TravelDeskItinerary: React.FC<TravelDeskItineraryProps> = ({
     </div>
   );
 };
+

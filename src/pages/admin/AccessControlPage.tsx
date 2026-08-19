@@ -66,7 +66,7 @@ export default function AccessControlPage() {
     <div className="admin-page animate-fade-in">
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <Shield className="w-5 h-5 text-[#F97316]" />
+          <Shield className="w-5 h-5 text-[#FF4D00]" />
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
               Access Control Matrix
@@ -79,7 +79,7 @@ export default function AccessControlPage() {
       </div>
 
       <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] p-4 flex items-start gap-3">
-        <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+        <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
         <div>
           <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-1">
             Security Enforcement Active
@@ -107,7 +107,7 @@ export default function AccessControlPage() {
                   >
                     <div className="flex flex-col items-center gap-1">
                       <Shield
-                        className={`w-3.5 h-3.5 ${role === "superadmin" ? "text-rose-500" : "text-primary-orange"}`}
+                        className={`w-3.5 h-3.5 ${role === "superadmin" ? "text-red-600" : "text-primary-orange"}`}
                       />
                       <span>{role}</span>
                     </div>
@@ -138,7 +138,7 @@ export default function AccessControlPage() {
                         <TableCell key={role} className="text-center py-3">
                           <div className="flex justify-center">
                             {hasPerm ? (
-                              <div className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                              <div className="w-5 h-5 rounded-full bg-green-50 border border-green-100 flex items-center justify-center text-green-600">
                                 <Check className="w-3 h-3 stroke-[3]" />
                               </div>
                             ) : (
@@ -158,3 +158,4 @@ export default function AccessControlPage() {
     </div>
   );
 }
+

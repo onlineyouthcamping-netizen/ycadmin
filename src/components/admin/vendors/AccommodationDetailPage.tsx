@@ -1844,11 +1844,11 @@ export function AccommodationDetailPage({
           >
             <Pencil className="w-3.5 h-3.5" /> Edit Vendor Info
           </Button>
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 text-right">
-            <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider block">
+          <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-1.5 text-right">
+            <span className="text-[10px] font-extrabold text-green-600 uppercase tracking-wider block">
               Performance Score
             </span>
-            <span className="text-sm font-black text-emerald-700">
+            <span className="text-sm font-black text-green-700">
               {vendor.performanceScore || 95}/100
             </span>
           </div>
@@ -1959,7 +1959,7 @@ export function AccommodationDetailPage({
             </Button>
             <Button
               onClick={handleSaveHeaderInfo}
-              className="bg-[#F97316] hover:bg-[#E05E00] text-white rounded h-8 text-xs font-bold px-4"
+              className="bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded h-8 text-xs font-bold px-4"
             >
               Save Header Changes
             </Button>
@@ -1995,7 +1995,7 @@ export function AccommodationDetailPage({
                 className={cn(
                   "flex items-center gap-1.5 px-4 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer",
                   activeTab === t.id
-                    ? "border-[#F97316] text-[#F97316] bg-amber-50/20"
+                    ? "border-[#FF4D00] text-[#FF4D00] bg-amber-50/20"
                     : "border-transparent text-slate-500 hover:text-slate-750 hover:bg-slate-50",
                 )}
               >
@@ -2044,7 +2044,7 @@ export function AccommodationDetailPage({
                   type="button"
                   onClick={handleSaveOverview}
                   disabled={isSavingOverview}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs cursor-pointer"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs cursor-pointer"
                 >
                   {isSavingOverview ? (
                     <>
@@ -2063,7 +2063,7 @@ export function AccommodationDetailPage({
                 {isTransport ? (
                   <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
-                      <Bus className="w-4 h-4 text-[#F97316]" /> Fleet & Transport Operational Info
+                      <Bus className="w-4 h-4 text-[#FF4D00]" /> Fleet & Transport Operational Info
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -2732,7 +2732,7 @@ export function AccommodationDetailPage({
                     });
                     setContactModalOpen(true);
                   }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Contact Person
                 </Button>
@@ -2755,7 +2755,7 @@ export function AccommodationDetailPage({
                       </div>
                       <div className="flex items-center gap-1.5">
                         {c.isPrimary && (
-                          <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase px-2 py-0.5 rounded border border-emerald-200">
+                          <span className="bg-green-100 text-green-700 text-[9px] font-black uppercase px-2 py-0.5 rounded border border-green-200">
                             Primary
                           </span>
                         )}
@@ -2778,7 +2778,7 @@ export function AccommodationDetailPage({
                         </button>
                         <button
                           onClick={() => handleDeleteContact(c.id)}
-                          className="p-1 text-slate-400 hover:text-rose-600 bg-white rounded border"
+                          className="p-1 text-slate-400 hover:text-red-600 bg-white rounded border"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -2830,7 +2830,7 @@ export function AccommodationDetailPage({
                     });
                     setRoomModalOpen(true);
                   }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold cursor-pointer"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold cursor-pointer"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Room Category
                 </Button>
@@ -2887,7 +2887,7 @@ export function AccommodationDetailPage({
                           </button>
                           <button
                             onClick={() => handleDeleteRoom(r.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 bg-slate-50 rounded cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-red-600 bg-slate-50 rounded cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -2901,17 +2901,17 @@ export function AccommodationDetailPage({
                         <div className="grid grid-cols-3 gap-1.5 text-[10px]">
                           <div className="bg-slate-50 p-1.5 rounded border border-slate-100">
                             <span className="text-slate-500 block text-[8.5px] font-bold">DOUBLE</span>
-                            <span className="font-black text-emerald-600">₹{r.doubleRate || r.base || 0}</span>
+                            <span className="font-black text-green-600">₹{r.doubleRate || r.base || 0}</span>
                             <span className="text-[8px] text-slate-400 font-medium"> / person</span>
                           </div>
                           <div className="bg-[#FFF7ED] p-1.5 rounded border border-orange-100">
                             <span className="text-orange-600 block text-[8.5px] font-bold">TRIPLE</span>
-                            <span className="font-black text-emerald-600">₹{r.tripleRate || 0}</span>
+                            <span className="font-black text-green-600">₹{r.tripleRate || 0}</span>
                             <span className="text-[8px] text-slate-400 font-medium"> / person</span>
                           </div>
                           <div className="bg-slate-50 p-1.5 rounded border border-slate-100">
                             <span className="text-slate-500 block text-[8.5px] font-bold">QUAD</span>
-                            <span className="font-black text-emerald-600">₹{r.quadRate || 0}</span>
+                            <span className="font-black text-green-600">₹{r.quadRate || 0}</span>
                             <span className="text-[8px] text-slate-400 font-medium"> / person</span>
                           </div>
                         </div>
@@ -2936,7 +2936,7 @@ export function AccommodationDetailPage({
                     setSeasonForm({ name: "", twin: "", triple: "", quad: "" });
                     setSeasonModalOpen(true);
                   }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Seasonal Rate
                 </Button>
@@ -2997,7 +2997,7 @@ export function AccommodationDetailPage({
                         </button>
                         <button
                           onClick={() => handleDeleteSeason(s.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 rounded"
+                          className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-100 rounded"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -3031,7 +3031,7 @@ export function AccommodationDetailPage({
                     });
                     setGuideRateModalOpen(true);
                   }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-3.5 shadow-2xs"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-3.5 shadow-2xs"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Rate Config
                 </Button>
@@ -3059,7 +3059,7 @@ export function AccommodationDetailPage({
                           <span className="font-extrabold text-slate-800 text-sm block">
                             {gr.roleName}
                           </span>
-                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 uppercase">
+                          <span className="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 uppercase">
                             {gr.badgeText || "Role"}
                           </span>
                         </div>
@@ -3080,7 +3080,7 @@ export function AccommodationDetailPage({
                           </button>
                           <button
                             onClick={() => handleDeleteGuideRate(gr.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 bg-slate-50 rounded border border-slate-200"
+                            className="p-1 text-slate-400 hover:text-red-600 bg-slate-50 rounded border border-slate-200"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -3088,7 +3088,7 @@ export function AccommodationDetailPage({
                       </div>
                       <p className="text-slate-600 pt-1">
                         Per Day Fee:{" "}
-                        <span className="font-black text-emerald-600 text-sm">
+                        <span className="font-black text-green-600 text-sm">
                           ₹{gr.perDayFee || 2500} / Day
                         </span>
                       </p>
@@ -3114,7 +3114,7 @@ export function AccommodationDetailPage({
                 <Button
                   onClick={handleOpenAddActivityRate}
                   size="sm"
-                  className="h-8 bg-[#F97316] hover:bg-[#ea580c] text-white text-xs font-bold gap-1.5 shadow-2xs cursor-pointer"
+                  className="h-8 bg-[#FF4D00] hover:bg-[#ea580c] text-white text-xs font-bold gap-1.5 shadow-2xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Activity Tariff
                 </Button>
@@ -3127,7 +3127,7 @@ export function AccommodationDetailPage({
                   <p className="text-[11px] text-slate-400">Add negotiated per-person tariffs for adventure activities.</p>
                   <Button
                     onClick={handleOpenAddActivityRate}
-                    className="h-7.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-3 mt-2 cursor-pointer shadow-2xs"
+                    className="h-7.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-3 mt-2 cursor-pointer shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" /> Add First Activity Tariff
                   </Button>
@@ -3150,7 +3150,7 @@ export function AccommodationDetailPage({
                         </div>
                         <p className="text-slate-600">
                           Per Pax Tariff:{" "}
-                          <span className="font-black text-emerald-600 text-sm">
+                          <span className="font-black text-green-600 text-sm">
                             ₹{Number(rate.perPaxRate || 0).toLocaleString("en-IN")} / Person
                           </span>
                         </p>
@@ -3173,7 +3173,7 @@ export function AccommodationDetailPage({
                           onClick={() => handleDeleteActivityRate(rate.id)}
                           variant="ghost"
                           size="sm"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                          className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -3200,7 +3200,7 @@ export function AccommodationDetailPage({
                 <Button
                   onClick={handleOpenAddMealTariff}
                   size="sm"
-                  className="bg-[#F97316] hover:bg-[#E05E00] text-white font-bold h-8 px-3 text-xs shadow-2xs gap-1.5"
+                  className="bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold h-8 px-3 text-xs shadow-2xs gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add Meal Tariff / Thali
@@ -3214,7 +3214,7 @@ export function AccommodationDetailPage({
                   <Button
                     onClick={handleOpenAddMealTariff}
                     size="sm"
-                    className="bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs"
+                    className="bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold text-xs"
                   >
                     + Add First Meal Tariff
                   </Button>
@@ -3236,7 +3236,7 @@ export function AccommodationDetailPage({
                             <span
                               className={`text-[10px] font-black uppercase px-2 py-0.5 rounded shrink-0 ${
                                 isVeg
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  ? "bg-green-50 text-green-700 border border-green-200"
                                   : "bg-red-50 text-red-700 border border-red-200"
                               }`}
                             >
@@ -3248,7 +3248,7 @@ export function AccommodationDetailPage({
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                               Per Pax Rate:
                             </span>
-                            <span className="font-black text-emerald-600 text-base">
+                            <span className="font-black text-green-600 text-base">
                               ₹{t.perPaxRate?.toLocaleString("en-IN") || t.ratePerPerson || 0} / Pax
                             </span>
                           </div>
@@ -3274,7 +3274,7 @@ export function AccommodationDetailPage({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteMealTariff(t.id)}
-                            className="h-7 px-2 text-[11px] font-bold text-red-500 hover:text-red-700 hover:bg-red-50"
+                            className="h-7 px-2 text-[11px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -3302,7 +3302,7 @@ export function AccommodationDetailPage({
                 <Button
                   onClick={handleOpenAddOtherRate}
                   size="sm"
-                  className="h-8 bg-[#F97316] hover:bg-[#ea580c] text-white text-xs font-bold gap-1.5 shadow-2xs cursor-pointer"
+                  className="h-8 bg-[#FF4D00] hover:bg-[#ea580c] text-white text-xs font-bold gap-1.5 shadow-2xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Service Tariff
                 </Button>
@@ -3319,7 +3319,7 @@ export function AccommodationDetailPage({
                   </p>
                   <Button
                     onClick={handleOpenAddOtherRate}
-                    className="h-7.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-3 mt-2 cursor-pointer shadow-2xs"
+                    className="h-7.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-3 mt-2 cursor-pointer shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" /> Add First Service Tariff
                   </Button>
@@ -3342,7 +3342,7 @@ export function AccommodationDetailPage({
                         </div>
                         <p className="text-slate-600">
                           Tariff Rate:{" "}
-                          <span className="font-black text-emerald-600 text-sm">
+                          <span className="font-black text-green-600 text-sm">
                             ₹{Number(rate.rate || rate.perPaxRate || 0).toLocaleString("en-IN")}
                           </span>
                           <span className="text-slate-400 text-[11px] ml-1 font-medium">
@@ -3368,7 +3368,7 @@ export function AccommodationDetailPage({
                           onClick={() => handleDeleteOtherRate(rate.id)}
                           variant="ghost"
                           size="sm"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                          className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -3406,7 +3406,7 @@ export function AccommodationDetailPage({
                     });
                     setContractModalOpen(true);
                   }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Contract Agreement
                 </Button>
@@ -3448,7 +3448,7 @@ export function AccommodationDetailPage({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded border border-emerald-200">
+                          <span className="bg-green-100 text-green-700 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded border border-green-200">
                             {ctr.status}
                           </span>
                           <button
@@ -3474,7 +3474,7 @@ export function AccommodationDetailPage({
                           </button>
                           <button
                             onClick={() => handleDeleteContract(ctr.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 bg-slate-50 rounded"
+                            className="p-1 text-slate-400 hover:text-red-600 bg-slate-50 rounded"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -3492,7 +3492,7 @@ export function AccommodationDetailPage({
                           <span className="text-[10px] text-slate-450 block font-bold">
                             EXPIRY DATE
                           </span>{" "}
-                          <span className="font-bold text-rose-600">
+                          <span className="font-bold text-red-600">
                             {ctr.expiryDate}
                           </span>
                         </div>
@@ -3508,7 +3508,7 @@ export function AccommodationDetailPage({
                           <span className="text-[10px] text-slate-450 block font-bold">
                             COMMISSION %
                           </span>{" "}
-                          <span className="font-bold text-emerald-600">
+                          <span className="font-bold text-green-600">
                             {ctr.commissionPercent}%
                           </span>
                         </div>
@@ -3542,7 +3542,7 @@ export function AccommodationDetailPage({
                     setGalleryForm({ title: "", url: "" });
                     setGalleryModalOpen(true);
                   }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Photo
                 </Button>
@@ -3587,7 +3587,7 @@ export function AccommodationDetailPage({
                           </button>
                           <button
                             onClick={() => handleDeleteGallery(g.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600"
+                            className="p-1 text-slate-400 hover:text-red-600"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -3615,7 +3615,7 @@ export function AccommodationDetailPage({
                 </div>
                 <Button
                   onClick={() => setLedgerModalOpen(true)}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Log Ledger Entry
                 </Button>
@@ -3645,7 +3645,7 @@ export function AccommodationDetailPage({
                               "px-2 py-0.5 rounded text-[10px] font-black uppercase",
                               l.entryType === "INVOICE"
                                 ? "bg-amber-100 text-amber-800"
-                                : "bg-emerald-100 text-emerald-800",
+                                : "bg-green-100 text-green-700",
                             )}
                           >
                             {l.entryType}
@@ -3658,7 +3658,7 @@ export function AccommodationDetailPage({
                         <td className="p-3 text-right font-black text-slate-800">
                           ₹{l.amount.toLocaleString()}
                         </td>
-                        <td className="p-3 text-right font-black text-emerald-600">
+                        <td className="p-3 text-right font-black text-green-600">
                           ₹{l.balance.toLocaleString()}
                         </td>
                       </tr>
@@ -3678,7 +3678,7 @@ export function AccommodationDetailPage({
                 </h3>
                 <Button
                   onClick={() => setHistoryModalOpen(true)}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Log Price Change
                 </Button>
@@ -3706,7 +3706,7 @@ export function AccommodationDetailPage({
                         <td className="p-3 text-right font-bold text-slate-450 line-through">
                           ₹{ph.oldRate}
                         </td>
-                        <td className="p-3 text-right font-black text-emerald-600">
+                        <td className="p-3 text-right font-black text-green-600">
                           ₹{ph.newRate}
                         </td>
                         <td className="p-3 font-bold text-slate-700">
@@ -3727,7 +3727,7 @@ export function AccommodationDetailPage({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
                 <div>
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <History className="w-4 h-4 text-[#F97316]" /> Unified Partner Activity Audit Trail
+                    <History className="w-4 h-4 text-[#FF4D00]" /> Unified Partner Activity Audit Trail
                   </h3>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     Automated traceability log of all profile updates, rate revisions, fleet changes, and operational activities.
@@ -3742,7 +3742,7 @@ export function AccommodationDetailPage({
                     });
                     setTimelineModalOpen(true);
                   }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Manual Log
                 </Button>
@@ -3770,14 +3770,14 @@ export function AccommodationDetailPage({
                         : isContact
                           ? "bg-orange-100 text-orange-800 border-orange-200"
                           : isPayment
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                            ? "bg-green-100 text-green-700 border-green-200"
                             : isProfile
                               ? "bg-sky-100 text-sky-800 border-sky-200"
                               : "bg-slate-100 text-slate-700 border-slate-200";
 
                     return (
                       <div key={item.id} className="relative pl-6">
-                        <div className="absolute -left-[9px] top-2 w-4 h-4 rounded-full bg-[#F97316] border-2 border-white ring-4 ring-orange-50" />
+                        <div className="absolute -left-[9px] top-2 w-4 h-4 rounded-full bg-[#FF4D00] border-2 border-white ring-4 ring-orange-50" />
                         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs text-xs space-y-2">
                           <div className="flex flex-wrap justify-between items-center gap-2">
                             <span
@@ -3917,7 +3917,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveOverview}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               Save Changes
             </Button>
@@ -3998,7 +3998,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveContact}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               Save Contact
             </Button>
@@ -4017,7 +4017,7 @@ export function AccommodationDetailPage({
           <div className="space-y-3.5 text-xs my-2">
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                Room Category Name <span className="text-red-500">*</span>
+                Room Category Name <span className="text-red-600">*</span>
               </label>
               <Input
                 value={roomForm.name}
@@ -4107,7 +4107,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveRoom}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2 cursor-pointer"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2 cursor-pointer"
             >
               Save Room Category
             </Button>
@@ -4179,7 +4179,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveSeason}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               Save Seasonal Rate
             </Button>
@@ -4257,7 +4257,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveContract}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               Save Contract
             </Button>
@@ -4302,7 +4302,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveGallery}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               Add Photo
             </Button>
@@ -4380,7 +4380,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveLedger}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               Log Entry
             </Button>
@@ -4452,7 +4452,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveHistory}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               Save Log
             </Button>
@@ -4511,7 +4511,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveTimeline}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               Save Activity Log
             </Button>
@@ -4607,7 +4607,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveVehicle}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               {editingVehicle ? "Update Vehicle" : "Save Vehicle"}
             </Button>
@@ -4677,7 +4677,7 @@ export function AccommodationDetailPage({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveRoute}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#FF4D00] text-white text-xs font-bold px-4 py-2"
             >
               {editingRoute ? "Update Route Tariff" : "Save Route Tariff"}
             </Button>
@@ -4739,7 +4739,7 @@ export function AccommodationDetailPage({
             </Button>
             <Button
               onClick={handleSaveGuideRate}
-              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+              className="h-8 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingGuideRate ? "Update Guide Rate" : "Add Guide Rate"}
             </Button>
@@ -4812,7 +4812,7 @@ export function AccommodationDetailPage({
                 value={mealTariffForm.perPaxRate}
                 onChange={(e) => setMealTariffForm({ ...mealTariffForm, perPaxRate: e.target.value })}
                 placeholder="250"
-                className="h-8.5 text-xs font-bold text-emerald-600"
+                className="h-8.5 text-xs font-bold text-green-600"
               />
             </div>
 
@@ -4839,7 +4839,7 @@ export function AccommodationDetailPage({
             </Button>
             <Button
               onClick={handleSaveMealTariff}
-              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+              className="h-8 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingMealTariff ? "Update Meal Rate" : "Add Meal Rate"}
             </Button>
@@ -4899,7 +4899,7 @@ export function AccommodationDetailPage({
                   value={activityRateForm.perPaxRate}
                   onChange={(e) => setActivityRateForm({ ...activityRateForm, perPaxRate: e.target.value })}
                   placeholder="2500"
-                  className="h-8.5 text-xs font-bold text-emerald-600"
+                  className="h-8.5 text-xs font-bold text-green-600"
                 />
               </div>
             </div>
@@ -4927,7 +4927,7 @@ export function AccommodationDetailPage({
             </Button>
             <Button
               onClick={handleSaveActivityRate}
-              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+              className="h-8 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingActivityRate ? "Update Activity Rate" : "Add Activity Rate"}
             </Button>
@@ -5008,7 +5008,7 @@ export function AccommodationDetailPage({
                     })
                   }
                   placeholder="500"
-                  className="h-8.5 text-xs font-bold text-emerald-600"
+                  className="h-8.5 text-xs font-bold text-green-600"
                 />
               </div>
             </div>
@@ -5058,7 +5058,7 @@ export function AccommodationDetailPage({
             </Button>
             <Button
               onClick={handleSaveOtherRate}
-              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+              className="h-8 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingOtherRate
                 ? "Update Service Tariff"
@@ -5072,3 +5072,4 @@ export function AccommodationDetailPage({
 }
 
 export default AccommodationDetailPage;
+

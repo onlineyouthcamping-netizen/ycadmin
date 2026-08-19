@@ -575,7 +575,7 @@ function AdminSidebar() {
                 type="button"
                 onClick={handleLogout}
                 title="Log out"
-                className="h-8 w-8 rounded-md text-slate-500 hover:text-rose-300 hover:bg-rose-500/10 flex items-center justify-center"
+                className="h-8 w-8 rounded-md text-slate-500 hover:text-red-300 hover:bg-red-600/10 flex items-center justify-center"
               >
                 <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
               </button>
@@ -609,7 +609,7 @@ function AdminSidebar() {
                 type="button"
                 onClick={handleLogout}
                 title="Log out"
-                className="h-8 w-8 rounded-md text-slate-500 hover:text-rose-300 hover:bg-rose-500/10 flex items-center justify-center shrink-0"
+                className="h-8 w-8 rounded-md text-slate-500 hover:text-red-300 hover:bg-red-600/10 flex items-center justify-center shrink-0"
               >
                 <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
               </button>
@@ -999,7 +999,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       e.preventDefault();
                       logout();
                     }}
-                    className="text-xs font-semibold text-rose-600 hover:bg-rose-50 focus:bg-rose-50 focus:text-rose-700 cursor-pointer rounded-md py-2 px-3 mt-1 flex items-center"
+                    className="text-xs font-semibold text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-700 cursor-pointer rounded-md py-2 px-3 mt-1 flex items-center"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Log out
@@ -1179,3 +1179,5 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+

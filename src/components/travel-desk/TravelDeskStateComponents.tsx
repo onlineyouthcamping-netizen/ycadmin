@@ -18,7 +18,7 @@ export const TravelDeskErrorState = ({
   onRetry?: () => void;
 }) => (
   <div className="flex flex-1 flex-col items-center justify-center p-10 text-center font-sans">
-    <AlertTriangle className="mb-3 h-7 w-7 text-rose-500" />
+    <AlertTriangle className="mb-3 h-7 w-7 text-red-600" />
     <h2 className="text-[14px] font-semibold text-[#0B1528]">
       Could not load trip data
     </h2>
@@ -96,3 +96,4 @@ export const TravelDeskActivationState = ({
     </button>
   </div>
 );
+

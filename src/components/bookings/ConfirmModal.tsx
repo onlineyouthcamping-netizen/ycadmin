@@ -129,7 +129,7 @@ export function ConfirmModal({
   return (
     <Dialog open={!!booking} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[420px] p-0 border border-slate-200 rounded-lg overflow-hidden shadow-premium bg-white">
-        <DialogHeader className="bg-emerald-600 px-4 py-3 text-white">
+        <DialogHeader className="bg-green-600 px-4 py-3 text-white">
           <DialogTitle className="text-xs font-bold uppercase tracking-wider text-white">
             Confirm Booking
           </DialogTitle>
@@ -187,7 +187,7 @@ export function ConfirmModal({
                 className={cn(
                   "text-xs font-black uppercase tracking-wider",
                   rem <= 0
-                    ? "text-emerald-600"
+                    ? "text-green-600"
                     : parseFloat(advance) > 0
                       ? "text-orange-500"
                       : "text-amber-500",
@@ -267,18 +267,18 @@ export function ConfirmModal({
             />
           </div>
           {trainStatus !== "SELF_BOOKED" && (
-            <div className="flex flex-col gap-2 p-2 bg-emerald-50 rounded border border-emerald-100 max-w-sm my-2">
+            <div className="flex flex-col gap-2 p-2 bg-green-50 rounded border border-green-100 max-w-sm my-2">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="modalSendTrainWithEmail"
                   checked={sendTicket}
                   onChange={(e) => setSendTicket(e.target.checked)}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                  className="rounded text-green-600 focus:ring-green-600 w-3.5 h-3.5 cursor-pointer"
                 />
                 <label
                   htmlFor="modalSendTrainWithEmail"
-                  className="text-[10px] font-bold text-emerald-800 cursor-pointer select-none"
+                  className="text-[10px] font-bold text-green-700 cursor-pointer select-none"
                 >
                   Include train ticket confirmation details inside email
                 </label>
@@ -308,7 +308,7 @@ export function ConfirmModal({
                         setTicketFileName(null);
                       }
                     }}
-                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer"
                   />
                   {ticketFileName && (
                     <p className="text-[10px] text-slate-500 font-medium font-mono">
@@ -322,7 +322,7 @@ export function ConfirmModal({
           <Button
             onClick={handleConfirm}
             disabled={saving}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-wider h-9 rounded text-[10px] mt-2 shadow-sm"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider h-9 rounded text-[10px] mt-2 shadow-sm"
           >
             {saving ? "Processing..." : "Confirm Booking"}
           </Button>
@@ -331,3 +331,5 @@ export function ConfirmModal({
     </Dialog>
   );
 }
+
+

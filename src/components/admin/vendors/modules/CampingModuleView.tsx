@@ -67,7 +67,7 @@ export function CampingModuleView({
       title: "Swiss Luxury Tents",
       count: 18,
       icon: ShieldCheck,
-      color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+      color: "text-green-600 bg-green-50 border-green-200",
     },
     {
       title: "Bonfire & Music Permitted",
@@ -93,7 +93,7 @@ export function CampingModuleView({
         </div>
         <Button
           onClick={onAddVendor}
-          className="bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-2xs"
+          className="bg-[#FF4D00] hover:bg-[#E05E00] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-2xs"
         >
           <Plus className="w-4 h-4 mr-1.5" /> Add Campsite Partner
         </Button>
@@ -167,7 +167,7 @@ export function CampingModuleView({
                 <td className="p-3.5 text-slate-700 font-bold">
                   25 Swiss Tents (Triple Sharing)
                 </td>
-                <td className="p-3.5 font-bold text-emerald-600">
+                <td className="p-3.5 font-bold text-green-600">
                   Attached Western Washrooms
                 </td>
                 <td className="p-3.5 text-slate-700">
@@ -179,7 +179,7 @@ export function CampingModuleView({
                 <td className="p-3.5 text-right space-x-1.5">
                   <Button
                     onClick={() => onSelectVendor(c)}
-                    className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-2.5 rounded-lg"
+                    className="h-8 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-2.5 rounded-lg"
                   >
                     <Eye className="w-3.5 h-3.5 mr-1" /> View Workspace
                   </Button>
@@ -226,3 +226,4 @@ export function CampingModuleView({
     </div>
   );
 }
+

@@ -50,7 +50,7 @@ export function getPaymentReceivedColorClass(
 
   switch (state) {
     case BookingPaymentState.CONFIRMED:
-      return `text-emerald-600 ${fontClass}`;
+      return `text-green-600 ${fontClass}`;
     case BookingPaymentState.REFUNDED:
       return `text-blue-600 ${fontClass}`;
     case BookingPaymentState.PARTIALLY_REFUNDED:
@@ -62,7 +62,7 @@ export function getPaymentReceivedColorClass(
     case BookingPaymentState.UNCONFIRMED:
     case BookingPaymentState.INQUIRY:
     default:
-      return `text-rose-600 ${fontClass}`;
+      return `text-red-600 ${fontClass}`;
   }
 }
 
@@ -89,3 +89,4 @@ export function getPaymentReceivedColorHex(
       return "#DC2626"; // Red
   }
 }
+

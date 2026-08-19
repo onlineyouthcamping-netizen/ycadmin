@@ -78,7 +78,7 @@ export function MyAccountTab({ profile, onRefresh }: MyAccountTabProps) {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
               Account Status
             </span>
-            <div className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
+            <div className="inline-flex items-center gap-1 text-xs font-bold text-green-600">
               <CheckCircle className="w-3.5 h-3.5" />
               Active Member
             </div>
@@ -196,7 +196,7 @@ export function MyAccountTab({ profile, onRefresh }: MyAccountTabProps) {
             variant="ghost"
             size="sm"
             onClick={() => setDeleteModalOpen(true)}
-            className="text-xs font-semibold text-rose-600 hover:bg-rose-50"
+            className="text-xs font-semibold text-red-600 hover:bg-red-50"
           >
             Delete Account
           </Button>
@@ -205,7 +205,7 @@ export function MyAccountTab({ profile, onRefresh }: MyAccountTabProps) {
             id="settings-tab-save-btn"
             type="submit"
             disabled={isSaving}
-            className="h-9 px-5 text-xs font-bold uppercase tracking-wider bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xs rounded-lg flex items-center gap-1.5"
+            className="h-9 px-5 text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#EA580C] text-white shadow-xs rounded-lg flex items-center gap-1.5"
           >
             {isSaving ? (
               <>
@@ -228,3 +228,4 @@ export function MyAccountTab({ profile, onRefresh }: MyAccountTabProps) {
     </div>
   );
 }
+

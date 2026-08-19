@@ -75,7 +75,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
       case "APPROVED":
       case "published":
         return {
-          color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+          color: "text-green-700 bg-green-50 border-green-200",
           icon: CheckCircle2,
         };
       case "UNDER_REVIEW":
@@ -86,7 +86,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
         };
       case "REJECTED":
         return {
-          color: "text-rose-700 bg-rose-50 border-rose-200",
+          color: "text-red-700 bg-red-50 border-red-200",
           icon: XCircle,
         };
       default:
@@ -148,7 +148,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                   >
                     <td className="p-4 pl-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-orange-50 text-[#F97316] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded bg-orange-50 text-[#FF4D00] flex items-center justify-center shrink-0">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div>
@@ -206,7 +206,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                         </button>
                         <button
                           onClick={() => handleDelete(doc.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete Document"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -232,3 +232,4 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 };
 
 export default DocumentList;
+

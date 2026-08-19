@@ -266,7 +266,7 @@ export function ImageUpload({
                   e.stopPropagation();
                   handleRemoveIndex(i);
                 }}
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-md transition cursor-pointer"
+                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition cursor-pointer"
                 title="Remove photo"
               >
                 <X size={12} />
@@ -352,7 +352,7 @@ export function ImageUpload({
                   variant="destructive"
                   size="icon"
                   className={cn(
-                    "rounded-full shadow-md bg-rose-600 hover:bg-rose-700 text-white p-0 flex items-center justify-center",
+                    "rounded-full shadow-md bg-red-600 hover:bg-red-700 text-white p-0 flex items-center justify-center",
                     compact ? "w-5 h-5" : "w-7 h-7",
                   )}
                   title="Remove image"
@@ -452,3 +452,4 @@ export function ImageUpload({
 }
 
 export default ImageUpload;
+

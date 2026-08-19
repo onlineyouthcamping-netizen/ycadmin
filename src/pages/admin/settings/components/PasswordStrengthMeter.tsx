@@ -21,12 +21,12 @@ export function calculatePasswordStrength(password: string): {
   if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 25;
 
   if (score <= 25)
-    return { score: 1, label: "Weak", color: "bg-rose-500", percent: 25 };
+    return { score: 1, label: "Weak", color: "bg-red-600", percent: 25 };
   if (score <= 50)
     return { score: 2, label: "Fair", color: "bg-amber-500", percent: 50 };
   if (score <= 75)
     return { score: 3, label: "Good", color: "bg-yellow-500", percent: 75 };
-  return { score: 4, label: "Strong", color: "bg-emerald-500", percent: 100 };
+  return { score: 4, label: "Strong", color: "bg-green-600", percent: 100 };
 }
 
 export function PasswordStrengthMeter({
@@ -69,14 +69,14 @@ export function PasswordStrengthMeter({
         {rules.map((rule, idx) => (
           <div key={idx} className="flex items-center gap-1.5 text-[11px]">
             {rule.met ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <Check className="w-3.5 h-3.5 text-green-600 shrink-0" />
             ) : (
               <X className="w-3.5 h-3.5 text-slate-350 shrink-0" />
             )}
             <span
               className={
                 rule.met
-                  ? "text-emerald-700 font-semibold"
+                  ? "text-green-700 font-semibold"
                   : "text-slate-400 font-normal"
               }
             >
@@ -88,3 +88,4 @@ export function PasswordStrengthMeter({
     </div>
   );
 }
+

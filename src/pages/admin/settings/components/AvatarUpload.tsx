@@ -95,7 +95,7 @@ export function AvatarUpload({
               variant="ghost"
               size="sm"
               onClick={handleRemove}
-              className="h-8 px-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+              className="h-8 px-2 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1" />
               Remove
@@ -106,3 +106,4 @@ export function AvatarUpload({
     </div>
   );
 }
+

@@ -640,13 +640,13 @@ function AccommodationTableRow({
           className={cn(
             "px-2 py-1 rounded-[4px] font-extrabold text-[10px] uppercase transition-all inline-flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 border shadow-2xs",
             row.hasStay
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100"
+              ? "bg-green-50 text-green-700 border-green-200/80 hover:bg-green-100"
               : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200 hover:text-slate-800"
           )}
         >
           {row.hasStay ? (
             <>
-              <Bed className="w-3 h-3 text-emerald-600 shrink-0" />
+              <Bed className="w-3 h-3 text-green-600 shrink-0" />
               <span>{row.nightsText}</span>
             </>
           ) : (
@@ -693,7 +693,7 @@ function AccommodationTableRow({
       <td className="px-4 py-3.5 whitespace-nowrap">
         {row.hasStay && (row.totalAmount > 0 || row.costPerPaxPerNight > 0) ? (
           <div>
-            <div className="font-extrabold text-emerald-600 flex items-center gap-1">
+            <div className="font-extrabold text-green-600 flex items-center gap-1">
               <span>{formatINR(row.totalAmount > 0 ? row.totalAmount : row.costPerPaxStay)}</span>
               {row.booking && (row.booking.nightsCount || 1) > 1 && (
                 <span className="text-[10px] font-semibold text-slate-500">/ night</span>
@@ -783,7 +783,7 @@ function AccommodationMobileCard({
             </div>
           )}
           {row.hasStay && row.costPerPaxPerNight > 0 && (
-            <div className="text-xs font-bold text-emerald-600 mt-0.5">
+            <div className="text-xs font-bold text-green-600 mt-0.5">
               {formatINR(row.costPerPaxPerNight)}/pax
             </div>
           )}
@@ -806,7 +806,7 @@ function AccommodationMobileCard({
 function StatusBadge({ status }: { status: AccommodationRow["status"] }) {
   if (status === "configured") {
     return (
-      <span className="px-2 py-0.5 rounded-[4px] font-black text-[10px] uppercase bg-emerald-50 text-emerald-600">
+      <span className="px-2 py-0.5 rounded-[4px] font-black text-[10px] uppercase bg-green-50 text-green-600">
         Configured
       </span>
     );
@@ -1039,7 +1039,7 @@ function DayDetailDrawer({
           <div className="flex items-center gap-2.5 min-w-0">
             <div className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shadow-2xs shrink-0 transition-colors",
-              row.hasStay ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
+              row.hasStay ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"
             )}>
               <Bed className="w-4 h-4" />
             </div>
@@ -1059,7 +1059,7 @@ function DayDetailDrawer({
               className={cn(
                 "px-2.5 py-1 text-[11px] font-extrabold rounded-md transition-all flex items-center gap-1 cursor-pointer",
                 row.hasStay
-                  ? "bg-white text-emerald-700 shadow-xs"
+                  ? "bg-white text-green-700 shadow-xs"
                   : "text-slate-500 hover:text-slate-700"
               )}
             >
@@ -1115,7 +1115,7 @@ function DayDetailDrawer({
                   className={cn(
                     "text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider",
                     booking.confirmed === "CONFIRMED"
-                      ? "bg-emerald-50 text-emerald-600 border border-emerald-200/50"
+                      ? "bg-green-50 text-green-600 border border-green-200/50"
                       : "bg-amber-50 text-amber-600 border border-amber-200/50"
                   )}
                 >
@@ -1268,7 +1268,7 @@ function DayDetailDrawer({
                 <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
                   <div className="flex justify-between items-baseline">
                     <span className="text-[10px] text-slate-500 font-semibold uppercase">Cost / Pax / Night</span>
-                    <span className="text-base font-black text-emerald-600">
+                    <span className="text-base font-black text-green-600">
                       {formatINR(costResult.costPerPaxPerNight, 2)}
                     </span>
                   </div>
@@ -1299,13 +1299,13 @@ function DayDetailDrawer({
                 {(booking.advancePaid > 0 || booking.balanceAmount > 0) && (
                   <div className="mt-2 space-y-1">
                     {booking.advancePaid > 0 && (
-                      <div className="flex justify-between text-xs font-bold text-emerald-600">
+                      <div className="flex justify-between text-xs font-bold text-green-600">
                         <span>Advance Paid</span>
                         <span>{formatINR(booking.advancePaid)}</span>
                       </div>
                     )}
                     {booking.balanceAmount > 0 && (
-                      <div className="flex justify-between text-xs font-bold text-rose-600">
+                      <div className="flex justify-between text-xs font-bold text-red-600">
                         <span>Balance Due</span>
                         <span>{formatINR(booking.balanceAmount)}</span>
                       </div>
@@ -1439,3 +1439,4 @@ function formatDisplayDate(raw: string): string {
     return raw;
   }
 }
+

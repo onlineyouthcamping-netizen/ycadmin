@@ -112,7 +112,7 @@ export function AssignTripVendorDialog({
           </DialogTitle>
           <p className="text-[11px] text-slate-500 font-medium mt-0.5">
             Search all master vendors and assign or remove them from{" "}
-            <span className="text-[#F97316] font-bold">{tripTitle}</span>
+            <span className="text-[#FF4D00] font-bold">{tripTitle}</span>
           </p>
         </DialogHeader>
 
@@ -153,7 +153,7 @@ export function AssignTripVendorDialog({
                   key={vendor.id}
                   className={`p-3.5 rounded-lg border transition-colors flex items-center justify-between gap-3 ${
                     mapped
-                      ? "bg-emerald-50/50 border-emerald-200"
+                      ? "bg-green-50/50 border-green-200"
                       : "bg-white border-slate-200 hover:bg-slate-50"
                   }`}
                 >
@@ -166,7 +166,7 @@ export function AssignTripVendorDialog({
                         {vendor.type || "VENDOR"}
                       </span>
                       {mapped && (
-                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 shrink-0 flex items-center gap-0.5">
+                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-700 border border-green-200 shrink-0 flex items-center gap-0.5">
                           <CheckCircle2 className="w-2.5 h-2.5" /> Assigned
                         </span>
                       )}
@@ -183,7 +183,7 @@ export function AssignTripVendorDialog({
                         type="button"
                         disabled={isRemoving}
                         onClick={() => handleRemove(vendor)}
-                        className="h-7 px-3 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white text-[10px] font-bold rounded border border-rose-200 hover:border-rose-600 transition-colors flex items-center gap-1"
+                        className="h-7 px-3 bg-red-50 hover:bg-red-600 text-red-700 hover:text-white text-[10px] font-bold rounded border border-red-200 hover:border-rose-600 transition-colors flex items-center gap-1"
                       >
                         <X className="w-3 h-3" />
                         {isRemoving ? "Removing..." : "Remove"}
@@ -193,7 +193,7 @@ export function AssignTripVendorDialog({
                         type="button"
                         disabled={isAssigning}
                         onClick={() => handleAssign(vendor)}
-                        className="h-7 px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-[10px] font-bold rounded transition-colors flex items-center gap-1"
+                        className="h-7 px-3 bg-[#FF4D00] hover:bg-[#E05E00] text-white text-[10px] font-bold rounded transition-colors flex items-center gap-1"
                       >
                         <Plus className="w-3 h-3" />
                         {isAssigning ? "Assigning..." : "Assign to Trip"}
@@ -209,3 +209,4 @@ export function AssignTripVendorDialog({
     </Dialog>
   );
 }
+

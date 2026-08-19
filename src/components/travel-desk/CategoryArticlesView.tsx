@@ -1047,9 +1047,9 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
                                           "APPROVED",
                                         )
                                       }
-                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer text-emerald-600"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer text-green-600"
                                     >
-                                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                                      <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                                       Approve Draft
                                     </button>
                                   </>
@@ -1184,7 +1184,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
                           "h-full transition-all duration-300",
                           uf.status === "error"
                             ? "bg-red-500"
-                            : "bg-emerald-500",
+                            : "bg-green-600",
                         )}
                         style={{ width: `${uf.progress}%` }}
                       />
@@ -1193,7 +1193,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
                       className={cn(
                         "text-[10px] uppercase font-black shrink-0",
                         uf.status === "success"
-                          ? "text-emerald-600"
+                          ? "text-green-600"
                           : uf.status === "error"
                             ? "text-red-600"
                             : "text-blue-600",
@@ -1287,7 +1287,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
                       onClick={() => setViewingPdf(pdf)}
                     >
                       <div className="flex items-start gap-3 min-w-0">
-                        <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-rose-600 shrink-0 mt-0.5">
+                        <div className="p-2.5 bg-red-50 border border-red-100 rounded-lg text-red-600 shrink-0 mt-0.5">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
@@ -1429,7 +1429,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
             {/* Viewer Control Bar */}
             <div className="bg-slate-900 px-4 py-3 border-b border-slate-700 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3 min-w-0">
-                <FileText className="w-5 h-5 text-rose-500 shrink-0" />
+                <FileText className="w-5 h-5 text-red-600 shrink-0" />
                 <div className="min-w-0">
                   <h3 className="text-xs font-black uppercase tracking-wider truncate pr-3">
                     {viewingPdf.title || viewingPdf.name}
@@ -1506,7 +1506,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
                 {/* Close Viewer */}
                 <button
                   onClick={() => setViewingPdf(null)}
-                  className="p-1.5 hover:bg-slate-800 hover:text-rose-400 rounded-lg text-slate-400 transition-colors cursor-pointer"
+                  className="p-1.5 hover:bg-slate-800 hover:text-red-400 rounded-lg text-slate-400 transition-colors cursor-pointer"
                   title="Close Viewer"
                 >
                   <X className="w-4 h-4" />
@@ -1540,7 +1540,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
                 })()
               ) : (
                 <div className="text-center text-slate-400 text-xs">
-                  <AlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-2" />
+                  <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
                   <span>PDF location URL not found.</span>
                 </div>
               )}
@@ -1551,3 +1551,5 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
     </div>
   );
 };
+
+

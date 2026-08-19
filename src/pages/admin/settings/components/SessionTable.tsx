@@ -34,7 +34,7 @@ export function SessionTable({
             size="sm"
             onClick={onLogoutAllOthers}
             disabled={isLoading}
-            className="h-8 text-xs font-semibold px-3 bg-rose-600 hover:bg-rose-700 w-full sm:w-auto"
+            className="h-8 text-xs font-semibold px-3 bg-red-600 hover:bg-red-700 w-full sm:w-auto"
           >
             <LogOut className="w-3.5 h-3.5 mr-1.5" />
             Sign Out All Other Devices
@@ -75,7 +75,7 @@ export function SessionTable({
                         <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-white">
                           <span>{sess.deviceName}</span>
                           {sess.isCurrent && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-green-50 dark:bg-green-900/60 text-green-700 dark:text-green-500 border border-green-200 dark:border-emerald-800">
                               Current Device
                             </span>
                           )}
@@ -100,7 +100,7 @@ export function SessionTable({
                   </td>
                   <td className="py-3 px-4 text-right">
                     {sess.isCurrent ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                      <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-500 font-semibold text-[11px]">
                         <ShieldCheck className="w-3.5 h-3.5" /> Active Now
                       </span>
                     ) : (
@@ -110,7 +110,7 @@ export function SessionTable({
                         size="sm"
                         onClick={() => onLogoutSession(sess.id)}
                         disabled={isLoading}
-                        className="h-7 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-700 font-semibold"
+                        className="h-7 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/50 hover:text-red-700 font-semibold"
                       >
                         Sign Out
                       </Button>
@@ -145,7 +145,7 @@ export function SessionTable({
                   <h5 className="font-bold text-xs text-slate-800 dark:text-white flex items-center gap-1.5">
                     {sess.deviceName}
                     {sess.isCurrent && (
-                      <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase bg-green-50 text-green-700 border border-green-200">
                         Current
                       </span>
                     )}
@@ -156,7 +156,7 @@ export function SessionTable({
                 </div>
               </div>
               {sess.isCurrent ? (
-                <span className="text-emerald-600 font-bold text-[10px] flex items-center gap-1">
+                <span className="text-green-600 font-bold text-[10px] flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" /> Active
                 </span>
               ) : (
@@ -166,7 +166,7 @@ export function SessionTable({
                   size="sm"
                   onClick={() => onLogoutSession(sess.id)}
                   disabled={isLoading}
-                  className="h-7 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold px-2.5"
+                  className="h-7 text-xs text-red-600 border-red-200 hover:bg-red-50 font-semibold px-2.5"
                 >
                   Sign Out
                 </Button>
@@ -190,3 +190,5 @@ export function SessionTable({
     </div>
   );
 }
+
+

@@ -105,7 +105,7 @@ export function OtherVendorsModuleView({
                       <div>
                         <span
                           onClick={() => onSelectVendor(ov)}
-                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#F97316] cursor-pointer transition-colors"
+                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#FF4D00] cursor-pointer transition-colors"
                         >
                           {ov.name}
                         </span>
@@ -155,7 +155,7 @@ export function OtherVendorsModuleView({
                         type="button"
                         onClick={() => onDeleteVendor(ov.id)}
                         title="Deactivate"
-                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -199,3 +199,4 @@ export function OtherVendorsModuleView({
     </div>
   );
 }
+

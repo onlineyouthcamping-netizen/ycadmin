@@ -41,7 +41,7 @@ export default function PagesPage() {
     <div className="admin-page animate-fade-in">
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <FileText className="w-5 h-5 text-[#F97316]" />
+          <FileText className="w-5 h-5 text-[#FF4D00]" />
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
               Pages & Templates
@@ -82,7 +82,7 @@ export default function PagesPage() {
                   key={page._id}
                   className="bg-white rounded-md border border-slate-200 p-5 flex flex-col items-center justify-center text-center gap-3 hover:shadow-md transition-all"
                 >
-                  <FileText className="w-5 h-5 text-[#F97316]" />
+                  <FileText className="w-5 h-5 text-[#FF4D00]" />
                   <div>
                     <h3 className="text-sm font-bold text-slate-800 truncate max-w-full">
                       {page.title}
@@ -105,3 +105,4 @@ export default function PagesPage() {
     </div>
   );
 }
+

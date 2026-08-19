@@ -71,7 +71,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       Underline,
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: "text-[#F97316] underline font-semibold" },
+        HTMLAttributes: { class: "text-[#FF4D00] underline font-semibold" },
       }),
       Placeholder.configure({
         placeholder: "Write knowledge content, instructions, or guide...",
@@ -197,7 +197,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter Section Title..."
-            className="w-full text-base font-black text-[#0A192F] bg-transparent border-b border-transparent focus:border-[#F97316] focus:outline-none transition-colors"
+            className="w-full text-base font-black text-[#0A192F] bg-transparent border-b border-transparent focus:border-[#FF4D00] focus:outline-none transition-colors"
           />
           <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1 font-medium">
             <span className="bg-slate-200 text-slate-700 font-bold px-1.5 py-0.5 rounded text-[10px] uppercase">
@@ -212,7 +212,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <span
               className={`px-2 py-0.5 rounded-full font-bold uppercase text-[9px] ${
                 status === "published"
-                  ? "bg-emerald-100 text-emerald-700"
+                  ? "bg-green-100 text-green-700"
                   : "bg-amber-100 text-amber-700"
               }`}
             >
@@ -243,7 +243,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             onClick={() => saveMutation.mutate("published")}
             disabled={saveMutation.isPending || charCount > 5000}
-            className="px-4 py-1.5 bg-[#F97316] hover:bg-[#e06100] text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
+            className="px-4 py-1.5 bg-[#FF4D00] hover:bg-[#e06100] text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Publish</span>
@@ -372,7 +372,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <span>Auto-saves every 30s</span>
         <span
           className={
-            charCount > 5000 ? "text-rose-600 font-bold" : "text-slate-500"
+            charCount > 5000 ? "text-red-600 font-bold" : "text-slate-500"
           }
         >
           {charCount.toLocaleString()} / 5,000 characters
@@ -383,3 +383,4 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 };
 
 export default RichTextEditor;
+

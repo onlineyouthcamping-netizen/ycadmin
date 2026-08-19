@@ -344,7 +344,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2">
-              <Bus className="w-5 h-5 text-[#F97316]" />
+              <Bus className="w-5 h-5 text-[#FF4D00]" />
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
                 Vehicle Master Fleet ({vehicles.length} Active Vehicles)
               </h3>
@@ -368,7 +368,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
               });
               setVehicleModalOpen(true);
             }}
-            className="bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold h-8 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            className="bg-[#FF4D00] hover:bg-[#E05E00] text-white text-xs font-bold h-8 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Vehicle to Master
@@ -384,7 +384,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
             >
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-[#F97316] flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-[#FF4D00] flex items-center justify-center font-bold">
                     <Car className="w-4 h-4" />
                   </div>
                   <div>
@@ -424,7 +424,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                     size="icon"
                     variant="ghost"
                     onClick={() => handleDeleteVehicleMaster(v.id, v.vehicleName)}
-                    className="h-6 w-6 text-slate-400 hover:text-rose-600 cursor-pointer"
+                    className="h-6 w-6 text-slate-400 hover:text-red-600 cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
@@ -438,7 +438,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[9px] uppercase font-bold">Sellable</span>
-                  <span className="text-[#F97316] font-black">{v.sellableSeats} Seats</span>
+                  <span className="text-[#FF4D00] font-black">{v.sellableSeats} Seats</span>
                 </div>
               </div>
             </div>
@@ -451,7 +451,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
           <div>
             <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-[#F97316]" />
+              <Layers className="w-5 h-5 text-[#FF4D00]" />
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
                 Route Contracts & Vehicle Rate Sheets ({groups.length} Contracts)
               </h3>
@@ -478,7 +478,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
               });
               setGroupModalOpen(true);
             }}
-            className="bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold h-8.5 px-3.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            className="bg-[#FF4D00] hover:bg-[#E05E00] text-white text-xs font-bold h-8.5 px-3.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <Plus className="w-4 h-4" />
             Add Route Pricing Group
@@ -501,7 +501,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                 setEditingGroup(null);
                 setGroupModalOpen(true);
               }}
-              className="bg-[#F97316] text-white text-xs font-bold h-7.5 px-3 rounded-lg cursor-pointer"
+              className="bg-[#FF4D00] text-white text-xs font-bold h-7.5 px-3 rounded-lg cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
               Add First Contract
@@ -537,7 +537,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                         </span>
                       )}
                       {group.pickupDropIncluded && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
                           Pickup & Drop Included
                         </span>
                       )}
@@ -574,7 +574,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                         });
                         setRateModalOpen(true);
                       }}
-                      className="h-7.5 text-xs font-bold bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer"
+                      className="h-7.5 text-xs font-bold bg-green-50 text-green-700 border-green-200 hover:bg-green-100 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
                       Add Vehicle Rate
@@ -631,7 +631,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                       className="h-7.5 text-xs font-bold text-red-600 bg-white border-red-200 hover:bg-red-50 hover:text-red-700 cursor-pointer"
                       title="Delete Route Contract"
                     >
-                      <Trash2 className="w-3 h-3 mr-1 text-red-500" />
+                      <Trash2 className="w-3 h-3 mr-1 text-red-600" />
                       Delete
                     </Button>
                   </div>
@@ -667,7 +667,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                             <tr key={rate.id} className="hover:bg-slate-50/80 transition-colors">
                               <td className="py-3 px-4 font-bold text-slate-900">
                                 <div className="flex items-center gap-2">
-                                  <Car className="w-4 h-4 text-[#F97316]" />
+                                  <Car className="w-4 h-4 text-[#FF4D00]" />
                                   <div>
                                     <div>{vName}</div>
                                     {rate.vehicle?.plateNumber && (
@@ -685,7 +685,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
 
                               <td className="py-3 px-4">
                                 <div className="space-y-0.5">
-                                  <div className="font-extrabold text-emerald-700 flex items-center gap-1">
+                                  <div className="font-extrabold text-green-700 flex items-center gap-1">
                                     <span>₹{(negPP !== null ? negPP : suggPP).toLocaleString("en-IN")}</span>
                                     {negPP !== null && (
                                       <span className="text-[9px] font-extrabold uppercase bg-amber-100 text-amber-800 px-1 py-0.2 rounded border border-amber-200">
@@ -721,7 +721,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                                 <span
                                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                                     rate.isActive
-                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      ? "bg-green-50 text-green-700 border-green-200"
                                       : "bg-slate-100 text-slate-500 border-slate-200"
                                   }`}
                                 >
@@ -755,7 +755,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                                     size="icon"
                                     variant="ghost"
                                     onClick={() => handleDeleteRate(rate.id, vName)}
-                                    className="h-7 w-7 text-rose-500 hover:text-rose-700 cursor-pointer"
+                                    className="h-7 w-7 text-red-600 hover:text-red-700 cursor-pointer"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
@@ -779,7 +779,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
         <DialogContent className="max-w-md bg-white rounded-xl p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <Bus className="w-4 h-4 text-[#F97316]" />
+              <Bus className="w-4 h-4 text-[#FF4D00]" />
               <span>{editingVehicle ? "Edit Master Vehicle" : "Add Vehicle to Master Fleet"}</span>
             </DialogTitle>
           </DialogHeader>
@@ -820,7 +820,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                   value={vehicleForm.sellableSeats}
                   onChange={(e) => setVehicleForm({ ...vehicleForm, sellableSeats: e.target.value })}
                   placeholder="16"
-                  className="h-8.5 text-xs font-bold text-[#F97316]"
+                  className="h-8.5 text-xs font-bold text-[#FF4D00]"
                 />
               </div>
             </div>
@@ -842,7 +842,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
             <Button variant="outline" onClick={() => setVehicleModalOpen(false)} className="h-8 text-xs font-bold">
               Cancel
             </Button>
-            <Button onClick={handleSaveVehicleMaster} className="bg-[#F97316] text-white h-8 text-xs font-bold px-4">
+            <Button onClick={handleSaveVehicleMaster} className="bg-[#FF4D00] text-white h-8 text-xs font-bold px-4">
               Save Vehicle
             </Button>
           </div>
@@ -854,7 +854,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
         <DialogContent className="max-w-xl bg-white rounded-xl p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[#F97316]" />
+              <Layers className="w-4 h-4 text-[#FF4D00]" />
               <span>{editingGroup ? "Edit Route Contract Header" : "Add Route Pricing Contract"}</span>
             </DialogTitle>
           </DialogHeader>
@@ -961,7 +961,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
             <Button variant="outline" onClick={() => setGroupModalOpen(false)} className="h-8.5 text-xs font-bold">
               Cancel
             </Button>
-            <Button onClick={handleSaveGroup} className="bg-[#F97316] text-white h-8.5 text-xs font-bold px-4">
+            <Button onClick={handleSaveGroup} className="bg-[#FF4D00] text-white h-8.5 text-xs font-bold px-4">
               Save Contract
             </Button>
           </div>
@@ -973,7 +973,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
         <DialogContent className="max-w-md bg-white rounded-xl p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <Car className="w-4 h-4 text-[#F97316]" />
+              <Car className="w-4 h-4 text-[#FF4D00]" />
               <span>{editingRate ? "Edit Vehicle Pricing Rate" : "Add Vehicle Price to Contract"}</span>
             </DialogTitle>
           </DialogHeader>
@@ -1041,16 +1041,16 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
               </div>
             </div>
 
-            <div className="p-3 bg-emerald-50/80 rounded-lg border border-emerald-200/80 flex items-center justify-between">
+            <div className="p-3 bg-green-50/80 rounded-lg border border-green-200/80 flex items-center justify-between">
               <div>
-                <div className="text-[10px] font-bold text-emerald-800 uppercase">
+                <div className="text-[10px] font-bold text-green-700 uppercase">
                   Suggested Per Person (Computed)
                 </div>
-                <div className="text-xs text-emerald-600 font-medium">
+                <div className="text-xs text-green-600 font-medium">
                   ₹{currentTotalAmount.toLocaleString("en-IN")} / {currentSellableSeats} seats
                 </div>
               </div>
-              <div className="text-base font-black text-emerald-800">
+              <div className="text-base font-black text-green-700">
                 ₹{calculatedSuggestedPP.toLocaleString("en-IN")}
               </div>
             </div>
@@ -1102,7 +1102,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
             <Button variant="outline" onClick={() => setRateModalOpen(false)} className="h-8.5 text-xs font-bold">
               Cancel
             </Button>
-            <Button onClick={handleSaveRate} className="bg-[#F97316] text-white h-8.5 text-xs font-bold px-4">
+            <Button onClick={handleSaveRate} className="bg-[#FF4D00] text-white h-8.5 text-xs font-bold px-4">
               Save Vehicle Rate
             </Button>
           </div>
@@ -1111,3 +1111,4 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
     </div>
   );
 };
+

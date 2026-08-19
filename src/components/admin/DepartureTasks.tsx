@@ -418,8 +418,8 @@ export default function DepartureTasks({
               kpis.total > 0
                 ? `${Math.round((kpis.completed / kpis.total) * 100)}% of total`
                 : "0% of total",
-            color: "text-emerald-600",
-            bg: "bg-emerald-50/50",
+            color: "text-green-600",
+            bg: "bg-green-50/50",
           },
           {
             label: "In Progress",
@@ -542,7 +542,7 @@ export default function DepartureTasks({
             });
             setTaskModalOpen(true);
           }}
-          className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-3.5 flex items-center gap-1.5 shadow-xs"
+          className="h-8 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-3.5 flex items-center gap-1.5 shadow-xs"
         >
           <Plus className="w-3.5 h-3.5" /> Add Task
         </button>
@@ -598,7 +598,7 @@ export default function DepartureTasks({
                       className={cn(
                         "p-1.5 rounded-full border transition-colors",
                         t.status === "Completed"
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                          ? "bg-green-50 text-green-600 border-green-200"
                           : "bg-white text-slate-300 border-slate-200 hover:border-slate-300",
                       )}
                     >
@@ -628,7 +628,7 @@ export default function DepartureTasks({
                       className={cn(
                         "text-[9px] font-black px-2 py-0.5 rounded border uppercase tracking-wider block w-fit mx-auto",
                         t.priority?.toUpperCase() === "CRITICAL"
-                          ? "bg-rose-50 text-rose-700 border-rose-200"
+                          ? "bg-red-50 text-red-700 border-red-200"
                           : t.priority?.toUpperCase() === "HIGH"
                             ? "bg-amber-50 text-amber-700 border-amber-200"
                             : t.priority?.toUpperCase() === "MEDIUM"
@@ -647,7 +647,7 @@ export default function DepartureTasks({
                       className={cn(
                         "text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider inline-block",
                         t.status === "Completed"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                          ? "bg-green-50 text-green-700 border-green-100"
                           : t.status === "In Progress"
                             ? "bg-blue-50 text-blue-700 border-blue-100 animate-pulse"
                             : t.status === "Overdue"
@@ -857,7 +857,7 @@ export default function DepartureTasks({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-8 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
+                className="h-8 bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
               >
                 {isSubmitting
                   ? "Saving..."
@@ -872,3 +872,4 @@ export default function DepartureTasks({
     </div>
   );
 }
+

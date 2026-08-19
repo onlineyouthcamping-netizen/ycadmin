@@ -42,7 +42,7 @@ const COL_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   },
   FULLY_COLLECTED: {
     label: "Collected",
-    cls: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    cls: "bg-green-50 text-green-700 border border-green-200",
   },
   UPI_PENDING: {
     label: "UPI Pending",
@@ -59,7 +59,7 @@ const COL_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
 };
 
 const PAY_STATUS_BADGE: Record<string, string> = {
-  PAID: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  PAID: "bg-green-50 text-green-700 border border-green-200",
   PARTIAL: "bg-amber-50 text-amber-700 border border-amber-200",
   Pending: "bg-slate-100 text-slate-500",
 };
@@ -421,7 +421,7 @@ export default function StationPaymentCollection({
               <span className="text-xs font-bold text-slate-800">
                 Station Collections (Cash & UPI)
               </span>
-              <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200 text-[10px] font-bold">
                 Trip Scoped
               </span>
             </div>
@@ -462,7 +462,7 @@ export default function StationPaymentCollection({
               value: INR(stats.totalCashCollected),
               sub: `Awaiting: ${INR(stats.cashAwaitingHandover)}`,
               icon: "💵",
-              cls: "text-emerald-600",
+              cls: "text-green-600",
             },
             {
               label: "UPI Collected",
@@ -484,7 +484,7 @@ export default function StationPaymentCollection({
               sub: `${stats.unpaid} unpaid / ${stats.partiallyPaid} partial`,
               icon: "⏳",
               cls:
-                stats.totalRemaining > 0 ? "text-red-500" : "text-emerald-600",
+                stats.totalRemaining > 0 ? "text-red-600" : "text-green-600",
             },
           ].map((k) => (
             <div
@@ -509,7 +509,7 @@ export default function StationPaymentCollection({
           stats.collectorUpiSummary.length > 0) && (
           <div className="bg-white border border-slate-200 rounded-[6px] p-3 shadow-xs">
             <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Banknote className="w-3.5 h-3.5 text-[#F97316]" /> Cash & UPI by
+              <Banknote className="w-3.5 h-3.5 text-[#FF4D00]" /> Cash & UPI by
               Collector
             </div>
             <div className="flex flex-wrap gap-2">
@@ -518,9 +518,9 @@ export default function StationPaymentCollection({
                   key={c.id}
                   className="flex items-center gap-2 border border-slate-200 rounded-[4px] px-3 py-1.5 bg-slate-50 text-xs"
                 >
-                  <Banknote className="w-3 h-3 text-emerald-500" />
+                  <Banknote className="w-3 h-3 text-green-600" />
                   <span className="font-semibold text-slate-700">{c.name}</span>
-                  <span className="text-emerald-600 font-bold">
+                  <span className="text-green-600 font-bold">
                     {INR(c.cash)} Cash
                   </span>
                   {stats.cashHandedOver > 0 && (
@@ -559,7 +559,7 @@ export default function StationPaymentCollection({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search booking, name, mobile…"
-            className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-[4px] bg-white focus:outline-none focus:border-[#F97316]"
+            className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-[4px] bg-white focus:outline-none focus:border-[#FF4D00]"
           />
         </div>
         <select
@@ -635,7 +635,7 @@ export default function StationPaymentCollection({
                   const cs = isPrePaid
                     ? {
                         label: "Pre-Paid (100%)",
-                        cls: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+                        cls: "bg-green-50 text-green-700 border border-green-200",
                       }
                     : COL_STATUS_BADGE[bk.collectionStatus] ||
                       COL_STATUS_BADGE.NOT_COLLECTED;
@@ -663,7 +663,7 @@ export default function StationPaymentCollection({
                         onClick={() => toggleExpand(bk.id)}
                       >
                         <td className="px-3 py-2.5">
-                          <span className="font-bold text-[#F97316] text-xs">
+                          <span className="font-bold text-[#FF4D00] text-xs">
                             {bk.bookingId}
                           </span>
                           <span className="ml-2 inline-flex items-center justify-center bg-slate-100 text-slate-500 rounded text-[9px] px-1.5 py-0.5 font-bold tracking-wider">
@@ -717,8 +717,8 @@ export default function StationPaymentCollection({
                             className={cn(
                               "font-bold",
                               bk.grandRemaining > 0
-                                ? "text-red-500"
-                                : "text-emerald-600",
+                                ? "text-red-600"
+                                : "text-green-600",
                             )}
                           >
                             {INR(bk.grandRemaining)}
@@ -726,7 +726,7 @@ export default function StationPaymentCollection({
                         </td>
                         <td className="px-3 py-2.5">
                           {bk.cashCollected > 0 ? (
-                            <span className="text-emerald-600 font-semibold">
+                            <span className="text-green-600 font-semibold">
                               {INR(bk.cashCollected)}
                             </span>
                           ) : (
@@ -746,7 +746,7 @@ export default function StationPaymentCollection({
                                 </div>
                               )}
                               {upiRejected.length > 0 && (
-                                <div className="text-[9px] text-rose-500 font-bold mt-0.5">
+                                <div className="text-[9px] text-red-600 font-bold mt-0.5">
                                   Rejected
                                 </div>
                               )}
@@ -781,7 +781,7 @@ export default function StationPaymentCollection({
                             >
                               <button
                                 onClick={() => handleVerifyUpi(p.id, "VERIFY")}
-                                className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded hover:bg-emerald-100 transition-colors"
+                                className="text-[9px] font-bold px-1.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded hover:bg-green-100 transition-colors"
                               >
                                 Verify
                               </button>
@@ -805,12 +805,12 @@ export default function StationPaymentCollection({
                           {canCollect ? (
                             <button
                               onClick={() => openDrawer(bk)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] text-[10px] font-black transition-colors whitespace-nowrap"
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] text-[10px] font-black transition-colors whitespace-nowrap"
                             >
                               <Banknote className="w-3 h-3" /> Collect
                             </button>
                           ) : (
-                            <span className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold">
+                            <span className="flex items-center gap-1 text-green-600 text-[10px] font-bold">
                               <CheckCircle2 className="w-3.5 h-3.5" /> Settled
                             </span>
                           )}
@@ -823,7 +823,7 @@ export default function StationPaymentCollection({
                                   ].id,
                                 )
                               }
-                              className="mt-1 text-[9px] text-slate-400 hover:text-[#F97316] underline block"
+                              className="mt-1 text-[9px] text-slate-400 hover:text-[#FF4D00] underline block"
                             >
                               Resend Receipt
                             </button>
@@ -852,7 +852,7 @@ export default function StationPaymentCollection({
                                   </div>
                                   <div className="bg-slate-50 p-2 rounded border border-slate-100">
                                     <span className="text-[10px] text-slate-500 block">Station Cash Received</span>
-                                    <span className="font-bold text-emerald-700">{INR(bk.cashCollected)}</span>
+                                    <span className="font-bold text-green-700">{INR(bk.cashCollected)}</span>
                                     <span className="text-[10px] text-slate-600 block mt-0.5">
                                       {bk.cashCollected > 0 ? "Collected at station" : "No cash collection"}
                                     </span>
@@ -866,7 +866,7 @@ export default function StationPaymentCollection({
                                   </div>
                                   <div className="bg-slate-50 p-2 rounded border border-slate-100">
                                     <span className="text-[10px] text-slate-500 block">Total Balance Due</span>
-                                    <span className={cn("font-bold", bk.grandRemaining > 0 ? "text-rose-600" : "text-emerald-600")}>
+                                    <span className={cn("font-bold", bk.grandRemaining > 0 ? "text-red-600" : "text-green-600")}>
                                       {INR(bk.grandRemaining)}
                                     </span>
                                     <span className="text-[10px] text-slate-600 block mt-0.5">
@@ -889,7 +889,7 @@ export default function StationPaymentCollection({
                                           {ae.referenceNumber && (
                                             <span className="text-slate-400 font-mono text-[9px]">Ref: {ae.referenceNumber}</span>
                                           )}
-                                          <span className="text-emerald-700 font-semibold text-[9px] bg-emerald-50 px-1 py-0.5 rounded">
+                                          <span className="text-green-700 font-semibold text-[9px] bg-green-50 px-1 py-0.5 rounded">
                                             {ae.status || "APPROVED"}
                                           </span>
                                         </div>
@@ -949,7 +949,7 @@ export default function StationPaymentCollection({
                 const cs = isPrePaid
                   ? {
                       label: "Pre-Paid (100%)",
-                      cls: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+                      cls: "bg-green-50 text-green-700 border border-green-200",
                     }
                   : COL_STATUS_BADGE[bk.collectionStatus] ||
                     COL_STATUS_BADGE.NOT_COLLECTED;
@@ -978,7 +978,7 @@ export default function StationPaymentCollection({
                     >
                       <div>
                         <div className="flex items-center gap-2">
-                          <div className="font-bold text-[#F97316] text-sm">
+                          <div className="font-bold text-[#FF4D00] text-sm">
                             {bk.bookingId}
                           </div>
                           <span className="inline-flex items-center justify-center bg-slate-100 text-slate-500 rounded text-[9px] px-1.5 py-0.5 font-bold tracking-wider">
@@ -1051,8 +1051,8 @@ export default function StationPaymentCollection({
                           className={cn(
                             "font-black text-sm mt-0.5",
                             bk.grandRemaining > 0
-                              ? "text-red-500"
-                              : "text-emerald-600",
+                              ? "text-red-600"
+                              : "text-green-600",
                           )}
                         >
                           {INR(bk.grandRemaining)}
@@ -1066,7 +1066,7 @@ export default function StationPaymentCollection({
                           {bk.cashCollected > 0 || bk.upiCollected > 0 ? (
                             <div className="font-semibold text-slate-700 flex gap-1">
                               {bk.cashCollected > 0 && (
-                                <span className="text-emerald-600">
+                                <span className="text-green-600">
                                   {INR(bk.cashCollected)} C
                                 </span>
                               )}
@@ -1110,7 +1110,7 @@ export default function StationPaymentCollection({
                             <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => handleVerifyUpi(p.id, "VERIFY")}
-                                className="text-[9px] font-bold px-2 py-1 bg-emerald-500 text-white rounded shadow-sm"
+                                className="text-[9px] font-bold px-2 py-1 bg-green-600 text-white rounded shadow-sm"
                               >
                                 Verify
                               </button>
@@ -1135,7 +1135,7 @@ export default function StationPaymentCollection({
                                 .id,
                             )
                           }
-                          className="text-[10px] text-slate-400 hover:text-[#F97316] underline font-medium"
+                          className="text-[10px] text-slate-400 hover:text-[#FF4D00] underline font-medium"
                         >
                           Resend Receipt
                         </button>
@@ -1146,12 +1146,12 @@ export default function StationPaymentCollection({
                       {canCollect ? (
                         <button
                           onClick={() => openDrawer(bk)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] text-xs font-black transition-colors shadow-sm"
+                          className="flex items-center gap-1.5 px-4 py-2 bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] text-xs font-black transition-colors shadow-sm"
                         >
                           <Banknote className="w-4 h-4" /> Collect
                         </button>
                       ) : (
-                        <span className="flex items-center gap-1 text-emerald-600 text-xs font-bold">
+                        <span className="flex items-center gap-1 text-green-600 text-xs font-bold">
                           <CheckCircle2 className="w-4 h-4" /> Settled
                         </span>
                       )}
@@ -1217,7 +1217,7 @@ export default function StationPaymentCollection({
               {
                 label: "Verified UPI",
                 v: INR(stats.totalVerifiedUpi),
-                hi: "text-emerald-600",
+                hi: "text-green-600",
               },
               {
                 label: "UPI Pending Verification",
@@ -1227,20 +1227,20 @@ export default function StationPaymentCollection({
               {
                 label: "Total Station Collection",
                 v: INR(stats.totalStationCollection),
-                hi: "text-[#F97316] font-black",
+                hi: "text-[#FF4D00] font-black",
               },
               {
                 label: "Grand Total Received",
                 v: INR(stats.grandTotalReceived),
-                hi: "text-emerald-700 font-black",
+                hi: "text-green-700 font-black",
               },
               {
                 label: "Total Remaining",
                 v: INR(stats.totalRemaining),
                 hi:
                   stats.totalRemaining > 0
-                    ? "text-red-500 font-black"
-                    : "text-emerald-600 font-black",
+                    ? "text-red-600 font-black"
+                    : "text-green-600 font-black",
               },
               {
                 label: "Cash Awaiting Handover",
@@ -1262,11 +1262,11 @@ export default function StationPaymentCollection({
             ))}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-3 pt-3 border-t border-slate-100 text-center text-xs">
-            <div className="bg-emerald-50 rounded-[4px] p-2">
-              <div className="text-[10px] text-emerald-600 font-bold">
+            <div className="bg-green-50 rounded-[4px] p-2">
+              <div className="text-[10px] text-green-600 font-bold">
                 Fully Paid
               </div>
-              <div className="text-lg font-black text-emerald-700">
+              <div className="text-lg font-black text-green-700">
                 {stats.fullyPaid}
               </div>
             </div>
@@ -1279,7 +1279,7 @@ export default function StationPaymentCollection({
               </div>
             </div>
             <div className="bg-red-50 rounded-[4px] p-2">
-              <div className="text-[10px] text-red-500 font-bold">Unpaid</div>
+              <div className="text-[10px] text-red-600 font-bold">Unpaid</div>
               <div className="text-lg font-black text-red-600">
                 {stats.unpaid}
               </div>
@@ -1324,15 +1324,15 @@ export default function StationPaymentCollection({
             {drawerStep === "success" ? (
               /* ── Success State ────────────────────────────────────────────── */
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-green-600" />
                 </div>
                 <h2 className="font-black text-slate-800 text-lg mb-1">
                   Payment Recorded!
                 </h2>
                 <p className="text-sm text-slate-500 mb-2">
                   Receipt:{" "}
-                  <strong className="text-[#F97316]">
+                  <strong className="text-[#FF4D00]">
                     {lastCollection?.receiptNumber}
                   </strong>
                 </p>
@@ -1347,7 +1347,7 @@ export default function StationPaymentCollection({
                 </p>
                 <button
                   onClick={() => setDrawerOpen(false)}
-                  className="px-6 py-2.5 bg-[#F97316] text-white rounded-[4px] text-sm font-black hover:bg-[#E05E00] transition-colors"
+                  className="px-6 py-2.5 bg-[#FF4D00] text-white rounded-[4px] text-sm font-black hover:bg-[#E05E00] transition-colors"
                 >
                   Close
                 </button>
@@ -1414,11 +1414,11 @@ export default function StationPaymentCollection({
                         )}
                       </span>
                     </div>
-                    <div className="flex justify-between text-emerald-600 font-bold">
+                    <div className="flex justify-between text-green-600 font-bold">
                       <span>+ Collecting Now</span>
                       <span>{INR(parsedAmount)}</span>
                     </div>
-                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-black text-[#F97316]">
+                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-black text-[#FF4D00]">
                       <span>New Total Paid</span>
                       <span>
                         {paymentMode === "CASH"
@@ -1431,7 +1431,7 @@ export default function StationPaymentCollection({
                       <span
                         className={
                           paymentMode === "CASH" && newRemaining <= 0
-                            ? "text-emerald-600"
+                            ? "text-green-600"
                             : "text-slate-600"
                         }
                       >
@@ -1458,7 +1458,7 @@ export default function StationPaymentCollection({
                   <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="flex-1 py-2.5 bg-[#F97316] hover:bg-[#E05E00] disabled:opacity-60 text-white rounded-[4px] text-xs font-black transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 bg-[#FF4D00] hover:bg-[#E05E00] disabled:opacity-60 text-white rounded-[4px] text-xs font-black transition-colors flex items-center justify-center gap-2"
                   >
                     {submitting ? (
                       <>
@@ -1492,7 +1492,7 @@ export default function StationPaymentCollection({
                       <div className="text-[10px] text-slate-400 font-semibold">
                         Paid So Far
                       </div>
-                      <div className="font-bold text-emerald-600">
+                      <div className="font-bold text-green-600">
                         {INR(
                           selectedBooking.previousPaid +
                             selectedBooking.cashCollected +
@@ -1504,7 +1504,7 @@ export default function StationPaymentCollection({
                       <div className="text-[10px] text-slate-400 font-semibold">
                         Balance Due
                       </div>
-                      <div className="font-black text-red-500 text-sm">
+                      <div className="font-black text-red-600 text-sm">
                         {INR(remaining)}
                       </div>
                     </div>
@@ -1526,7 +1526,7 @@ export default function StationPaymentCollection({
                           className={cn(
                             "flex items-center justify-center gap-2 py-3 rounded-[6px] border-2 text-sm font-black transition-all",
                             paymentMode === m
-                              ? "border-[#F97316] bg-orange-50 text-[#F97316]"
+                              ? "border-[#FF4D00] bg-orange-50 text-[#FF4D00]"
                               : "border-slate-200 text-slate-500 hover:border-slate-300",
                           )}
                         >
@@ -1559,7 +1559,7 @@ export default function StationPaymentCollection({
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="0"
                         max={remaining}
-                        className="w-full pl-7 pr-3 py-2.5 border border-slate-200 rounded-[4px] text-sm font-bold focus:outline-none focus:border-[#F97316]"
+                        className="w-full pl-7 pr-3 py-2.5 border border-slate-200 rounded-[4px] text-sm font-bold focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     {parsedAmount > 0 && parsedAmount <= remaining && (
@@ -1568,7 +1568,7 @@ export default function StationPaymentCollection({
                         <strong
                           className={
                             newRemaining <= 0
-                              ? "text-emerald-600"
+                              ? "text-green-600"
                               : "text-amber-600"
                           }
                         >
@@ -1579,7 +1579,7 @@ export default function StationPaymentCollection({
                       </div>
                     )}
                     {parsedAmount > remaining + 0.01 && (
-                      <div className="mt-1 text-xs text-red-500 font-semibold">
+                      <div className="mt-1 text-xs text-red-600 font-semibold">
                         ⚠️ Exceeds remaining balance of {INR(remaining)}
                       </div>
                     )}
@@ -1619,7 +1619,7 @@ export default function StationPaymentCollection({
                               setCustomAccountName(e.target.value)
                             }
                             placeholder="Enter account name"
-                            className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316]"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#FF4D00]"
                           />
                         </div>
                       )}
@@ -1641,7 +1641,7 @@ export default function StationPaymentCollection({
                           value={utrNumber}
                           onChange={(e) => setUtrNumber(e.target.value)}
                           placeholder="e.g. 426781234567"
-                          className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316] font-mono"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#FF4D00] font-mono"
                         />
                       </div>
                       <div>
@@ -1678,7 +1678,7 @@ export default function StationPaymentCollection({
                                 setCustomAccountName(e.target.value)
                               }
                               placeholder="Enter account name"
-                              className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316]"
+                              className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#FF4D00]"
                             />
                           </div>
                         )}
@@ -1710,7 +1710,7 @@ export default function StationPaymentCollection({
                         value={collectedFrom}
                         onChange={(e) => setCollectedFrom(e.target.value)}
                         placeholder="Person's name"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316]"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                     <div>
@@ -1722,7 +1722,7 @@ export default function StationPaymentCollection({
                         value={collectedFromMobile}
                         onChange={(e) => setCollectedFromMobile(e.target.value)}
                         placeholder="Mobile number"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316]"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -1736,7 +1736,7 @@ export default function StationPaymentCollection({
                       type="datetime-local"
                       value={collectedAt}
                       onChange={(e) => setCollectedAt(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316]"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
                   <div>
@@ -1748,7 +1748,7 @@ export default function StationPaymentCollection({
                       onChange={(e) => setRemarks(e.target.value)}
                       rows={2}
                       placeholder="Optional notes…"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316] resize-none"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#FF4D00] resize-none"
                     />
                   </div>
                 </div>
@@ -1769,7 +1769,7 @@ export default function StationPaymentCollection({
                       (!utrNumber.trim() || !receivingAccountId)) ||
                     (receivingAccountId === "OTHER" && !customAccountName.trim())
                   }
-                  className="w-full py-3 bg-[#F97316] hover:bg-[#E05E00] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[4px] text-sm font-black transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#FF4D00] hover:bg-[#E05E00] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[4px] text-sm font-black transition-colors flex items-center justify-center gap-2"
                 >
                   Review Collection <ArrowRight className="w-4 h-4" />
                 </button>
@@ -1781,3 +1781,5 @@ export default function StationPaymentCollection({
     </div>
   );
 }
+
+

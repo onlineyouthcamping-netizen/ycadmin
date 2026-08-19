@@ -96,7 +96,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {/* ─── Header ─── */}
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 bg-orange-100 text-[#F97316] rounded-lg shrink-0">
+            <div className="p-2 bg-orange-100 text-[#FF4D00] rounded-lg shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -182,7 +182,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               download={fileName}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F97316] hover:bg-[#e06100] text-white text-xs font-bold rounded-lg transition-all shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FF4D00] hover:bg-[#e06100] text-white text-xs font-bold rounded-lg transition-all shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Download</span>
@@ -201,7 +201,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         <div className="flex-1 bg-slate-900/90 overflow-auto p-4 flex items-center justify-center min-h-[350px] relative">
           {hasError ? (
             <div className="bg-white rounded-xl p-8 max-w-sm text-center space-y-3 shadow-lg">
-              <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
+              <AlertCircle className="w-10 h-10 text-red-600 mx-auto" />
               <h3 className="text-sm font-bold text-slate-800">
                 Preview Not Available
               </h3>
@@ -221,7 +221,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   href={fullFileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-1.5 bg-[#F97316] text-white text-xs font-bold rounded-lg hover:bg-[#e06100]"
+                  className="px-4 py-1.5 bg-[#FF4D00] text-white text-xs font-bold rounded-lg hover:bg-[#e06100]"
                 >
                   Download File
                 </a>
@@ -251,7 +251,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 onLoadError={() => setHasError(true)}
                 loading={
                   <div className="text-white text-xs font-bold flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#F97316]" />
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#FF4D00]" />
                     Loading PDF pages...
                   </div>
                 }
@@ -272,7 +272,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             </div>
           ) : (
             <div className="bg-white rounded-xl p-8 max-w-sm text-center space-y-3 shadow-lg">
-              <FileText className="w-12 h-12 text-[#F97316] mx-auto" />
+              <FileText className="w-12 h-12 text-[#FF4D00] mx-auto" />
               <h3 className="text-sm font-bold text-slate-800">{fileName}</h3>
               <p className="text-xs text-slate-500 font-medium">
                 Preview not available for this file type. Click below to
@@ -283,7 +283,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 download={fileName}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#F97316] text-white text-xs font-bold rounded-lg hover:bg-[#e06100] shadow-xs"
+                className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#FF4D00] text-white text-xs font-bold rounded-lg hover:bg-[#e06100] shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download Document</span>
@@ -331,3 +331,4 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 };
 
 export default DocumentViewer;
+

@@ -100,7 +100,7 @@ export default function TrainTemplatesPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <Train className="w-5 h-5 text-[#F97316]" />
+          <Train className="w-5 h-5 text-[#FF4D00]" />
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
               Ticketing Templates Management
@@ -179,3 +179,4 @@ export default function TrainTemplatesPage() {
     </div>
   );
 }
+

@@ -125,10 +125,10 @@ const colorMap: Record<
     lightBg: "bg-orange-50",
   },
   emerald: {
-    bg: "bg-emerald-600",
-    text: "text-emerald-600",
-    border: "border-emerald-100",
-    lightBg: "bg-emerald-50",
+    bg: "bg-green-600",
+    text: "text-green-600",
+    border: "border-green-100",
+    lightBg: "bg-green-50",
   },
   blue: {
     bg: "bg-blue-600",
@@ -155,10 +155,10 @@ const colorMap: Record<
     lightBg: "bg-green-50",
   },
   rose: {
-    bg: "bg-rose-600",
-    text: "text-rose-600",
-    border: "border-rose-100",
-    lightBg: "bg-rose-50",
+    bg: "bg-red-600",
+    text: "text-red-600",
+    border: "border-red-100",
+    lightBg: "bg-red-50",
   },
   orange: {
     bg: "bg-orange-600",
@@ -861,7 +861,7 @@ export default function ReportsConsole({
           <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-xs">
             <div className="mb-4">
               <div className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">
+                <span className="h-5 w-5 rounded-full bg-[#FF4D00] text-white flex items-center justify-center font-bold text-[10px]">
                   1
                 </span>
                 <p className="text-sm font-bold text-slate-800">
@@ -885,7 +885,7 @@ export default function ReportsConsole({
                     className={cn(
                       "border rounded-lg p-3 cursor-pointer transition-all flex flex-col justify-between relative min-h-[96px]",
                       isSelected
-                        ? "border-[#F97316] bg-[#F97316]/5 ring-1 ring-[#F97316]/10"
+                        ? "border-[#FF4D00] bg-[#FF4D00]/5 ring-1 ring-[#FF4D00]/10"
                         : "border-slate-200 hover:bg-slate-50/50 bg-white",
                     )}
                   >
@@ -907,7 +907,7 @@ export default function ReportsConsole({
                           className={cn(
                             "w-4 h-4 rounded-full border flex items-center justify-center",
                             isSelected
-                              ? "border-[#F97316] bg-[#F97316]"
+                              ? "border-[#FF4D00] bg-[#FF4D00]"
                               : "border-slate-300 bg-white",
                           )}
                         >
@@ -936,7 +936,7 @@ export default function ReportsConsole({
           <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-xs">
             <div className="mb-4">
               <div className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">
+                <span className="h-5 w-5 rounded-full bg-[#FF4D00] text-white flex items-center justify-center font-bold text-[10px]">
                   2
                 </span>
                 <p className="text-sm font-bold text-slate-800">
@@ -1018,7 +1018,7 @@ export default function ReportsConsole({
           <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">
+                <span className="h-5 w-5 rounded-full bg-[#FF4D00] text-white flex items-center justify-center font-bold text-[10px]">
                   3
                 </span>
                 <div>
@@ -1039,7 +1039,7 @@ export default function ReportsConsole({
                   placeholder="Search fields..."
                   value={fieldsSearch}
                   onChange={(e) => setFieldsSearch(e.target.value)}
-                  className="h-8 w-full pl-8 text-[11px] rounded-[6px] border border-slate-200 bg-white placeholder:text-slate-400 focus-visible:ring-[#F97316] text-slate-855"
+                  className="h-8 w-full pl-8 text-[11px] rounded-[6px] border border-slate-200 bg-white placeholder:text-slate-400 focus-visible:ring-[#FF4D00] text-slate-855"
                 />
               </div>
             </div>
@@ -1067,7 +1067,7 @@ export default function ReportsConsole({
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => handleToggleField(f)}
-                              className="rounded border-slate-300 text-[#F97316] focus:ring-[#F97316]/20 w-3.5 h-3.5"
+                              className="rounded border-slate-300 text-[#FF4D00] focus:ring-[#FF4D00]/20 w-3.5 h-3.5"
                             />
                             <span>{f}</span>
                           </label>
@@ -1083,7 +1083,7 @@ export default function ReportsConsole({
             <div className="flex gap-2.5 border-t border-slate-100 mt-5 pt-4">
               <button
                 onClick={handleSelectAllFields}
-                className="text-[11.5px] font-extrabold text-white bg-[#F97316] hover:bg-[#E05E00] px-4 py-1.5 rounded-[6px] shadow-sm transition-colors"
+                className="text-[11.5px] font-extrabold text-white bg-[#FF4D00] hover:bg-[#E05E00] px-4 py-1.5 rounded-[6px] shadow-sm transition-colors"
               >
                 Select All
               </button>
@@ -1102,7 +1102,7 @@ export default function ReportsConsole({
           <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-xs flex flex-col justify-between min-h-[420px] sticky top-20">
             <div>
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
-                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">
+                <span className="h-5 w-5 rounded-full bg-[#FF4D00] text-white flex items-center justify-center font-bold text-[10px]">
                   4
                 </span>
                 <p className="text-sm font-bold text-slate-800">
@@ -1162,7 +1162,7 @@ export default function ReportsConsole({
                     <p className="text-[10px] font-extrabold text-slate-455 uppercase tracking-widest">
                       Selected Fields
                     </p>
-                    <span className="text-[10px] font-extrabold text-[#F97316] bg-[#F97316]/10 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-extrabold text-[#FF4D00] bg-[#FF4D00]/10 px-2 py-0.5 rounded-full">
                       {selectedFields.length} selected
                     </span>
                   </div>
@@ -1179,7 +1179,7 @@ export default function ReportsConsole({
                         >
                           {f}
                           <X
-                            className="w-2.5 h-2.5 text-slate-450 hover:text-red-500 cursor-pointer"
+                            className="w-2.5 h-2.5 text-slate-450 hover:text-red-600 cursor-pointer"
                             onClick={() => handleToggleField(f)}
                           />
                         </span>
@@ -1220,7 +1220,7 @@ export default function ReportsConsole({
                             "py-1.5 text-[11px] font-bold rounded transition-colors text-center shadow-3xs",
                             isFormatSelected
                               ? fmt === "Excel"
-                                ? "bg-emerald-600 text-white font-extrabold"
+                                ? "bg-green-600 text-white font-extrabold"
                                 : fmt === "CSV"
                                   ? "bg-slate-700 text-white font-extrabold"
                                   : "bg-red-600 text-white font-extrabold"
@@ -1251,3 +1251,4 @@ export default function ReportsConsole({
     </div>
   );
 }
+

@@ -120,7 +120,7 @@ export function PassengerTimeline({
         <div className="relative flex min-w-[430px] items-start justify-between gap-1 pt-1">
           <div className="absolute left-4 right-4 top-3.5 h-[3px] rounded-full bg-[#E8EEF4]" />
           <div
-            className="absolute left-4 top-3.5 h-[3px] rounded-full bg-emerald-500/80 transition-all duration-500 ease-in-out"
+            className="absolute left-4 top-3.5 h-[3px] rounded-full bg-green-600/80 transition-all duration-500 ease-in-out"
             style={{ width: `calc((100% - 2rem) * ${progressPct} / 100)` }}
           />
 
@@ -144,7 +144,7 @@ export function PassengerTimeline({
                     "flex h-7 w-7 items-center justify-center rounded-full border-2 bg-white transition-all",
                     isActive && "ring-2 ring-[#FF4D00]/40 ring-offset-2",
                     step.completed
-                      ? "border-emerald-500/70 text-emerald-600"
+                      ? "border-green-500/70 text-green-600"
                       : step.actionRequired
                         ? "border-[#FF4D00]/45 bg-[#FF4D00]/[0.07] text-[#FF4D00]"
                         : "border-[#E8EEF4] text-slate-300",
@@ -165,7 +165,7 @@ export function PassengerTimeline({
                     isActive
                       ? "font-semibold text-[#FF4D00]"
                       : step.completed
-                        ? "font-medium text-emerald-700"
+                        ? "font-medium text-green-700"
                         : step.actionRequired
                           ? "font-semibold text-[#9A3412]"
                           : "font-medium text-slate-400",
@@ -185,13 +185,13 @@ export function PassengerTimeline({
           className={cn(
             "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border px-3 py-2",
             isDepartureReady
-              ? "border-emerald-200 bg-emerald-50/70"
+              ? "border-green-200 bg-green-50/70"
               : "border-[#FF4D00]/20 bg-[#FF4D00]/[0.06]",
           )}
         >
           <div className="flex items-center gap-2">
             {isDepartureReady ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
             ) : (
               <AlertCircle className="h-4 w-4 shrink-0 text-[#FF4D00]" />
             )}
@@ -201,7 +201,7 @@ export function PassengerTimeline({
             <span
               className={cn(
                 "text-[11px] font-semibold",
-                isDepartureReady ? "text-emerald-800" : "text-[#9A3412]",
+                isDepartureReady ? "text-green-700" : "text-[#9A3412]",
               )}
             >
               {isDepartureReady ? "Ready for departure" : "Action required"}
@@ -217,3 +217,5 @@ export function PassengerTimeline({
     </div>
   );
 }
+
+

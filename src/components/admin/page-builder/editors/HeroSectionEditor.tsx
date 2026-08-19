@@ -854,7 +854,7 @@ export function HeroSectionEditor({
             <Sparkles className="w-3.5 h-3.5 text-[#D97854]" />
             Month Filter Mode
           </Label>
-          <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase">
+          <span className="text-[10px] font-extrabold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full uppercase">
             AUTO DYNAMIC
           </span>
         </div>
@@ -933,3 +933,4 @@ export function HeroSectionEditor({
     </div>
   );
 }
+

@@ -129,7 +129,7 @@ export function TripManager({
                   onClick={handleSave}
                   disabled={loading}
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] h-8 rounded px-3"
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] h-8 rounded px-3"
                 >
                   Update
                 </Button>
@@ -166,7 +166,7 @@ export function TripManager({
                   <span className="font-medium text-slate-700">
                     {t.tripName}
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded font-mono">
+                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1 rounded font-mono">
                     ₹{t.price?.toLocaleString("en-IN") || 0}
                   </span>
                 </div>
@@ -192,7 +192,7 @@ export function TripManager({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-red-500 h-7 w-7 p-0"
+                    className="text-red-600 h-7 w-7 p-0"
                     onClick={async () => {
                       if (confirm("Delete trip?")) {
                         await bookingsService.deleteTrip(t.id);
@@ -217,3 +217,4 @@ export function TripManager({
     </Dialog>
   );
 }
+

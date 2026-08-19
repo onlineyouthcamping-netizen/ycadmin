@@ -92,8 +92,8 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     },
     "customer-faqs": {
       icon: HelpCircle,
-      colorClass: "text-emerald-600",
-      bgClass: "bg-emerald-50 border border-emerald-100",
+      colorClass: "text-green-600",
+      bgClass: "bg-green-50 border border-green-100",
       desc: "All customer questions & answers",
     },
     "inclusions-&-exclusions": {
@@ -221,3 +221,4 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     </div>
   );
 };
+

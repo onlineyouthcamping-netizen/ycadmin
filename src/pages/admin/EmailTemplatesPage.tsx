@@ -235,7 +235,7 @@ export default function EmailTemplatesPage() {
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         template.isActive
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-green-50 text-green-700"
                           : "bg-slate-100 text-slate-500"
                       }`}
                     >
@@ -269,7 +269,7 @@ export default function EmailTemplatesPage() {
                     }
                   >
                     {template.isActive ? (
-                      <ToggleRight className="h-6 w-6 text-emerald-600" />
+                      <ToggleRight className="h-6 w-6 text-green-600" />
                     ) : (
                       <ToggleLeft className="h-6 w-6 text-slate-400" />
                     )}
@@ -301,7 +301,7 @@ export default function EmailTemplatesPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(template.id)}
-                      className="h-10 w-10 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+                      className="h-10 w-10 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-600"
                       title="Delete Template"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -458,7 +458,7 @@ export default function EmailTemplatesPage() {
                       onClick={() => formatDoc("removeFormat")}
                       title="Clear formatting"
                     >
-                      <Trash2 className="h-4 w-4 text-rose-500" />
+                      <Trash2 className="h-4 w-4 text-red-600" />
                     </Button>
                   </div>
 
@@ -515,3 +515,4 @@ export default function EmailTemplatesPage() {
     </div>
   );
 }
+

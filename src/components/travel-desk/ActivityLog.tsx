@@ -79,21 +79,21 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
           label: "Edit",
           badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
           icon: Edit3,
-          iconColor: "text-[#F97316]",
+          iconColor: "text-[#FF4D00]",
         };
       case "publish":
         return {
           label: "Publish",
-          badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+          badgeClass: "bg-green-50 text-green-700 border-green-200",
           icon: CheckCircle2,
-          iconColor: "text-emerald-600",
+          iconColor: "text-green-600",
         };
       case "delete":
         return {
           label: "Delete",
-          badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
+          badgeClass: "bg-red-50 text-red-700 border-red-200",
           icon: Trash2,
-          iconColor: "text-rose-600",
+          iconColor: "text-red-600",
         };
       case "upload":
         return {
@@ -126,10 +126,10 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
               return (
                 <div key={key} className="space-y-0.5">
                   <span className="font-bold text-slate-500">{key}:</span>
-                  <div className="text-rose-600 line-through pl-2">
+                  <div className="text-red-600 line-through pl-2">
                     - {String(beforeVal ?? "null")}
                   </div>
-                  <div className="text-emerald-600 font-bold pl-2">
+                  <div className="text-green-600 font-bold pl-2">
                     + {String(afterVal ?? "null")}
                   </div>
                 </div>
@@ -162,7 +162,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
       {/* ─── Top Filter Header ─── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2.5 bg-orange-50 text-[#F97316] rounded-xl">
+          <div className="p-2.5 bg-orange-50 text-[#FF4D00] rounded-xl">
             <History className="w-5 h-5" />
           </div>
           <div>
@@ -186,7 +186,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
             <select
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
-              className="text-xs font-bold px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#F97316]"
+              className="text-xs font-bold px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00]"
             >
               <option value="all">All Actions</option>
               <option value="create">Create</option>
@@ -206,7 +206,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
             Showing {activitiesList.length} of {total} entries
           </span>
           {isFetching && (
-            <span className="text-[11px] text-[#F97316] font-bold animate-pulse">
+            <span className="text-[11px] text-[#FF4D00] font-bold animate-pulse">
               Refreshing...
             </span>
           )}
@@ -222,8 +222,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
             ))}
           </div>
         ) : isError ? (
-          <div className="p-8 text-center border border-rose-200 rounded-xl bg-rose-50/20 space-y-2">
-            <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
+          <div className="p-8 text-center border border-red-200 rounded-xl bg-red-50/20 space-y-2">
+            <AlertCircle className="w-8 h-8 text-red-600 mx-auto" />
             <p className="text-xs font-bold text-slate-800">
               Failed to load activity log
             </p>
@@ -259,7 +259,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
               return (
                 <div key={entry.id} className="relative group">
                   {/* Timeline Icon Node */}
-                  <div className="absolute -left-[25px] sm:-left-[33px] top-1 p-1 bg-white border-2 border-slate-200 rounded-full shadow-xs group-hover:border-[#F97316] transition-colors">
+                  <div className="absolute -left-[25px] sm:-left-[33px] top-1 p-1 bg-white border-2 border-slate-200 rounded-full shadow-xs group-hover:border-[#FF4D00] transition-colors">
                     <ActionIcon className={`w-3.5 h-3.5 ${config.iconColor}`} />
                   </div>
 
@@ -325,3 +325,4 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
 };
 
 export default ActivityLog;
+

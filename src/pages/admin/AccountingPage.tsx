@@ -644,8 +644,8 @@ export default function AccountingPage() {
   const getApprovalBadge = (approvalStatus?: string, status?: string, requiresFounder?: boolean) => {
     if (approvalStatus === "APPROVED_FOUNDER" || status === "Verified" || status === "Paid") {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Approved & Verified
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">
+          <CheckCircle2 className="w-3 h-3 text-green-600" /> Approved & Verified
         </span>
       );
     }
@@ -665,8 +665,8 @@ export default function AccountingPage() {
     }
     if (approvalStatus === "REJECTED" || status === "Rejected") {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-          <XCircle className="w-3 h-3 text-rose-600" /> Rejected
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+          <XCircle className="w-3 h-3 text-red-600" /> Rejected
         </span>
       );
     }
@@ -1291,7 +1291,7 @@ export default function AccountingPage() {
                     tone:
                       treasurySummary.netLiquidity >= 0
                         ? "text-[#0B1528]"
-                        : "text-rose-600",
+                        : "text-red-600",
                   },
                   {
                     label: "Riya wallet balance",
@@ -1441,7 +1441,7 @@ export default function AccountingPage() {
                         <td
                           className={cn(
                             "py-2.5 px-3 text-right font-medium tabular-nums md:px-4",
-                            t.grossProfit >= 0 ? "text-[#0B1528]" : "text-rose-600",
+                            t.grossProfit >= 0 ? "text-[#0B1528]" : "text-red-600",
                           )}
                         >
                           {formatINR(t.grossProfit)}
@@ -1452,7 +1452,7 @@ export default function AccountingPage() {
                               "inline-flex rounded border px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
                               t.marginPercent >= 0
                                 ? "border-[#E8EEF4] bg-[#F8FAFC] text-slate-600"
-                                : "border-rose-100 bg-rose-50 text-rose-600",
+                                : "border-red-100 bg-red-50 text-red-600",
                             )}
                           >
                             {t.marginPercent}%
@@ -1532,7 +1532,7 @@ export default function AccountingPage() {
                           <td className="py-2.5 px-4 text-slate-700">
                             {p.booking?.tripName || "—"}
                           </td>
-                          <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
+                          <td className="py-2.5 px-4 text-right font-semibold text-green-600">
                             {formatINR(p.amount)}
                           </td>
                           <td className="py-2.5 px-4">
@@ -1603,7 +1603,7 @@ export default function AccountingPage() {
                                 <Button
                                   size="sm"
                                   onClick={() => handleFounderApproveCollection(p.id, proof, p.paymentMode)}
-                                  className="h-7 gap-1 rounded-md bg-emerald-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-emerald-700 cursor-pointer"
+                                  className="h-7 gap-1 rounded-md bg-green-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-green-700 cursor-pointer"
                                 >
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
                                   Approve (Founder)
@@ -1623,7 +1623,7 @@ export default function AccountingPage() {
                                       title: `Reject Client Payment - ${p.booking?.fullName} (${formatINR(p.amount)})`,
                                     })
                                   }
-                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
+                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-red-600 cursor-pointer"
                                 >
                                   <XCircle className="w-3 h-3 mr-1" />
                                   Reject
@@ -1708,7 +1708,7 @@ export default function AccountingPage() {
                               className={cn(
                                 "text-[10px] font-semibold uppercase",
                                 p.paymentMode === "CASH"
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  ? "border-green-200 bg-green-50 text-green-700"
                                   : "border-blue-200 bg-blue-50 text-blue-700"
                               )}
                             >
@@ -1770,7 +1770,7 @@ export default function AccountingPage() {
                                   title: `Reject Station Payment - ${p.booking?.fullName || p.collectedFrom} (${formatINR(p.amount)})`,
                                 })
                               }
-                              className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
+                              className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-red-600 cursor-pointer"
                             >
                               <XCircle className="w-3 h-3 mr-1" />
                               Reject
@@ -1838,7 +1838,7 @@ export default function AccountingPage() {
                               {v.category}
                             </Badge>
                           </td>
-                          <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
+                          <td className="py-2.5 px-4 text-right font-semibold text-red-600">
                             {formatINR(v.advancePaid || v.agreedAmount)}
                           </td>
                           <td className="py-2.5 px-4">
@@ -1895,7 +1895,7 @@ export default function AccountingPage() {
                                     "h-7 gap-1 rounded-md px-2.5 text-[11px] font-medium text-white shadow-none cursor-pointer",
                                     requiresFounder
                                       ? "bg-purple-600 hover:bg-purple-700"
-                                      : "bg-emerald-600 hover:bg-emerald-700"
+                                      : "bg-green-600 hover:bg-green-700"
                                   )}
                                 >
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -1916,7 +1916,7 @@ export default function AccountingPage() {
                                       title: `Reject Vendor Payment - ${v.vendorName} (${formatINR(v.advancePaid || v.agreedAmount)})`,
                                     })
                                   }
-                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
+                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-red-600 cursor-pointer"
                                 >
                                   <XCircle className="w-3 h-3 mr-1" />
                                   Reject
@@ -2028,7 +2028,7 @@ export default function AccountingPage() {
                                   variance > 0
                                     ? "bg-amber-50 text-amber-700 border-amber-200"
                                     : variance < 0
-                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      ? "bg-green-50 text-green-700 border-green-200"
                                       : "bg-slate-50 text-slate-600 border-slate-200",
                                 )}
                               >
@@ -2050,7 +2050,7 @@ export default function AccountingPage() {
                                 <Button
                                   size="sm"
                                   onClick={() => handleVerifyTrainTicket(t.id)}
-                                  className="h-7 gap-1 rounded-md bg-emerald-600 px-2.5 text-[11px] font-bold text-white shadow-none hover:bg-emerald-700 cursor-pointer"
+                                  className="h-7 gap-1 rounded-md bg-green-600 px-2.5 text-[11px] font-bold text-white shadow-none hover:bg-green-700 cursor-pointer"
                                 >
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
                                   Verify
@@ -2067,7 +2067,7 @@ export default function AccountingPage() {
                                       title: `Reject Train Ticket Cost - ${t.travelerName} (PNR: ${t.pnr || "N/A"}) - ${formatINR(act)}`,
                                     })
                                   }
-                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
+                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-red-600 cursor-pointer"
                                 >
                                   <XCircle className="w-3 h-3 mr-1" />
                                   Reject
@@ -2174,7 +2174,7 @@ export default function AccountingPage() {
                           <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
                             {r.tripName}
                           </td>
-                          <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
+                          <td className="py-2.5 px-4 text-right font-semibold text-green-600">
                             {formatINR(r.amount)}
                           </td>
                           <td className="py-2.5 px-4 text-slate-600">
@@ -2305,7 +2305,7 @@ export default function AccountingPage() {
                 <span className="rounded bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-200">
                   Due: {pendingDueExpenses.length}
                 </span>
-                <span className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-700 border border-emerald-200">
+                <span className="rounded bg-green-50 px-2 py-0.5 text-green-700 border border-green-200">
                   Done: {completedExpenses.length}
                 </span>
               </div>
@@ -2376,7 +2376,7 @@ export default function AccountingPage() {
                             <td className="py-2.5 px-4 text-right text-slate-600 font-medium">
                               {formatINR(v.agreedAmount)}
                             </td>
-                            <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
+                            <td className="py-2.5 px-4 text-right font-semibold text-red-600">
                               {formatINR(v.advancePaid)}
                             </td>
                             <td className="py-2.5 px-4 text-right font-semibold">
@@ -2440,15 +2440,15 @@ export default function AccountingPage() {
             </div>
 
             {/* SECTION 2: PAYMENT DONE / FULLY SETTLED DISBURSEMENTS */}
-            <div className="min-w-0 overflow-hidden rounded-xl border border-emerald-200/80 bg-white shadow-sm">
-              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-emerald-100 bg-emerald-50/40 px-3 py-2.5 md:px-4">
+            <div className="min-w-0 overflow-hidden rounded-xl border border-green-200/80 bg-white shadow-sm">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-green-100 bg-green-50/40 px-3 py-2.5 md:px-4">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
                   <span className="truncate text-[12px] font-semibold text-[#0B1528]">
                     Payment Done / Fully Settled Disbursements
                   </span>
                 </div>
-                <span className="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold tabular-nums text-emerald-800">
+                <span className="shrink-0 rounded bg-green-100 px-2 py-0.5 text-[10px] font-bold tabular-nums text-green-700">
                   {completedExpenses.length} Completed
                 </span>
               </div>
@@ -2501,11 +2501,11 @@ export default function AccountingPage() {
                             <td className="py-2.5 px-4 text-right text-slate-600 font-medium">
                               {formatINR(v.agreedAmount)}
                             </td>
-                            <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
+                            <td className="py-2.5 px-4 text-right font-semibold text-green-600">
                               {formatINR(v.advancePaid)}
                             </td>
                             <td className="py-2.5 px-4 text-right font-semibold">
-                              <span className="text-emerald-600 text-[11px] font-medium">Settled (₹0)</span>
+                              <span className="text-green-600 text-[11px] font-medium">Settled (₹0)</span>
                             </td>
                             <td className="py-2.5 px-4 text-slate-600">
                               {v.collectionAccount?.accountName || "Primary bank"}
@@ -2695,9 +2695,9 @@ export default function AccountingPage() {
                               className={cn(
                                 "text-[10px] font-medium",
                                 t.ticketStatus === "CONFIRMED"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  ? "bg-green-50 text-green-700 border-green-200"
                                   : t.ticketStatus === "CANCELLED"
-                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                    ? "bg-red-50 text-red-700 border-red-200"
                                     : "bg-blue-50 text-blue-700 border-blue-200",
                               )}
                             >
@@ -2797,7 +2797,7 @@ export default function AccountingPage() {
                             type="button"
                             onClick={() => handleDeleteAccount(acc)}
                             title="Delete / Archive account (Founder Only)"
-                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -2826,7 +2826,7 @@ export default function AccountingPage() {
                     {/* Connected Channel Mappings */}
                     <div className="flex items-center gap-1 mt-2.5 flex-wrap">
                       {(acc.paymentMethods?.includes("CASH") || acc.accountType === "CASH") && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
                           <Banknote className="w-2.5 h-2.5" /> Cash Desk
                         </span>
                       )}
@@ -2906,7 +2906,7 @@ export default function AccountingPage() {
                     {
                       label: "Gross profit",
                       value: formatINR(totals.profit),
-                      tone: totals.profit >= 0 ? "text-[#0B1528]" : "text-rose-600",
+                      tone: totals.profit >= 0 ? "text-[#0B1528]" : "text-red-600",
                     },
                     { label: "Blended margin", value: `${blendedMargin}%` },
                   ].map((kpi) => (
@@ -3001,7 +3001,7 @@ export default function AccountingPage() {
                                 t.trainCostVariance > 0
                                   ? "border-amber-100 bg-amber-50 text-amber-700"
                                   : t.trainCostVariance < 0
-                                    ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                                    ? "border-green-100 bg-green-50 text-green-700"
                                     : "border-[#E8EEF4] bg-[#F8FAFC] text-slate-500",
                               )}
                             >
@@ -3021,7 +3021,7 @@ export default function AccountingPage() {
                           <td
                             className={cn(
                               "px-3 py-2.5 text-right font-medium tabular-nums md:px-4",
-                              t.grossProfit >= 0 ? "text-[#0B1528]" : "text-rose-600",
+                              t.grossProfit >= 0 ? "text-[#0B1528]" : "text-red-600",
                             )}
                           >
                             {formatINR(t.grossProfit)}
@@ -3031,10 +3031,10 @@ export default function AccountingPage() {
                               className={cn(
                                 "inline-flex items-center rounded border px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
                                 t.marginPercent >= 20
-                                  ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                                  ? "border-green-100 bg-green-50 text-green-700"
                                   : t.marginPercent >= 0
                                     ? "border-[#E8EEF4] bg-[#F8FAFC] text-slate-600"
-                                    : "border-rose-100 bg-rose-50 text-rose-600",
+                                    : "border-red-100 bg-red-50 text-red-600",
                               )}
                             >
                               {t.marginPercent}%
@@ -3460,7 +3460,7 @@ export default function AccountingPage() {
         <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-rose-500" strokeWidth={1.75} />
+              <XCircle className="w-4 h-4 text-red-600" strokeWidth={1.75} />
               {rejectModalState?.title || "Reject Payment"}
             </DialogTitle>
           </DialogHeader>
@@ -3497,7 +3497,7 @@ export default function AccountingPage() {
                 type="button"
                 disabled={submittingAction}
                 onClick={handleConfirmReject}
-                className="h-8 gap-1.5 rounded-md bg-rose-600 px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-rose-700 cursor-pointer"
+                className="h-8 gap-1.5 rounded-md bg-red-600 px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-red-700 cursor-pointer"
               >
                 {submittingAction ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -3613,9 +3613,9 @@ export default function AccountingPage() {
                   </div>
                   <div className="text-[11px] text-slate-500 pl-6.5">
                     {auditModalState.chain.step1_financeController?.status === "DONE" ? (
-                      <span className="text-emerald-600 font-medium">✓ Reviewed & Verified</span>
+                      <span className="text-green-600 font-medium">✓ Reviewed & Verified</span>
                     ) : auditModalState.chain.step1_financeController?.status === "REJECTED" ? (
-                      <span className="text-rose-600 font-medium">✕ Rejected</span>
+                      <span className="text-red-600 font-medium">✕ Rejected</span>
                     ) : (
                       <span className="text-amber-600 font-medium">⏳ Pending FC Review</span>
                     )}
@@ -3634,7 +3634,7 @@ export default function AccountingPage() {
                   </div>
                   <div className="text-[11px] text-slate-500 pl-6.5">
                     {auditModalState.chain.step2_founder?.status === "DONE" ? (
-                      <span className="text-emerald-600 font-medium">✓ Founder Approved</span>
+                      <span className="text-green-600 font-medium">✓ Founder Approved</span>
                     ) : (
                       <span className="text-slate-400 font-medium">⏳ Awaiting Sign-off</span>
                     )}
@@ -3673,11 +3673,11 @@ export default function AccountingPage() {
                             className={cn(
                               "text-[10px] font-semibold",
                               log.action === "APPROVED_FOUNDER"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                ? "bg-green-50 text-green-700 border-green-200"
                                 : log.action === "REVIEWED_FC"
                                   ? "bg-blue-50 text-blue-700 border-blue-200"
                                   : log.action === "REJECTED"
-                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                    ? "bg-red-50 text-red-700 border-red-200"
                                     : "bg-slate-50 text-slate-700 border-slate-200"
                             )}
                           >
@@ -3695,7 +3695,7 @@ export default function AccountingPage() {
                       <p className="text-slate-700">{log.changeDescription}</p>
 
                       {log.reason && (
-                        <div className="text-[11px] text-rose-700 bg-rose-50 border border-rose-100 rounded px-2 py-1 mt-1 font-medium">
+                        <div className="text-[11px] text-red-700 bg-red-50 border border-red-100 rounded px-2 py-1 mt-1 font-medium">
                           <strong>Note / Reason:</strong> {log.reason}
                         </div>
                       )}
@@ -3785,11 +3785,11 @@ export default function AccountingPage() {
             </div>
 
             {newAccForm.accountType === "CASH" ? (
-              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] space-y-1">
+              <div className="p-3 bg-green-50/80 border border-green-200 rounded-lg text-green-700 text-[11px] space-y-1">
                 <p className="font-bold flex items-center gap-1.5">
-                  <Banknote className="w-4 h-4 text-emerald-600" /> Physical Cash Desk Configuration
+                  <Banknote className="w-4 h-4 text-green-600" /> Physical Cash Desk Configuration
                 </p>
-                <p className="text-emerald-700">
+                <p className="text-green-700">
                   This register is exclusively dedicated to tracking on-ground physical cash collections and handovers. Bank, IFSC, and UPI configurations are disabled.
                 </p>
               </div>
@@ -3988,11 +3988,11 @@ export default function AccountingPage() {
             </div>
 
             {editAccForm.accountType === "CASH" ? (
-              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] space-y-1">
+              <div className="p-3 bg-green-50/80 border border-green-200 rounded-lg text-green-700 text-[11px] space-y-1">
                 <p className="font-bold flex items-center gap-1.5">
-                  <Banknote className="w-4 h-4 text-emerald-600" /> Physical Cash Desk Register
+                  <Banknote className="w-4 h-4 text-green-600" /> Physical Cash Desk Register
                 </p>
-                <p className="text-emerald-700">
+                <p className="text-green-700">
                   This register is mapped directly to on-venue physical cash collections. Bank, IFSC, and UPI fields are not applicable and hidden.
                 </p>
               </div>
@@ -4259,13 +4259,13 @@ export default function AccountingPage() {
               <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E8EEF4] bg-[#F8FAFC] p-3 sm:grid-cols-3">
                 <div>
                   <span className="text-[11px] text-slate-500 font-medium">Total inflows</span>
-                  <div className="text-base font-semibold text-emerald-600">
+                  <div className="text-base font-semibold text-green-600">
                     {formatINR(accountLedgerData?.metrics?.totalCollected || 0)}
                   </div>
                 </div>
                 <div>
                   <span className="text-[11px] text-slate-500 font-medium">Total outflows</span>
-                  <div className="text-base font-semibold text-rose-600">
+                  <div className="text-base font-semibold text-red-600">
                     {formatINR(
                       (accountLedgerData?.metrics?.totalSubmitted || 0) +
                         (accountLedgerData?.metrics?.totalVendorPaid || 0),
@@ -4299,11 +4299,11 @@ export default function AccountingPage() {
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(cp.paymentDate || cp.createdAt)}
                         </td>
-                        <td className="py-2 px-3 font-medium text-emerald-700">Client payment</td>
+                        <td className="py-2 px-3 font-medium text-green-700">Client payment</td>
                         <td className="py-2 px-3">
                           {cp.booking?.fullName} (Ref: {cp.bookingId}) · {cp.paymentMode}
                         </td>
-                        <td className="py-2 px-3 text-right font-semibold text-emerald-600">
+                        <td className="py-2 px-3 text-right font-semibold text-green-600">
                           + {formatINR(cp.amount)}
                         </td>
                         <td className="py-2 px-3 text-right text-slate-300">—</td>
@@ -4316,12 +4316,12 @@ export default function AccountingPage() {
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(vp.paymentDate || vp.createdAt)}
                         </td>
-                        <td className="py-2 px-3 font-medium text-rose-600">Vendor outflow</td>
+                        <td className="py-2 px-3 font-medium text-red-600">Vendor outflow</td>
                         <td className="py-2 px-3">
                           {vp.vendorName} ({vp.category}) · Trip: {vp.trip?.title}
                         </td>
                         <td className="py-2 px-3 text-right text-slate-300">—</td>
-                        <td className="py-2 px-3 text-right font-semibold text-rose-600">
+                        <td className="py-2 px-3 text-right font-semibold text-red-600">
                           − {formatINR(vp.advancePaid)}
                         </td>
                       </tr>
@@ -4337,7 +4337,7 @@ export default function AccountingPage() {
                         <td className="py-2 px-3">
                           {sub.notes || "Inter-account transfer / Submission"}
                         </td>
-                        <td className="py-2 px-3 text-right font-semibold text-emerald-600">
+                        <td className="py-2 px-3 text-right font-semibold text-green-600">
                           + {formatINR(sub.amount)}
                         </td>
                         <td className="py-2 px-3 text-right text-slate-300">—</td>
@@ -4434,3 +4434,4 @@ export default function AccountingPage() {
     </div>
   );
 }
+

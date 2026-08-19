@@ -168,7 +168,7 @@ export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({
                   <User className="h-3 w-3 text-slate-400" strokeWidth={1.75} />
                   {trip.size}
                 </span>
-                <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] font-medium leading-none text-emerald-600">
+                <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] font-medium leading-none text-green-600">
                   <MapPin className="h-3 w-3" strokeWidth={1.75} />
                   {trip.stay}
                 </span>
@@ -222,7 +222,7 @@ export const TripsNext7DaysWidget: React.FC<DashboardWidgetContextProps> = ({
               <span
                 className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
                   trip.status === "full"
-                    ? "border-emerald-200 bg-[#ECFDF3] text-[#16A34A]"
+                    ? "border-green-200 bg-[#ECFDF3] text-[#16A34A]"
                     : "border-blue-200 bg-[#EFF6FF] text-[#2563EB]"
                 }`}
               >
@@ -318,3 +318,4 @@ export const opsWidgets: DashboardWidget[] = [
     component: TodaysScheduleWidget,
   },
 ];
+

@@ -86,7 +86,7 @@ export default function SeoCenterPage() {
     <div className="admin-page animate-fade-in">
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <Search className="w-5 h-5 text-[#F97316]" />
+          <Search className="w-5 h-5 text-[#FF4D00]" />
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
               SEO Center
@@ -164,7 +164,7 @@ export default function SeoCenterPage() {
               />
               <div className="flex justify-between px-2">
                 <span
-                  className={`text-[10px] font-semibold uppercase tracking-wider ${seoData.metaDescription.length > 150 ? "text-red-500" : "text-[#F97316]"}`}
+                  className={`text-[10px] font-semibold uppercase tracking-wider ${seoData.metaDescription.length > 150 ? "text-red-600" : "text-[#FF4D00]"}`}
                 >
                   {seoData.metaDescription.length} / 150-160 Recommended
                 </span>
@@ -201,3 +201,4 @@ export default function SeoCenterPage() {
     </div>
   );
 }
+

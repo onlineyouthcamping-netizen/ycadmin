@@ -58,7 +58,7 @@ function KpiCard({
         <p className="mt-1.5 flex items-center gap-1 truncate text-[10px] font-medium leading-none text-slate-400">
           {trend ? (
             <TrendingUp
-              className="h-2.5 w-2.5 shrink-0 text-emerald-600"
+              className="h-2.5 w-2.5 shrink-0 text-green-600"
               strokeWidth={2}
             />
           ) : null}
@@ -218,3 +218,4 @@ export const kpiWidgets: DashboardWidget[] = [
     component: BookingsMonthCard,
   },
 ];
+

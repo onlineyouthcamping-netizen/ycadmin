@@ -370,7 +370,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 
             {upcomingDepartures.length === 0 && attentionItems.length === 0 && (
               <div className="flex items-center gap-2 py-4 justify-center text-slate-500">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
                 <p className="text-[11px] font-semibold">
                   {stats
                     ? "Nothing needs attention right now"
@@ -386,3 +386,4 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 };
 
 export default MobileDashboardView;
+

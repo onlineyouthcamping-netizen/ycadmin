@@ -155,7 +155,7 @@ export default function QuestionsPage() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <HelpCircle className="w-5 h-5 text-[#F97316]" />
+          <HelpCircle className="w-5 h-5 text-[#FF4D00]" />
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
               Question System
@@ -182,7 +182,7 @@ export default function QuestionsPage() {
           />
           <input
             placeholder="Search by title, category, or options..."
-            className="w-full pl-9 pr-4 h-8.5 bg-slate-50 rounded-[4px] border border-slate-200 text-xs font-medium focus:ring-1 focus:ring-[#F97316]/20 focus:border-[#F97316] outline-none transition-all"
+            className="w-full pl-9 pr-4 h-8.5 bg-slate-50 rounded-[4px] border border-slate-200 text-xs font-medium focus:ring-1 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] outline-none transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -217,7 +217,7 @@ export default function QuestionsPage() {
             <motion.div
               layout
               key={q._id}
-              className="bg-white rounded-md p-5 border border-slate-200 shadow-sm flex flex-col group hover:border-[#F97316]/30 transition-all"
+              className="bg-white rounded-md p-5 border border-slate-200 shadow-sm flex flex-col group hover:border-[#FF4D00]/30 transition-all"
             >
               <div className="flex justify-between items-start mb-4">
                 <Badge
@@ -229,7 +229,7 @@ export default function QuestionsPage() {
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleOpenModal(q)}
-                    className="p-1.5 bg-slate-50 text-slate-400 hover:text-[#F97316] hover:bg-[#F97316]/10 rounded-[4px] transition-colors"
+                    className="p-1.5 bg-slate-50 text-slate-400 hover:text-[#FF4D00] hover:bg-[#FF4D00]/10 rounded-[4px] transition-colors"
                   >
                     <Edit size={14} />
                   </button>
@@ -238,7 +238,7 @@ export default function QuestionsPage() {
                       if (confirm("Delete this question?"))
                         deleteMutation.mutate(q._id);
                     }}
-                    className="p-1.5 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-[4px] transition-colors"
+                    className="p-1.5 bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-[4px] transition-colors"
                   >
                     <Trash size={14} />
                   </button>
@@ -253,7 +253,7 @@ export default function QuestionsPage() {
                 {q.options.slice(0, 3).map((opt, i) => (
                   <div
                     key={i}
-                    className={`text-xs p-2.5 rounded-[4px] border flex justify-between items-center ${opt === q.answer ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-bold" : "bg-slate-50 border-slate-100 text-slate-500"}`}
+                    className={`text-xs p-2.5 rounded-[4px] border flex justify-between items-center ${opt === q.answer ? "bg-green-50 border-green-200 text-green-700 font-bold" : "bg-slate-50 border-slate-100 text-slate-500"}`}
                   >
                     <span className="truncate">{opt}</span>
                     {opt === q.answer && <CheckCircle2 size={12} />}
@@ -268,21 +268,21 @@ export default function QuestionsPage() {
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-md bg-[#F97316]/10 flex items-center justify-center text-[#F97316]">
+                  <div className="w-7 h-7 rounded-md bg-[#FF4D00]/10 flex items-center justify-center text-[#FF4D00]">
                     <HelpCircle size={13} />
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold uppercase text-slate-400 leading-none">
                       Correct
                     </p>
-                    <p className="text-[11px] font-bold text-emerald-600 truncate max-w-[120px]">
+                    <p className="text-[11px] font-bold text-green-600 truncate max-w-[120px]">
                       {q.answer}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => handleOpenModal(q)}
-                  className="text-slate-300 hover:text-[#F97316] transition-colors"
+                  className="text-slate-300 hover:text-[#FF4D00] transition-colors"
                 >
                   <ChevronRight size={18} />
                 </button>
@@ -298,7 +298,7 @@ export default function QuestionsPage() {
           <div className="bg-slate-50 p-5 border-b border-[#E2E8F0]">
             <DialogHeader>
               <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-[#F97316]" />
+                <HelpCircle className="w-4 h-4 text-[#FF4D00]" />
                 {editingQuestion ? "Refine Question" : "New Knowledge Entry"}
               </DialogTitle>
               <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-1">
@@ -355,7 +355,7 @@ export default function QuestionsPage() {
                   <button
                     type="button"
                     onClick={addOption}
-                    className="text-[10px] font-bold uppercase text-[#F97316] tracking-wider hover:text-[#F97316]/80 flex items-center gap-1 transition-colors"
+                    className="text-[10px] font-bold uppercase text-[#FF4D00] tracking-wider hover:text-[#FF4D00]/80 flex items-center gap-1 transition-colors"
                   >
                     <Plus size={12} /> Add Choice
                   </button>
@@ -364,7 +364,7 @@ export default function QuestionsPage() {
                   {formData.options.map((option, idx) => (
                     <div key={idx} className="relative group">
                       <Input
-                        className={`h-8.5 pr-8 rounded-[4px] text-xs font-medium transition-all ${formData.answer === option && option !== "" ? "border-emerald-200 bg-emerald-50/30" : "border-[#E2E8F0]"}`}
+                        className={`h-8.5 pr-8 rounded-[4px] text-xs font-medium transition-all ${formData.answer === option && option !== "" ? "border-green-200 bg-green-50/30" : "border-[#E2E8F0]"}`}
                         value={option}
                         onChange={(e) =>
                           handleOptionChange(idx, e.target.value)
@@ -375,7 +375,7 @@ export default function QuestionsPage() {
                         type="button"
                         onClick={() => removeOption(idx)}
                         disabled={formData.options.length <= 2}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-rose-500 disabled:opacity-0 transition-all"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-600 disabled:opacity-0 transition-all"
                       >
                         <Trash size={12} />
                       </button>
@@ -390,7 +390,7 @@ export default function QuestionsPage() {
                 </Label>
                 <div className="relative">
                   <select
-                    className="w-full h-8.5 px-3 pr-8 rounded-[4px] border border-[#E2E8F0] bg-white text-xs font-semibold appearance-none focus:outline-none focus:border-[#F97316] transition-all"
+                    className="w-full h-8.5 px-3 pr-8 rounded-[4px] border border-[#E2E8F0] bg-white text-xs font-semibold appearance-none focus:outline-none focus:border-[#FF4D00] transition-all"
                     value={formData.answer}
                     onChange={(e) =>
                       setFormData({ ...formData, answer: e.target.value })
@@ -439,3 +439,4 @@ export default function QuestionsPage() {
     </div>
   );
 }
+

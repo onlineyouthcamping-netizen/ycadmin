@@ -137,7 +137,7 @@ export function CTASliderEditor({
             {isVideo(activeMedia) || isYouTube(activeMedia) ? (
               <Video className="w-3.5 h-3.5 text-[#D4541A]" />
             ) : (
-              <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+              <ImageIcon className="w-3.5 h-3.5 text-green-500" />
             )}
             <span>
               {isVideo(activeMedia) || isYouTube(activeMedia)
@@ -197,7 +197,7 @@ export function CTASliderEditor({
                     {isVideo(url) || isYouTube(url) ? (
                       <Video className="w-3.5 h-3.5 text-[#D4541A]" />
                     ) : (
-                      <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                      <ImageIcon className="w-3.5 h-3.5 text-green-600" />
                     )}
                     <span>
                       {isVideo(url) || isYouTube(url) ? "Video" : "Photo"}{" "}
@@ -297,3 +297,5 @@ export function CTASliderEditor({
     </div>
   );
 }
+
+

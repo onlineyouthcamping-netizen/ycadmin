@@ -294,7 +294,7 @@ export default function GlobalBookingTasksPage() {
                         <div className="flex items-start gap-2">
                           <div className="mt-0.5">
                             {isDone ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              <CheckCircle2 className="w-4 h-4 text-green-600" />
                             ) : (
                               <Clock className="w-4 h-4 text-slate-400" />
                             )}
@@ -359,7 +359,7 @@ export default function GlobalBookingTasksPage() {
                           className={cn(
                             "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border cursor-pointer focus:outline-none",
                             t.status === "COMPLETED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-green-50 text-green-700 border-green-200"
                               : t.status === "IN_PROGRESS"
                               ? "bg-blue-50 text-blue-700 border-blue-200"
                               : "bg-amber-50 text-amber-700 border-amber-200"
@@ -450,7 +450,7 @@ export default function GlobalBookingTasksPage() {
             {taskCategory === "BOOKING" && (
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-600">
-                  Booking Reference / ID <span className="text-red-500">*</span>
+                  Booking Reference / ID <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -468,7 +468,7 @@ export default function GlobalBookingTasksPage() {
             {/* Task Title */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-600">
-                Task Title <span className="text-red-500">*</span>
+                Task Title <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
@@ -500,7 +500,7 @@ export default function GlobalBookingTasksPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-600">
-                  Assign To <span className="text-red-500">*</span>
+                  Assign To <span className="text-red-600">*</span>
                 </label>
                 <select
                   required
@@ -593,3 +593,4 @@ export default function GlobalBookingTasksPage() {
     </div>
   );
 }
+

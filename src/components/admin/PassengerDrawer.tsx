@@ -45,7 +45,7 @@ interface PassengerDrawerProps {
 
 const getGenderSelectionTone = (gender: "M" | "F" | "O") => {
   if (gender === "F")
-    return "border-rose-200 bg-rose-50 font-semibold text-rose-700 shadow-2xs";
+    return "border-red-200 bg-red-50 font-semibold text-red-700 shadow-2xs";
   if (gender === "M")
     return "border-sky-200 bg-sky-50 font-semibold text-sky-700 shadow-2xs";
   return "border-violet-200 bg-violet-50 font-semibold text-violet-700 shadow-2xs";
@@ -390,7 +390,7 @@ export function PassengerDrawer({
                 </h4>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-1 text-[11px] text-slate-500">
                   <div>Booking ID <span className="font-mono font-semibold text-[#0B1528]">{booking?.bookingId}</span></div>
-                  <div>Status <span className="font-semibold text-emerald-700">{booking?.status}</span></div>
+                  <div>Status <span className="font-semibold text-green-700">{booking?.status}</span></div>
                   <div>Trip <span className="font-semibold text-[#0B1528]">{booking?.tripName || booking?.tripId}</span></div>
                   <div>Departure <span className="font-mono font-semibold text-[#0B1528]">{booking?.departureDate ? new Date(booking.departureDate).toLocaleDateString() : "Flexible"}</span></div>
                   <div>Travellers <span className="font-semibold text-[#0B1528]">{booking?.numberOfTravelers || 1} pax</span></div>
@@ -424,7 +424,7 @@ export function PassengerDrawer({
                   </div>
                   <div className="rounded-lg border border-[#E8EEF4] bg-[#F4F7FB] px-2.5 py-2">
                     <span className="block text-[10px] font-medium text-slate-400">Paid</span>
-                    <span className="font-mono text-[13px] font-semibold text-emerald-700">₹{booking?.advancePaid || 0}</span>
+                    <span className="font-mono text-[13px] font-semibold text-green-700">₹{booking?.advancePaid || 0}</span>
                   </div>
                   <div className="rounded-lg border border-[#E8EEF4] bg-[#F4F7FB] px-2.5 py-2">
                     <span className="block text-[10px] font-medium text-slate-400">Due</span>
@@ -445,7 +445,7 @@ export function PassengerDrawer({
                   ) : formData.trainDetails ? (
                     <span>Train PNR details: {formData.trainDetails}</span>
                   ) : booking?.trainTicketRequired === false || booking?.trainTicketStatus === "NOT_REQUIRED" ? (
-                    <span className="flex items-center gap-1.5 font-medium text-emerald-700">
+                    <span className="flex items-center gap-1.5 font-medium text-green-700">
                       <CheckCircle2 className="inline w-3.5 h-3.5" /> No train ticket required for this journey.
                     </span>
                   ) : (
@@ -665,8 +665,8 @@ export function PassengerDrawer({
                 ))}
               </div>
             ) : booking?.trainTicketRequired === false || booking?.trainTicketStatus === "NOT_REQUIRED" ? (
-              <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-xs font-medium text-emerald-800">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+              <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50/70 p-3 text-xs font-medium text-green-700">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-green-600" />
                 No train ticket required for this journey.
               </div>
             ) : (
@@ -760,7 +760,7 @@ export function PassengerDrawer({
                         <button
                           type="button"
                           onClick={() => handleRemoveDoc(doc.id)}
-                          className="px-1.5 py-0.5 text-slate-400 transition-colors hover:text-rose-600"
+                          className="px-1.5 py-0.5 text-slate-400 transition-colors hover:text-red-600"
                           title="Remove document"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -828,3 +828,4 @@ export function PassengerDrawer({
     </Sheet>
   );
 }
+

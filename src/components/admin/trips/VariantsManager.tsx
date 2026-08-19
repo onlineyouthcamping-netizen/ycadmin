@@ -262,7 +262,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => handleDeleteVariant(currentVariant.id)}
-              className="h-7 text-[10px] text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+              className="h-7 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="w-3.5 h-3.5" /> Delete Variant
             </Button>
@@ -317,7 +317,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
                       parseFloat(e.target.value) || 0,
                     )
                   }
-                  className="h-9 text-xs font-mono font-bold text-emerald-600"
+                  className="h-9 text-xs font-mono font-bold text-green-600"
                 />
               </div>
               <div className="space-y-1">
@@ -367,7 +367,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
               {/* Travel Mode Options */}
               <div className="space-y-3 p-4 bg-slate-50 border rounded-xl">
                 <h5 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                  <Train className="w-4 h-4 text-emerald-600" /> Travel Mode
+                  <Train className="w-4 h-4 text-green-600" /> Travel Mode
                   Upgrades
                 </h5>
                 {(currentVariant.travelOptions || []).map((opt, idx) => (
@@ -479,7 +479,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
                   type="button"
                   size="sm"
                   onClick={() => handleAddDayToVariant(currentVariant.id)}
-                  className="h-7 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-1"
+                  className="h-7 text-[10px] font-bold bg-green-600 hover:bg-green-600 text-white gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Day
                 </Button>
@@ -508,7 +508,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
                           onClick={() =>
                             handleDeleteVariantDay(currentVariant.id, dIdx)
                           }
-                          className="h-6 text-[10px] text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                          className="h-6 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="w-3 h-3" /> Remove Day
                         </Button>
@@ -641,3 +641,4 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
 };
 
 export default VariantsManager;
+

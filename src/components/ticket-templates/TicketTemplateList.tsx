@@ -145,7 +145,7 @@ export function TicketTemplateList({
                 )}
                 <td className="px-4 py-3">
                   {template.estimatedTicketCost ? (
-                    <span className="font-extrabold text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <span className="font-extrabold text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200">
                       ₹{Number(template.estimatedTicketCost).toLocaleString("en-IN")}/pax
                     </span>
                   ) : (
@@ -157,7 +157,7 @@ export function TicketTemplateList({
                     className={cn(
                       "inline-flex items-center px-2 py-0.5 rounded-[4px] text-[9px] font-bold uppercase tracking-wider border",
                       template.isActive
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        ? "bg-green-50 text-green-700 border-green-200"
                         : "bg-gray-50 text-gray-500 border-gray-200",
                     )}
                   >
@@ -178,7 +178,7 @@ export function TicketTemplateList({
                       variant="ghost"
                       size="sm"
                       onClick={() => onArchive(template.id)}
-                      className="h-7 px-2.5 text-[10px] font-bold uppercase tracking-wider border border-slate-100 hover:bg-rose-50 text-rose-600 hover:text-rose-700 rounded-[4px]"
+                      className="h-7 px-2.5 text-[10px] font-bold uppercase tracking-wider border border-slate-100 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-[4px]"
                       title="Archive Template"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -193,3 +193,4 @@ export function TicketTemplateList({
     </div>
   );
 }
+

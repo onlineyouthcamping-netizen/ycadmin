@@ -985,7 +985,7 @@ export default function HotelAssignmentWizardModal({
           <div className="border border-slate-200 rounded-lg overflow-x-auto bg-white">
             <div className="bg-slate-50 p-2 border-b border-slate-200 flex flex-wrap justify-between items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-700">
               <span>Per Person Sharing Allocation</span>
-              <span className={cn("font-bold px-2 py-0.5 rounded text-[10px]", isPaxFullyAllocated ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800")}>
+              <span className={cn("font-bold px-2 py-0.5 rounded text-[10px]", isPaxFullyAllocated ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800")}>
                 {paxCapacityCovered} / {targetPaxCount} Persons Allocated
               </span>
             </div>
@@ -1258,3 +1258,4 @@ export default function HotelAssignmentWizardModal({
     </Dialog>
   );
 }
+

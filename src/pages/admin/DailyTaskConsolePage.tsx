@@ -416,7 +416,7 @@ export default function DailyTaskConsolePage() {
       {/* ── STICKY HEADER & WORKSTATION TITLE ── */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#F97316] shrink-0">
+          <div className="w-11 h-11 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF4D00] shrink-0">
             <Zap className="w-6 h-6" />
           </div>
           <div>
@@ -461,7 +461,7 @@ export default function DailyTaskConsolePage() {
               setIsTaskModalOpen(true);
             }}
             size="sm"
-            className="h-9 text-xs font-bold gap-1.5 bg-[#F97316] hover:bg-[#E05E00] text-white shadow-xs"
+            className="h-9 text-xs font-bold gap-1.5 bg-[#FF4D00] hover:bg-[#E05E00] text-white shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" /> + Assign Quick Task
           </Button>
@@ -504,12 +504,12 @@ export default function DailyTaskConsolePage() {
           <p className="text-[9.5px] text-red-600 font-medium">Requires immediate action</p>
         </div>
 
-        <div className="bg-emerald-50/40 border border-emerald-200 rounded-xl p-4 shadow-2xs space-y-1">
-          <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
+        <div className="bg-green-50/40 border border-green-200 rounded-xl p-4 shadow-2xs space-y-1">
+          <span className="text-[10px] font-extrabold text-green-700 uppercase tracking-wider block">
             Completed Today
           </span>
-          <p className="text-2xl font-black text-emerald-700">{completedTodayCount}</p>
-          <p className="text-[9.5px] text-emerald-600 font-medium">
+          <p className="text-2xl font-black text-green-700">{completedTodayCount}</p>
+          <p className="text-[9.5px] text-green-600 font-medium">
             {todayDueCount + completedTodayCount > 0
               ? `${Math.round((completedTodayCount / (todayDueCount + completedTodayCount)) * 100)}% execution rate`
               : "0%"}
@@ -548,7 +548,7 @@ export default function DailyTaskConsolePage() {
             className={cn(
               "px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer",
               viewMode === "TODAY"
-                ? "bg-white text-[#F97316] shadow-xs border border-slate-200/80"
+                ? "bg-white text-[#FF4D00] shadow-xs border border-slate-200/80"
                 : "text-slate-600 hover:text-slate-900",
             )}
           >
@@ -724,7 +724,7 @@ export default function DailyTaskConsolePage() {
                         className={cn(
                           "w-5 h-5 rounded-full border flex items-center justify-center transition-all mx-auto cursor-pointer",
                           isDone
-                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            ? "bg-green-600 border-green-500 text-white"
                             : "border-slate-300 hover:border-slate-400 bg-white",
                         )}
                       >
@@ -778,7 +778,7 @@ export default function DailyTaskConsolePage() {
                         className={cn(
                           "text-[9px] font-black px-2 py-0.5 rounded border uppercase tracking-wider inline-block",
                           t.priority?.toUpperCase() === "CRITICAL"
-                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            ? "bg-red-50 text-red-700 border-red-200"
                             : t.priority?.toUpperCase() === "HIGH"
                               ? "bg-amber-50 text-amber-700 border-amber-200"
                               : t.priority?.toUpperCase() === "MEDIUM"
@@ -792,7 +792,7 @@ export default function DailyTaskConsolePage() {
 
                     {/* DUE DATE */}
                     <td className="p-3.5 border-r border-slate-100 font-bold text-slate-700 text-xs">
-                      <span className={cn(isDueToday && !isDone && "text-[#F97316] font-black")}>
+                      <span className={cn(isDueToday && !isDone && "text-[#FF4D00] font-black")}>
                         {dueDateFormatted}
                       </span>
                     </td>
@@ -819,7 +819,7 @@ export default function DailyTaskConsolePage() {
                         className={cn(
                           "text-[9.5px] font-black px-2 py-0.5 rounded border uppercase tracking-wider inline-block",
                           isDone
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            ? "bg-green-50 text-green-700 border-green-200"
                             : isOverdue
                               ? "bg-red-50 text-red-700 border-red-200"
                               : isDueToday
@@ -1018,7 +1018,7 @@ export default function DailyTaskConsolePage() {
               type="button"
               size="sm"
               onClick={handleSaveTaskForm}
-              className="h-9 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white"
+              className="h-9 text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white"
             >
               Save Task
             </Button>
@@ -1028,3 +1028,5 @@ export default function DailyTaskConsolePage() {
     </div>
   );
 }
+
+

@@ -57,16 +57,16 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
       value: `₹${data.grossProfit.toLocaleString("en-IN")}`,
       subtext: `${margin}% net margin`,
       icon: TrendingUp,
-      color: "text-emerald-600 bg-emerald-50 border-emerald-200",
-      iconColor: "text-emerald-600",
+      color: "text-green-600 bg-green-50 border-green-200",
+      iconColor: "text-green-600",
     },
     {
       label: "Pending",
       value: data.pendingVendorConfirmations.toString(),
       subtext: "Vendor confirmations due",
       icon: AlertCircle,
-      color: "text-rose-600 bg-rose-50 border-rose-200",
-      iconColor: "text-rose-600",
+      color: "text-red-600 bg-red-50 border-red-200",
+      iconColor: "text-red-600",
     },
     {
       label: "Passengers Booked",
@@ -115,3 +115,4 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
     </div>
   );
 }
+

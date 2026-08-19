@@ -71,7 +71,7 @@ export function TransportModuleView({
               <tr>
                 <td colSpan={5} className="p-12 text-center bg-slate-50/50">
                   <div className="space-y-2 max-w-sm mx-auto">
-                    <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mx-auto">
+                    <div className="w-12 h-12 rounded-full bg-green-50 border border-green-200 flex items-center justify-center text-green-600 mx-auto">
                       <Bus className="w-6 h-6" />
                     </div>
                     <p className="text-sm font-bold text-slate-800">
@@ -97,13 +97,13 @@ export function TransportModuleView({
                 >
                   <td className="py-2.5 px-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-md bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 font-bold shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-green-50 border border-green-200 flex items-center justify-center text-green-700 font-bold shrink-0">
                         <Bus className="w-3.5 h-3.5" />
                       </div>
                       <div>
                         <span
                           onClick={() => onSelectVendor(f)}
-                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#F97316] cursor-pointer transition-colors"
+                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#FF4D00] cursor-pointer transition-colors"
                         >
                           {f.name}
                         </span>
@@ -150,7 +150,7 @@ export function TransportModuleView({
                           type="button"
                           onClick={() => onDeleteVendor(f.id)}
                           title="Deactivate"
-                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -194,3 +194,4 @@ export function TransportModuleView({
     </div>
   );
 }
+

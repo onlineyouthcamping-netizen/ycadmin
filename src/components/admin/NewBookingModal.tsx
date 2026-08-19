@@ -381,7 +381,7 @@ export default function NewBookingModal({
         <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
           Balance Due
         </span>
-        <span className="text-base font-bold text-[#F97316]">
+        <span className="text-base font-bold text-[#FF4D00]">
           ₹{(form.totalAmount - (form.advancePaid || 0)).toLocaleString()}
         </span>
       </div>
@@ -423,8 +423,8 @@ export default function NewBookingModal({
         {/* Customer Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#F97316]" />
-            <h3 className="text-xs font-bold text-[#F97316] tracking-tight">
+            <Users className="w-4 h-4 text-[#FF4D00]" />
+            <h3 className="text-xs font-bold text-[#FF4D00] tracking-tight">
               Customer Information
             </h3>
           </div>
@@ -438,14 +438,14 @@ export default function NewBookingModal({
                 value={form.fullName}
                 onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                 placeholder="Primary guest name"
-                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
               />
             </div>
             <div className="space-y-1.5">
               <Label className="text-[11px] font-bold text-slate-650 tracking-tight">
                 Mobile Number *
               </Label>
-              <div className="flex h-8.5 rounded-[4px] border border-slate-200 overflow-hidden shadow-xs focus-within:ring-2 focus-within:ring-[#F97316]/20 transition-all">
+              <div className="flex h-8.5 rounded-[4px] border border-slate-200 overflow-hidden shadow-xs focus-within:ring-2 focus-within:ring-[#FF4D00]/20 transition-all">
                 <div className="w-10 h-full bg-slate-50 border-r border-slate-200 flex items-center justify-center text-[11px] font-bold text-slate-500">
                   +91
                 </div>
@@ -469,7 +469,7 @@ export default function NewBookingModal({
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="customer@example.com"
-                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -501,7 +501,7 @@ export default function NewBookingModal({
                   onChange={(e) =>
                     setForm({ ...form, age: parseInt(e.target.value) || 0 })
                   }
-                  className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                  className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
                 />
               </div>
             </div>
@@ -511,8 +511,8 @@ export default function NewBookingModal({
         {/* Trip Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#F97316]" />
-            <h3 className="text-xs font-bold text-[#F97316] tracking-tight">
+            <Calendar className="w-4 h-4 text-[#FF4D00]" />
+            <h3 className="text-xs font-bold text-[#FF4D00] tracking-tight">
               Expedition Logistics
             </h3>
           </div>
@@ -532,7 +532,7 @@ export default function NewBookingModal({
                       tripId: "",
                     })
                   }
-                  className="text-[9px] font-bold text-[#F97316] uppercase tracking-wider hover:underline"
+                  className="text-[9px] font-bold text-[#FF4D00] uppercase tracking-wider hover:underline"
                 >
                   {form.isManualTrip ? "Select from list" : "Manual Code"}
                 </button>
@@ -542,7 +542,7 @@ export default function NewBookingModal({
                   value={form.tripId}
                   onChange={(e) => setForm({ ...form, tripId: e.target.value })}
                   placeholder="e.g. MKA1"
-                  className="font-bold uppercase tracking-wider h-8.5 rounded-[4px] border-slate-200 text-xs text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                  className="font-bold uppercase tracking-wider h-8.5 rounded-[4px] border-slate-200 text-xs text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
                 />
               ) : (
                 <Select value={form.tripId} onValueChange={handleTripChange}>
@@ -576,7 +576,7 @@ export default function NewBookingModal({
                   })
                 }
                 placeholder="Number of guests"
-                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
               />
             </div>
           </div>
@@ -609,7 +609,7 @@ export default function NewBookingModal({
                     setForm({ ...form, pickupCity: e.target.value })
                   }
                   placeholder="e.g. Ahmedabad, Mumbai"
-                  className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                  className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
                 />
               )}
             </div>
@@ -649,7 +649,7 @@ export default function NewBookingModal({
                   onChange={(e) =>
                     setForm({ ...form, departureDate: e.target.value })
                   }
-                  className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                  className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
                 />
               )}
             </div>
@@ -693,7 +693,7 @@ export default function NewBookingModal({
                     setForm({ ...form, roomType: e.target.value })
                   }
                   placeholder="e.g. Double Sharing"
-                  className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                  className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
                 />
               )}
             </div>
@@ -749,8 +749,8 @@ export default function NewBookingModal({
         {/* Financials */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
-            <IndianRupee className="w-4 h-4 text-[#F97316]" />
-            <h3 className="text-xs font-bold text-[#F97316] tracking-tight">
+            <IndianRupee className="w-4 h-4 text-[#FF4D00]" />
+            <h3 className="text-xs font-bold text-[#FF4D00] tracking-tight">
               Financial Details
             </h3>
           </div>
@@ -769,7 +769,7 @@ export default function NewBookingModal({
                     totalAmount: parseFloat(e.target.value) || 0,
                   })
                 }
-                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
               />
             </div>
             <div className="space-y-1.5">
@@ -786,7 +786,7 @@ export default function NewBookingModal({
                   })
                 }
                 placeholder="0.00"
-                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316]"
+                className="h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00]"
               />
             </div>
           </div>
@@ -841,10 +841,11 @@ export default function NewBookingModal({
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
             placeholder="Special requests or payment remarks..."
-            className="min-h-[90px] rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#F97316] p-3"
+            className="min-h-[90px] rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700 bg-white shadow-xs focus-visible:ring-[#FF4D00] p-3"
           />
         </section>
       </div>
     </AdminModal>
   );
 }
+

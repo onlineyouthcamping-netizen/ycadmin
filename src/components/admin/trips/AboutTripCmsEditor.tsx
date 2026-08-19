@@ -322,7 +322,7 @@ export const AboutTripCmsEditor: React.FC<AboutTripCmsEditorProps> = ({
                       title={card.isVisible ? "Hide" : "Show"}
                     >
                       {card.isVisible ? (
-                        <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                        <Eye className="w-3.5 h-3.5 text-green-600" />
                       ) : (
                         <EyeOff className="w-3.5 h-3.5 text-slate-400" />
                       )}
@@ -348,7 +348,7 @@ export const AboutTripCmsEditor: React.FC<AboutTripCmsEditorProps> = ({
                     <button
                       type="button"
                       onClick={() => handleDeleteCard(card.id)}
-                      className="p-1 text-rose-500 hover:text-rose-700"
+                      className="p-1 text-red-600 hover:text-red-700"
                       title="Delete"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -541,3 +541,4 @@ export const AboutTripCmsEditor: React.FC<AboutTripCmsEditorProps> = ({
 };
 
 export default AboutTripCmsEditor;
+

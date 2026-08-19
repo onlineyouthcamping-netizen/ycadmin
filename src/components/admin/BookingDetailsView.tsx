@@ -117,8 +117,8 @@ const TAB_BADGE_TONES: Record<string, { active: string; idle: string }> = {
     idle: "bg-[#F4F7FB] text-slate-500 border border-[#E8EEF4]",
   },
   emerald: {
-    active: "bg-emerald-100 text-emerald-800 border border-emerald-200",
-    idle: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+    active: "bg-green-100 text-green-700 border border-green-200",
+    idle: "bg-green-50 text-green-700 border border-green-100",
   },
   amber: {
     active: "bg-amber-100 text-amber-800 border border-amber-200",
@@ -149,7 +149,7 @@ const TAB_BADGE_TONES: Record<string, { active: string; idle: string }> = {
 const getGenderTone = (gender: string) => {
   const normalized = String(gender || "").trim().toLowerCase();
   if (normalized.startsWith("f"))
-    return "bg-rose-50 text-rose-700 border-rose-200";
+    return "bg-red-50 text-red-700 border-red-200";
   if (normalized.startsWith("m"))
     return "bg-sky-50 text-sky-700 border-sky-200";
   return "bg-violet-50 text-violet-700 border-violet-200";
@@ -2659,7 +2659,7 @@ export default function BookingDetailsView({
               className={cn(
                 "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-semibold",
                 booking.status === "confirmed"
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  ? "bg-green-50 text-green-700 border border-green-200"
                   : "bg-amber-50 text-amber-700 border border-amber-200",
               )}
             >
@@ -2667,7 +2667,7 @@ export default function BookingDetailsView({
                 className={cn(
                   "h-1.5 w-1.5 rounded-full",
                   booking.status === "confirmed"
-                    ? "bg-emerald-500"
+                    ? "bg-green-600"
                     : "bg-amber-500",
                 )}
               />
@@ -2750,7 +2750,7 @@ export default function BookingDetailsView({
                     setCancelRefundMode("UPI");
                     setShowCancelModal(true);
                   }}
-                  className="text-xs font-semibold text-rose-600 rounded cursor-pointer gap-2 focus:bg-rose-50 focus:text-rose-700"
+                  className="text-xs font-semibold text-red-600 rounded cursor-pointer gap-2 focus:bg-red-50 focus:text-red-700"
                 >
                   <Ban className="h-3.5 w-3.5" />
                   Cancel booking
@@ -2761,7 +2761,7 @@ export default function BookingDetailsView({
                   <DropdownMenuSeparator className="bg-[#E8EEF4]" />
                   <DropdownMenuItem
                     onSelect={() => setShowDeleteFounderModal(true)}
-                    className="text-xs font-semibold text-rose-600 rounded cursor-pointer gap-2 focus:bg-rose-50 focus:text-rose-700"
+                    className="text-xs font-semibold text-red-600 rounded cursor-pointer gap-2 focus:bg-red-50 focus:text-red-700"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete booking
@@ -2779,13 +2779,13 @@ export default function BookingDetailsView({
       <div className="flex-1 min-w-0 space-y-3 px-3 py-3 sm:px-4 sm:py-4 md:px-6">
       {/* Status strip — quiet, single row. Full status detail lives in the header chip. */}
       {flowStatus === "Confirmed" || booking.status === "confirmed" ? (
-        <div className="bg-gradient-to-r from-emerald-50 via-emerald-50/40 to-white border border-emerald-200/80 border-l-[3px] border-l-emerald-500 rounded-xl px-3 sm:px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+        <div className="bg-gradient-to-r from-green-50 via-green-50/40 to-white border border-green-200/80 border-l-[3px] border-l-green-500 rounded-xl px-3 sm:px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
           <div className="flex items-center gap-2 min-w-0">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-            <span className="font-semibold text-emerald-900 truncate">
+            <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+            <span className="font-semibold text-green-900 truncate">
               Booking confirmed
             </span>
-            <span className="text-emerald-700/70 truncate hidden sm:inline">
+            <span className="text-green-700/70 truncate hidden sm:inline">
               Ticket and confirmation email can be re-issued below.
             </span>
           </div>
@@ -2796,9 +2796,9 @@ export default function BookingDetailsView({
               setConfirmEmail(booking.email || "");
               setIsConfirming(!isConfirming);
             }}
-            className="h-8 shrink-0 inline-flex items-center justify-center gap-1.5 bg-white border border-emerald-200 text-emerald-800 font-semibold text-xs px-3 rounded-lg hover:bg-emerald-50 transition-colors cursor-pointer"
+            className="h-8 shrink-0 inline-flex items-center justify-center gap-1.5 bg-white border border-green-200 text-green-700 font-semibold text-xs px-3 rounded-lg hover:bg-green-50 transition-colors cursor-pointer"
           >
-            <Mail className="h-3.5 w-3.5 text-emerald-600" />
+            <Mail className="h-3.5 w-3.5 text-green-600" />
             {isConfirming ? "Hide panel" : "Update ticket & email"}
           </button>
         </div>
@@ -2807,7 +2807,7 @@ export default function BookingDetailsView({
           className={cn(
             "rounded-xl px-3 sm:px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border border-l-[3px]",
             flowStatus === "Cancelled"
-              ? "bg-gradient-to-r from-rose-50 via-rose-50/40 to-white border-rose-200/80 border-l-rose-500"
+              ? "bg-gradient-to-r from-red-50 via-red-50/40 to-white border-red-200/80 border-l-red-500"
               : "bg-gradient-to-r from-amber-50 via-amber-50/40 to-white border-amber-200/80 border-l-amber-500",
           )}
         >
@@ -2815,13 +2815,13 @@ export default function BookingDetailsView({
             <AlertCircle
               className={cn(
                 "h-4 w-4 shrink-0 mt-0.5 sm:mt-0",
-                flowStatus === "Cancelled" ? "text-rose-600" : "text-amber-600",
+                flowStatus === "Cancelled" ? "text-red-600" : "text-amber-600",
               )}
             />
             <span
               className={cn(
                 "font-semibold shrink-0",
-                flowStatus === "Cancelled" ? "text-rose-900" : "text-amber-900",
+                flowStatus === "Cancelled" ? "text-red-900" : "text-amber-900",
               )}
             >
               {flowStatus}
@@ -2830,7 +2830,7 @@ export default function BookingDetailsView({
               className={cn(
                 "leading-snug",
                 flowStatus === "Cancelled"
-                  ? "text-rose-700/80"
+                  ? "text-red-700/80"
                   : "text-amber-800/80",
               )}
             >
@@ -2862,14 +2862,14 @@ export default function BookingDetailsView({
       )}
 
       {isRejecting && (
-        <div className="p-4 bg-white border-l-2 border-l-rose-400 border-y border-r border-[#E8EEF4] rounded-xl text-xs space-y-2">
+        <div className="p-4 bg-white border-l-2 border-l-red-400 border-y border-r border-[#E8EEF4] rounded-xl text-xs space-y-2">
           <p className="font-semibold text-[#0B1528]">
             Are you sure you want to reject this booking?
           </p>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleRejectSubmit}
-              className="h-8 inline-flex items-center bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold px-3 rounded-lg transition-colors cursor-pointer"
+              className="h-8 inline-flex items-center bg-white border border-red-200 text-red-600 hover:bg-red-50 font-semibold px-3 rounded-lg transition-colors cursor-pointer"
             >
               Yes, reject
             </button>
@@ -3005,7 +3005,7 @@ export default function BookingDetailsView({
                         });
                       }
                     }}
-                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer"
                   />
                   {confirmTicketFilesList.length > 0 && (
                     <div className="space-y-1 pt-1">
@@ -3028,7 +3028,7 @@ export default function BookingDetailsView({
                                   prev.filter((_, i) => i !== fIdx),
                                 )
                               }
-                              className="text-slate-400 hover:text-rose-600 font-semibold cursor-pointer"
+                              className="text-slate-400 hover:text-red-600 font-semibold cursor-pointer"
                               title="Remove file"
                             >
                               ✕
@@ -3089,9 +3089,9 @@ export default function BookingDetailsView({
                     "text-[11px] font-semibold truncate",
                     dueAmount > 0
                       ? isOverdue
-                        ? "text-rose-600"
+                        ? "text-red-600"
                         : "text-amber-700"
-                      : "text-emerald-700",
+                      : "text-green-700",
                   )}
                 >
                   {dueAmount > 0
@@ -3121,7 +3121,7 @@ export default function BookingDetailsView({
             <span
               className={cn(
                 "text-[11px] font-semibold truncate",
-                passengers.length >= qty ? "text-emerald-700" : "text-amber-700",
+                passengers.length >= qty ? "text-green-700" : "text-amber-700",
               )}
             >
               {passengers.length >= qty
@@ -3237,7 +3237,7 @@ export default function BookingDetailsView({
                 <span
                   className={cn(
                     "text-[11px] font-semibold truncate",
-                    openTasks > 0 ? "text-[#C2410C]" : "text-emerald-700",
+                    openTasks > 0 ? "text-[#C2410C]" : "text-green-700",
                   )}
                 >
                   {openTasks > 0 ? "Open" : "All clear"}
@@ -3369,14 +3369,14 @@ export default function BookingDetailsView({
                   <div
                     className={cn(
                       "bg-white rounded-xl overflow-hidden border",
-                      allClear ? "border-emerald-200/70" : "border-amber-200/70",
+                      allClear ? "border-green-200/70" : "border-amber-200/70",
                     )}
                   >
                     <div
                       className={cn(
                         "px-4 py-3 border-b flex items-center gap-2",
                         allClear
-                          ? "bg-gradient-to-r from-emerald-50 to-white border-emerald-100"
+                          ? "bg-gradient-to-r from-green-50 to-white border-green-100"
                           : "bg-gradient-to-r from-amber-50 to-white border-amber-100",
                       )}
                     >
@@ -3384,7 +3384,7 @@ export default function BookingDetailsView({
                         className={cn(
                           "h-6 w-6 rounded-lg inline-flex items-center justify-center border shrink-0",
                           allClear
-                            ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                            ? "bg-green-100 border-green-200 text-green-700"
                             : "bg-amber-100 border-amber-200 text-amber-700",
                         )}
                       >
@@ -3397,7 +3397,7 @@ export default function BookingDetailsView({
                       <h3
                         className={cn(
                           "text-xs font-semibold",
-                          allClear ? "text-emerald-900" : "text-amber-900",
+                          allClear ? "text-green-900" : "text-amber-900",
                         )}
                       >
                         {allClear ? "All clear" : "Needs attention"}
@@ -3451,7 +3451,7 @@ export default function BookingDetailsView({
                       )}
                       {allClear && (
                         <div className="px-4 py-3 text-xs text-slate-600 flex items-center gap-2.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0" />
                           <span>
                             All operational requirements and payments are up to
                             date
@@ -3681,7 +3681,7 @@ export default function BookingDetailsView({
                 if (isCancelled) {
                   return {
                     label: "Cancelled",
-                    colorClass: "bg-rose-100 text-rose-700 border-rose-300",
+                    colorClass: "bg-red-100 text-red-700 border-red-300",
                   };
                 }
                 const ticket = tickets.find(
@@ -3723,7 +3723,7 @@ export default function BookingDetailsView({
                 return {
                   label: "Confirmed",
                   colorClass:
-                    "bg-emerald-50 text-emerald-700 border-emerald-200",
+                    "bg-green-50 text-green-700 border-green-200",
                 };
               };
 
@@ -3910,7 +3910,7 @@ export default function BookingDetailsView({
                               {activePaxCount} active
                             </span>
                             {cancelledPaxCount > 0 && (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700">
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700">
                                 {cancelledPaxCount} cancelled
                               </span>
                             )}
@@ -3959,13 +3959,13 @@ export default function BookingDetailsView({
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <button
                             onClick={handleBulkCancelPassengers}
-                            className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 text-[11px] font-semibold transition-colors cursor-pointer"
+                            className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md bg-white border border-red-200 text-red-700 hover:bg-red-50 text-[11px] font-semibold transition-colors cursor-pointer"
                           >
                             <UserX className="w-3 h-3" /> Cancel
                           </button>
                           <button
                             onClick={handleBulkRestorePassengers}
-                            className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-[11px] font-semibold transition-colors cursor-pointer"
+                            className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md bg-white border border-green-200 text-green-700 hover:bg-green-50 text-[11px] font-semibold transition-colors cursor-pointer"
                           >
                             <RotateCcw className="w-3 h-3" /> Restore
                           </button>
@@ -4072,7 +4072,7 @@ export default function BookingDetailsView({
                                     className={cn(
                                       "group cursor-pointer transition-colors",
                                       isCancelled
-                                        ? "bg-rose-50/50 hover:bg-rose-50"
+                                        ? "bg-red-50/50 hover:bg-red-50"
                                         : "hover:bg-[#FFF6F1]",
                                     )}
                                   >
@@ -4103,7 +4103,7 @@ export default function BookingDetailsView({
                                           className={cn(
                                             "h-8 w-8 rounded-full border inline-flex items-center justify-center text-[11px] font-semibold shrink-0",
                                             isCancelled
-                                              ? "bg-rose-100 border-rose-200 text-rose-700"
+                                              ? "bg-red-100 border-red-200 text-red-700"
                                               : row.index === 0
                                                 ? "bg-[#FF4D00]/10 border-[#FF4D00]/25 text-[#C2410C]"
                                                 : "bg-[#0B1528]/[0.06] border-[#0B1528]/10 text-[#0B1528]",
@@ -4117,7 +4117,7 @@ export default function BookingDetailsView({
                                               className={cn(
                                                 "text-xs font-semibold truncate",
                                                 isCancelled
-                                                  ? "line-through text-rose-700"
+                                                  ? "line-through text-red-700"
                                                   : "text-[#0B1528]",
                                               )}
                                             >
@@ -4159,7 +4159,7 @@ export default function BookingDetailsView({
                                           </div>
                                           {isCancelled &&
                                             row.cancellationReason && (
-                                              <div className="text-[10px] text-rose-600 mt-1">
+                                              <div className="text-[10px] text-red-600 mt-1">
                                                 {row.cancellationReason}
                                               </div>
                                             )}
@@ -4206,7 +4206,7 @@ export default function BookingDetailsView({
                                           "inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide border",
                                           row.isJainFood
                                             ? "bg-amber-50 text-amber-700 border-amber-200"
-                                            : "bg-emerald-50 text-emerald-700 border-emerald-200",
+                                            : "bg-green-50 text-green-700 border-green-200",
                                         )}
                                       >
                                         {row.food}
@@ -4259,7 +4259,7 @@ export default function BookingDetailsView({
                                                     doc.id,
                                                   )
                                                 }
-                                                className="text-[10px] font-semibold text-slate-400 hover:text-rose-600 cursor-pointer"
+                                                className="text-[10px] font-semibold text-slate-400 hover:text-red-600 cursor-pointer"
                                               >
                                                 Remove
                                               </button>
@@ -4320,7 +4320,7 @@ export default function BookingDetailsView({
                                               }
                                               className={cn(
                                                 iconBtn,
-                                                "text-emerald-600 hover:bg-emerald-50",
+                                                "text-green-600 hover:bg-green-50",
                                               )}
                                               title="Restore passenger"
                                             >
@@ -4333,7 +4333,7 @@ export default function BookingDetailsView({
                                               }
                                               className={cn(
                                                 iconBtn,
-                                                "hover:text-rose-600 hover:bg-rose-50",
+                                                "hover:text-red-600 hover:bg-red-50",
                                               )}
                                               title="Cancel this passenger"
                                             >
@@ -4346,7 +4346,7 @@ export default function BookingDetailsView({
                                             }
                                             className={cn(
                                               iconBtn,
-                                              "hover:text-rose-600 hover:bg-rose-50",
+                                              "hover:text-red-600 hover:bg-red-50",
                                             )}
                                             title="Permanently delete"
                                           >
@@ -4386,7 +4386,7 @@ export default function BookingDetailsView({
                                 key={`m-${row.key}`}
                                 className={cn(
                                   "px-4 py-3.5",
-                                  isCancelled && "bg-rose-50/50",
+                                  isCancelled && "bg-red-50/50",
                                 )}
                               >
                                 <div className="flex items-start gap-3">
@@ -4414,7 +4414,7 @@ export default function BookingDetailsView({
                                         className={cn(
                                           "h-9 w-9 rounded-full border inline-flex items-center justify-center text-xs font-semibold shrink-0",
                                           isCancelled
-                                            ? "bg-rose-100 border-rose-200 text-rose-700"
+                                            ? "bg-red-100 border-red-200 text-red-700"
                                             : row.index === 0
                                               ? "bg-[#FF4D00]/10 border-[#FF4D00]/25 text-[#C2410C]"
                                               : "bg-[#0B1528]/[0.06] border-[#0B1528]/10 text-[#0B1528]",
@@ -4428,7 +4428,7 @@ export default function BookingDetailsView({
                                             className={cn(
                                               "text-xs font-semibold truncate",
                                               isCancelled
-                                                ? "line-through text-rose-700"
+                                                ? "line-through text-red-700"
                                                 : "text-[#0B1528]",
                                             )}
                                           >
@@ -4475,7 +4475,7 @@ export default function BookingDetailsView({
                                               "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border",
                                               row.isJainFood
                                                 ? "bg-amber-50 text-amber-700 border-amber-200"
-                                                : "bg-emerald-50 text-emerald-700 border-emerald-200",
+                                                : "bg-green-50 text-green-700 border-green-200",
                                             )}
                                           >
                                             {row.food}
@@ -4483,7 +4483,7 @@ export default function BookingDetailsView({
                                         </div>
                                         {isCancelled &&
                                           row.cancellationReason && (
-                                            <div className="text-[10px] text-rose-600 mt-1.5">
+                                            <div className="text-[10px] text-red-600 mt-1.5">
                                               {row.cancellationReason}
                                             </div>
                                           )}
@@ -4572,7 +4572,7 @@ export default function BookingDetailsView({
                                           onClick={() =>
                                             handleRestorePassenger(normP)
                                           }
-                                          className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md border border-emerald-200 bg-white text-emerald-700 text-[11px] font-semibold cursor-pointer"
+                                          className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md border border-green-200 bg-white text-green-700 text-[11px] font-semibold cursor-pointer"
                                         >
                                           <RotateCcw className="w-3 h-3" />{" "}
                                           Restore
@@ -4624,7 +4624,7 @@ export default function BookingDetailsView({
                         {(booking.remainingAmount || 0).toLocaleString("en-IN")}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase font-mono">
+                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 uppercase font-mono">
                         Fully Paid
                       </span>
                     )}
@@ -5011,7 +5011,7 @@ export default function BookingDetailsView({
                     <h3 className="font-semibold text-[#0B1528] text-xs">
                       Additional booking details
                     </h3>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 border border-emerald-250/30 uppercase">
+                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-green-100 text-green-700 border border-green-200/60 uppercase">
                       Form complete
                     </span>
                   </div>
@@ -5163,7 +5163,7 @@ export default function BookingDetailsView({
                             className={cn(
                               "px-2 py-0.5 rounded-full text-[8px] font-semibold",
                               task.status === "COMPLETED"
-                                ? "bg-emerald-100 text-emerald-700"
+                                ? "bg-green-100 text-green-700"
                                 : task.status === "IN_PROGRESS"
                                   ? "bg-blue-100 text-blue-700"
                                   : "bg-amber-100 text-amber-700",
@@ -5209,7 +5209,7 @@ export default function BookingDetailsView({
                               </div>
                             )}
                           {task.completedAt && (
-                            <div className="text-[9px] text-emerald-600 font-semibold">
+                            <div className="text-[9px] text-green-600 font-semibold">
                               Completed: {safeFormatDateTime(task.completedAt)}{" "}
                               {task.completedBy ? `by ${task.completedBy}` : ""}
                             </div>
@@ -5241,7 +5241,7 @@ export default function BookingDetailsView({
                               onClick={() =>
                                 handleUpdateTaskStatus(task.id, "COMPLETED")
                               }
-                              className="h-6 px-2 text-[8px] font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 uppercase"
+                              className="h-6 px-2 text-[8px] font-semibold text-green-600 hover:text-green-700 hover:bg-green-50 uppercase"
                             >
                               Mark Completed
                             </Button>
@@ -5284,11 +5284,11 @@ export default function BookingDetailsView({
                         className={cn(
                           "px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all cursor-pointer flex items-center gap-1",
                           accountingViewMode === "per_person"
-                            ? "bg-white text-emerald-700 border border-[#E8EEF4] font-semibold"
+                            ? "bg-white text-green-700 border border-[#E8EEF4] font-semibold"
                             : "text-slate-600 hover:text-slate-900 font-semibold",
                         )}
                       >
-                        <User className="w-3 h-3 text-emerald-600" />
+                        <User className="w-3 h-3 text-green-600" />
                         Per-Person Details
                       </button>
                       <button
@@ -5346,10 +5346,10 @@ export default function BookingDetailsView({
                         setBookingItems(regenerated);
                         toast.success("Restored per-person line items");
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 px-2.5 py-1 rounded transition-all"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-300 hover:bg-green-100 px-2.5 py-1 rounded transition-all"
                       title="Reset to 1 Transport & 1 Accommodation line item per passenger"
                     >
-                      <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
+                      <RefreshCw className="w-3.5 h-3.5 text-green-600" />
                       Reset to Per-Person
                     </button>
                   </div>
@@ -5617,7 +5617,7 @@ export default function BookingDetailsView({
                                         );
                                         toast.success("Item removed");
                                       }}
-                                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                       title="Remove Item"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -5695,7 +5695,7 @@ export default function BookingDetailsView({
                                     setCustomRate("");
                                     setCustomQty("1");
                                   }}
-                                  className="text-[10px] text-rose-500 font-semibold hover:underline mt-1 block"
+                                  className="text-[10px] text-red-600 font-semibold hover:underline mt-1 block"
                                 >
                                   Clear custom input
                                 </button>
@@ -5883,14 +5883,14 @@ export default function BookingDetailsView({
                             <td></td>
                           </tr>
                           {previewOtherDiscount > 0 && (
-                            <tr className="bg-rose-50/80 border-t border-rose-200">
+                            <tr className="bg-red-50/80 border-t border-red-200">
                               <td
                                 colSpan={3}
-                                className="px-5 py-2.5 text-right font-semibold text-rose-700 text-[10px]"
+                                className="px-5 py-2.5 text-right font-semibold text-red-700 text-[10px]"
                               >
                                 Applied Special Discount / Coupon
                               </td>
-                              <td className="px-5 py-2.5 text-right font-mono font-semibold text-rose-700">
+                              <td className="px-5 py-2.5 text-right font-mono font-semibold text-red-700">
                                 -₹{" "}
                                 {previewOtherDiscount.toLocaleString("en-IN", {
                                   minimumFractionDigits: 2,
@@ -5901,14 +5901,14 @@ export default function BookingDetailsView({
                             </tr>
                           )}
                           {previewGstDiscount > 0 && (
-                            <tr className="bg-rose-50/80">
+                            <tr className="bg-red-50/80">
                               <td
                                 colSpan={3}
-                                className="px-5 py-2.5 text-right font-semibold text-rose-600 text-[10px]"
+                                className="px-5 py-2.5 text-right font-semibold text-red-600 text-[10px]"
                               >
                                 GST Discount
                               </td>
-                              <td className="px-5 py-2.5 text-right font-mono font-semibold text-rose-600">
+                              <td className="px-5 py-2.5 text-right font-mono font-semibold text-red-600">
                                 -₹{" "}
                                 {previewGstDiscount.toLocaleString("en-IN", {
                                   minimumFractionDigits: 2,
@@ -5934,7 +5934,7 @@ export default function BookingDetailsView({
                                 </button>
                               </div>
                             </td>
-                            <td className="px-5 py-3.5 text-right font-semibold font-mono text-base text-emerald-400 align-middle">
+                            <td className="px-5 py-3.5 text-right font-semibold font-mono text-base text-green-500 align-middle">
                               ₹{" "}
                               {previewFinalTotal.toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
@@ -6180,7 +6180,7 @@ export default function BookingDetailsView({
                                   "Generated per-person booking items!",
                                 );
                               }}
-                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5"
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5"
                             >
                               <RefreshCw className="w-3.5 h-3.5" /> Generate
                               Per-Person Line Items
@@ -6359,14 +6359,14 @@ export default function BookingDetailsView({
                                 </td>
                               </tr>
                               {discountTotal > 0 && (
-                                <tr className="bg-rose-50/70 border-t border-rose-100">
+                                <tr className="bg-red-50/70 border-t border-red-100">
                                   <td
                                     colSpan={3}
-                                    className="px-5 py-2.5 text-right font-semibold text-rose-700 text-[10px]"
+                                    className="px-5 py-2.5 text-right font-semibold text-red-700 text-[10px]"
                                   >
                                     Applied Special Discount / Coupon
                                   </td>
-                                  <td className="px-5 py-2.5 text-right font-mono font-semibold text-rose-700">
+                                  <td className="px-5 py-2.5 text-right font-mono font-semibold text-red-700">
                                     - ₹{" "}
                                     {Math.round(discountTotal).toLocaleString(
                                       "en-IN",
@@ -6383,7 +6383,7 @@ export default function BookingDetailsView({
                                 >
                                   GRAND TOTAL
                                 </td>
-                                <td className="px-5 py-4 text-right font-mono font-semibold text-xl text-emerald-400">
+                                <td className="px-5 py-4 text-right font-mono font-semibold text-xl text-green-500">
                                   ₹ {grandTotal.toLocaleString("en-IN")}
                                 </td>
                               </tr>
@@ -6508,11 +6508,11 @@ export default function BookingDetailsView({
                     <div className="relative border-l border-[#E8EEF4] ml-2.5 pl-4 space-y-4">
                       {activityLogs.map((log: any) => {
                         const actionColors: Record<string, string> = {
-                          CREATE: "bg-emerald-500",
+                          CREATE: "bg-green-600",
                           STATUS_CHANGE: "bg-blue-500",
                           TRAIN_TICKET: "bg-purple-500",
                           PAYMENT_SUBMITTED: "bg-amber-500",
-                          PAYMENT_APPROVED: "bg-emerald-600",
+                          PAYMENT_APPROVED: "bg-green-600",
                           PAYMENT_REJECTED: "bg-red-500",
                           TASK_ASSIGNED: "bg-indigo-500",
                           TASK_UPDATED: "bg-sky-500",
@@ -6631,13 +6631,13 @@ export default function BookingDetailsView({
                               className={cn(
                                 "px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1",
                                 isVerified
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  ? "bg-green-50 text-green-700 border border-green-200"
                                   : "bg-amber-50 text-amber-700 border border-amber-200",
                               )}
                             >
                               {isVerified ? (
                                 <>
-                                  <ShieldCheck className="w-3 h-3 text-emerald-600" /> Verified
+                                  <ShieldCheck className="w-3 h-3 text-green-600" /> Verified
                                 </>
                               ) : (
                                 <>
@@ -6665,7 +6665,7 @@ export default function BookingDetailsView({
                             </div>
                             <div>
                               <span className="text-[9px] font-semibold uppercase text-slate-400 block">Margin</span>
-                              <span className={cn("font-mono font-semibold", margin >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                              <span className={cn("font-mono font-semibold", margin >= 0 ? "text-green-600" : "text-red-600")}>
                                 ₹{margin.toLocaleString("en-IN")}
                               </span>
                             </div>
@@ -6680,7 +6680,7 @@ export default function BookingDetailsView({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleVerifyService(srv.id)}
-                                className="h-6 text-[10px] font-semibold text-emerald-700 hover:bg-emerald-50 border-emerald-300"
+                                className="h-6 text-[10px] font-semibold text-green-700 hover:bg-green-50 border-green-300"
                               >
                                 <Check className="w-3 h-3 mr-1" /> Mark Verified
                               </Button>
@@ -6728,9 +6728,9 @@ export default function BookingDetailsView({
                         .toLocaleString("en-IN")}
                     </div>
                   </div>
-                  <div className="bg-emerald-50/50 border border-emerald-200 rounded-lg p-3">
-                    <span className="text-[10px] font-semibold uppercase text-emerald-700">Active Credit Note</span>
-                    <div className="text-base font-semibold text-emerald-700 font-mono mt-0.5">
+                  <div className="bg-green-50/50 border border-green-200 rounded-lg p-3">
+                    <span className="text-[10px] font-semibold uppercase text-green-700">Active Credit Note</span>
+                    <div className="text-base font-semibold text-green-700 font-mono mt-0.5">
                       ₹{bookingRefunds
                         .filter((r) => r.creditNoteStatus === "ACTIVE")
                         .reduce((acc, r) => acc + (r.creditAmount || 0), 0)
@@ -6775,9 +6775,9 @@ export default function BookingDetailsView({
                             className={cn(
                               "px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase",
                               ref.status === "APPROVED"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                ? "bg-green-50 text-green-700 border border-green-200"
                                 : ref.status === "REJECTED"
-                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                  ? "bg-red-50 text-red-700 border border-red-200"
                                   : "bg-amber-50 text-amber-700 border border-amber-200",
                             )}
                           >
@@ -6796,7 +6796,7 @@ export default function BookingDetailsView({
                           </div>
                           <div>
                             <span className="text-[9px] font-semibold uppercase text-slate-400 block">Credit Note</span>
-                            <span className="font-mono font-semibold text-emerald-700">₹{(ref.creditAmount || 0).toLocaleString("en-IN")}</span>
+                            <span className="font-mono font-semibold text-green-700">₹{(ref.creditAmount || 0).toLocaleString("en-IN")}</span>
                           </div>
                           <div>
                             <span className="text-[9px] font-semibold uppercase text-slate-400 block">Bank Reference</span>
@@ -6809,7 +6809,7 @@ export default function BookingDetailsView({
                         </p>
 
                         {ref.rejectionReason && (
-                          <p className="text-xs text-rose-600 font-medium bg-rose-50 p-2 rounded border border-rose-200">
+                          <p className="text-xs text-red-600 font-medium bg-red-50 p-2 rounded border border-red-200">
                             <span className="font-semibold">Rejection Note:</span> {ref.rejectionReason}
                           </p>
                         )}
@@ -6819,7 +6819,7 @@ export default function BookingDetailsView({
                             Created {safeFormatDateTime(ref.createdAt, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                           </span>
                           {ref.approvedAt && (
-                            <span className="text-emerald-700 font-semibold">
+                            <span className="text-green-700 font-semibold">
                               Approved {safeFormatDateTime(ref.approvedAt, { day: "2-digit", month: "short" })}
                             </span>
                           )}
@@ -6868,9 +6868,9 @@ export default function BookingDetailsView({
                               className={cn(
                                 "px-2 py-0.5 rounded font-semibold uppercase",
                                 log.action === "APPROVE"
-                                  ? "bg-emerald-100 text-emerald-800"
+                                  ? "bg-green-100 text-green-700"
                                   : log.action === "REJECT"
-                                    ? "bg-rose-100 text-rose-800"
+                                    ? "bg-red-100 text-red-700"
                                     : log.action === "CREATE"
                                       ? "bg-blue-100 text-blue-800"
                                       : "bg-slate-100 text-[#0B1528]",
@@ -7031,7 +7031,7 @@ export default function BookingDetailsView({
                   </button>
                 </div>
                 <div className="flex items-center gap-2.5 min-w-0 text-slate-600 font-mono text-[11px] sm:text-xs">
-                  <span className="h-6 w-6 rounded-md bg-emerald-50 border border-emerald-100 text-emerald-600 inline-flex items-center justify-center shrink-0">
+                  <span className="h-6 w-6 rounded-md bg-green-50 border border-green-100 text-green-600 inline-flex items-center justify-center shrink-0">
                     <Phone className="w-3 h-3" />
                   </span>
                   <span className="min-w-0 truncate" title={booking.mobile || booking.phone || undefined}>
@@ -7112,8 +7112,8 @@ export default function BookingDetailsView({
                 key: "confirmation",
                 label: "Resend confirmation",
                 icon: Send,
-                chip: "bg-emerald-50 border-emerald-100 text-emerald-600",
-                hover: "hover:bg-emerald-50/50",
+                chip: "bg-green-50 border-green-100 text-green-600",
+                hover: "hover:bg-green-50/50",
                 onClick: () => handleSendEmail("confirmation"),
               },
               (booking.remainingAmount || 0) > 0 && {
@@ -7723,7 +7723,7 @@ export default function BookingDetailsView({
           <div className="space-y-3 py-2 text-xs">
             <div className="space-y-1">
               <label className="text-[10px] font-semibold uppercase text-slate-500">
-                Account Name <span className="text-red-500">*</span>
+                Account Name <span className="text-red-600">*</span>
               </label>
               <Input
                 placeholder="e.g. Nikulbhai Patel Account or YouthCamping HDFC"
@@ -8023,7 +8023,7 @@ export default function BookingDetailsView({
       <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
         <DialogContent className="sm:max-w-[450px] bg-white p-6 rounded-xl shadow-lg border border-[#E8EEF4]">
           <DialogHeader>
-            <DialogTitle className="text-sm font-semibold text-rose-600 flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-red-600 flex items-center gap-2">
               ⚠️ Cancel Booking & Process Refund
             </DialogTitle>
             <DialogDescription className="text-[11px] text-slate-400">
@@ -8090,7 +8090,7 @@ export default function BookingDetailsView({
                   type="number"
                   value={cancelRefund}
                   onChange={(e) => setCancelRefund(e.target.value)}
-                  className="h-9 text-xs bg-white border border-[#E8EEF4] rounded-lg font-mono text-emerald-600 font-semibold"
+                  className="h-9 text-xs bg-white border border-[#E8EEF4] rounded-lg font-mono text-green-600 font-semibold"
                 />
               </div>
             </div>
@@ -8126,7 +8126,7 @@ export default function BookingDetailsView({
               <Button
                 onClick={handleCancelBooking}
                 disabled={cancelProcessing}
-                className="h-9 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-lg px-4"
+                className="h-9 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg px-4"
               >
                 {cancelProcessing ? "Cancelling..." : "Confirm Cancellation"}
               </Button>
@@ -8140,8 +8140,8 @@ export default function BookingDetailsView({
         <Dialog open={showDeleteFounderModal} onOpenChange={setShowDeleteFounderModal}>
           <DialogContent className="sm:max-w-[420px] bg-white p-6 rounded-xl shadow-lg border border-[#E8EEF4]">
             <DialogHeader>
-              <DialogTitle className="text-base font-semibold text-rose-700 flex items-center gap-2">
-                <Trash2 className="w-5 h-5 text-rose-600" /> Permanently Delete Booking
+              <DialogTitle className="text-base font-semibold text-red-700 flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-red-600" /> Permanently Delete Booking
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">
                 Permanently purge this booking record from the system.
@@ -8150,12 +8150,12 @@ export default function BookingDetailsView({
             <div className="space-y-3 py-2 text-xs text-slate-600">
               <p className="font-semibold text-[#0B1528]">
                 Are you sure you want to permanently delete booking{" "}
-                <span className="font-mono font-semibold text-rose-900 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                <span className="font-mono font-semibold text-red-900 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
                   {booking.bookingId || booking.id}
                 </span>{" "}
                 ({booking.fullName || booking.name})?
               </p>
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[11px] font-medium leading-relaxed">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[11px] font-medium leading-relaxed">
                 ⚠️ <strong>Founder Privilege Action:</strong> This will permanently purge this booking, all passenger records, train tickets, tasks, and payment logs from the system database. This action cannot be undone.
               </div>
             </div>
@@ -8173,7 +8173,7 @@ export default function BookingDetailsView({
                 size="sm"
                 onClick={handleDeleteBookingFounder}
                 disabled={deletingFounderProcessing}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer"
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer"
               >
                 {deletingFounderProcessing ? (
                   <>
@@ -8195,8 +8195,8 @@ export default function BookingDetailsView({
       <Dialog open={cancelPassengerModalOpen} onOpenChange={setCancelPassengerModalOpen}>
         <DialogContent className="sm:max-w-[460px] bg-white p-6 rounded-xl shadow-lg border border-[#E8EEF4]">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-rose-700 flex items-center gap-2">
-              <UserX className="w-5 h-5 text-rose-600" /> Cancel Passenger from Group
+            <DialogTitle className="text-base font-semibold text-red-700 flex items-center gap-2">
+              <UserX className="w-5 h-5 text-red-600" /> Cancel Passenger from Group
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               Mark an individual traveler as cancelled while keeping the rest of the booking active.
@@ -8205,14 +8205,14 @@ export default function BookingDetailsView({
 
           {cancellingPassenger && (
             <div className="space-y-4 py-2 text-xs">
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg space-y-1">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-rose-950 text-sm">{cancellingPassenger.name}</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-200/80 text-rose-900 font-semibold">
+                  <span className="font-semibold text-red-900 text-sm">{cancellingPassenger.name}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-200/80 text-red-900 font-semibold">
                     {cancellingPassenger.age ? `${cancellingPassenger.age}y` : ""} {cancellingPassenger.genderFull || cancellingPassenger.gender}
                   </span>
                 </div>
-                <p className="text-[11px] text-rose-700 font-medium">
+                <p className="text-[11px] text-red-700 font-medium">
                   Booking ID: <strong>{booking.bookingId || booking.id}</strong> ({booking.fullName || booking.name})
                 </p>
               </div>
@@ -8265,7 +8265,7 @@ export default function BookingDetailsView({
               size="sm"
               onClick={handleCancelPassengerSubmit}
               disabled={isProcessingCancelPax}
-              className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer"
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer"
             >
               {isProcessingCancelPax ? (
                 <>
@@ -8535,3 +8535,6 @@ export default function BookingDetailsView({
     </div>
   );
 }
+
+
+

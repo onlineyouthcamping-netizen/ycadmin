@@ -119,7 +119,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Station Operations Live
               </span>
@@ -140,7 +140,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
               Collection Progress
             </span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-2xl font-black text-emerald-400">
+              <span className="text-2xl font-black text-green-500">
                 {collectedCount}
               </span>
               <span className="text-xs font-bold text-slate-400">
@@ -161,7 +161,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
         {/* Progress Bar */}
         <div className="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
           <div
-            className="bg-emerald-500 h-full transition-all duration-300"
+            className="bg-green-600 h-full transition-all duration-300"
             style={{
               width: `${totalCount > 0 ? (collectedCount / totalCount) * 100 : 0}%`,
             }}
@@ -234,7 +234,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
             className={cn(
               "p-4 rounded-2xl border transition-all shadow-2xs flex flex-col gap-3",
               p.collected
-                ? "bg-emerald-50/60 border-emerald-200/80"
+                ? "bg-green-50/60 border-green-200/80"
                 : "bg-white border-slate-200/80",
             )}
           >
@@ -263,7 +263,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
                   className={cn(
                     "text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider block",
                     p.collected
-                      ? "bg-emerald-100 text-emerald-700"
+                      ? "bg-green-100 text-green-700"
                       : "bg-amber-100 text-amber-700",
                   )}
                 >
@@ -290,7 +290,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
                   href={`https://wa.me/${p.phone.replace(/[^0-9]/g, "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 hover:bg-emerald-200 flex items-center justify-center active:scale-95 transition-all"
+                  className="w-9 h-9 rounded-xl bg-green-100 text-green-700 hover:bg-green-200 flex items-center justify-center active:scale-95 transition-all"
                   aria-label="WhatsApp Traveller"
                 >
                   <MessageSquare className="w-4 h-4" />
@@ -304,7 +304,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
                   className={cn(
                     "h-10 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs touch-manipulation",
                     p.collected
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      ? "bg-green-600 text-white hover:bg-green-700"
                       : "bg-[#FF5400] text-white hover:bg-[#e04a00]",
                   )}
                 >
@@ -327,3 +327,6 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
 };
 
 export default MobileDepartureWorkspace;
+
+
+

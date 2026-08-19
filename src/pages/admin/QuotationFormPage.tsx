@@ -482,7 +482,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                 className={cn(
                   "text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border",
                   formData.status === "Published"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    ? "bg-green-50 text-green-700 border-green-200"
                     : "bg-amber-50 text-amber-700 border-amber-200",
                 )}
               >
@@ -504,7 +504,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                 onClick={copyLink}
                 className="h-10 px-3.5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
               >
-                <Copy size={14} className="text-emerald-600" /> Copy Link
+                <Copy size={14} className="text-green-600" /> Copy Link
               </Button>
               <Button
                 variant="outline"
@@ -729,7 +729,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-green-50 text-green-600 flex items-center justify-center font-bold">
                   <BadgePercent size={18} />
                 </div>
                 <div>
@@ -824,7 +824,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                 <Label className="text-[11px] font-bold text-slate-500">
                   Effective Net Price
                 </Label>
-                <div className="h-10 flex items-center px-4 bg-emerald-50 text-emerald-800 rounded-xl font-extrabold text-xs border border-emerald-200">
+                <div className="h-10 flex items-center px-4 bg-green-50 text-green-700 rounded-xl font-extrabold text-xs border border-green-200">
                   Final Standard: ₹
                   {(
                     (formData.lowLevelPrice || 0) - (formData.discount || 0)
@@ -881,7 +881,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                       newList.splice(idx, 1);
                       setFormData({ ...formData, itinerary: newList });
                     }}
-                    className="absolute top-4 right-4 h-7 w-7 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 shadow-2xs border border-slate-200 transition-all cursor-pointer"
+                    className="absolute top-4 right-4 h-7 w-7 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-red-600 shadow-2xs border border-slate-200 transition-all cursor-pointer"
                     title="Delete Day"
                   >
                     <Trash2 size={14} />
@@ -1109,7 +1109,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                     <button
                       type="button"
                       onClick={() => deleteHotel(hotelTierTab, hIdx)}
-                      className="absolute top-4 right-4 h-7 w-7 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 shadow-2xs border border-slate-200 transition-all cursor-pointer"
+                      className="absolute top-4 right-4 h-7 w-7 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-red-600 shadow-2xs border border-slate-200 transition-all cursor-pointer"
                       title="Delete Hotel"
                     >
                       <Trash2 size={14} />
@@ -1260,7 +1260,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
             {/* Inclusions */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-extrabold text-emerald-700 uppercase">
+                <Label className="text-xs font-extrabold text-green-700 uppercase">
                   Inclusions
                 </Label>
                 <Button
@@ -1273,7 +1273,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                       inclusions: [...(formData.inclusions || []), ""],
                     })
                   }
-                  className="h-7 px-2 rounded-lg text-emerald-700 font-extrabold text-[10px] uppercase hover:bg-emerald-50 cursor-pointer"
+                  className="h-7 px-2 rounded-lg text-green-700 font-extrabold text-[10px] uppercase hover:bg-green-50 cursor-pointer"
                 >
                   <Plus size={12} className="mr-1" /> Add Item
                 </Button>
@@ -1283,7 +1283,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                   <div key={i} className="flex gap-2 items-center">
                     <CheckCircle2
                       size={16}
-                      className="text-emerald-600 shrink-0"
+                      className="text-green-600 shrink-0"
                     />
                     <Input
                       value={item}
@@ -1302,7 +1302,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                         next.splice(i, 1);
                         setFormData({ ...formData, inclusions: next });
                       }}
-                      className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                      className="text-slate-400 hover:text-red-600 transition-colors p-1"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -1314,7 +1314,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
             {/* Exclusions */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-extrabold text-rose-600 uppercase">
+                <Label className="text-xs font-extrabold text-red-600 uppercase">
                   Exclusions
                 </Label>
                 <Button
@@ -1327,7 +1327,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                       exclusions: [...(formData.exclusions || []), ""],
                     })
                   }
-                  className="h-7 px-2 rounded-lg text-rose-600 font-extrabold text-[10px] uppercase hover:bg-rose-50 cursor-pointer"
+                  className="h-7 px-2 rounded-lg text-red-600 font-extrabold text-[10px] uppercase hover:bg-red-50 cursor-pointer"
                 >
                   <Plus size={12} className="mr-1" /> Add Item
                 </Button>
@@ -1335,7 +1335,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
               <div className="space-y-2">
                 {formData.exclusions?.map((item, i) => (
                   <div key={i} className="flex gap-2 items-center">
-                    <XCircle size={16} className="text-rose-500 shrink-0" />
+                    <XCircle size={16} className="text-red-600 shrink-0" />
                     <Input
                       value={item}
                       onChange={(e) => {
@@ -1353,7 +1353,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                         next.splice(i, 1);
                         setFormData({ ...formData, exclusions: next });
                       }}
-                      className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                      className="text-slate-400 hover:text-red-600 transition-colors p-1"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -1452,7 +1452,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
           {/* Destination Expert / Agent Profile */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <UserCheck size={18} className="text-emerald-600" />
+              <UserCheck size={18} className="text-green-600" />
               <h3 className="font-extrabold text-sm text-[#0B1528]">
                 Curated By (Expert Profile)
               </h3>
@@ -1522,7 +1522,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                           },
                         })
                       }
-                      className="text-[10px] font-bold text-rose-500 hover:underline"
+                      className="text-[10px] font-bold text-red-600 hover:underline"
                     >
                       Remove Photo
                     </button>
@@ -1640,7 +1640,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
           {formData.customerPhone && (
             <Button
               onClick={sendWhatsApp}
-              className="w-full h-12 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 cursor-pointer"
+              className="w-full h-12 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md shadow-green-600/20 cursor-pointer"
             >
               <WhatsAppIcon size={18} /> Send Quotation via WhatsApp
             </Button>
@@ -1650,3 +1650,5 @@ ${formData.expert?.designation || "Destination Expert"}`;
     </div>
   );
 }
+
+

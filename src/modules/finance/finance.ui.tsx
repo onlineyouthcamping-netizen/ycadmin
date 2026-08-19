@@ -11,9 +11,9 @@ export const FINANCE_NAVY = "#0B1528";
 export const financePrimaryBtn =
   "h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-xs";
 export const financeApproveBtn =
-  "h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs";
+  "h-7 text-xs font-bold bg-green-600 hover:bg-green-700 text-white shadow-xs";
 export const financeRejectBtn =
-  "h-7 text-xs font-bold border-rose-200 text-rose-600 hover:bg-rose-50";
+  "h-7 text-xs font-bold border-red-200 text-red-600 hover:bg-red-50";
 export const financeOutlineBtn =
   "h-8 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border-slate-200";
 
@@ -27,18 +27,18 @@ const STATUS_TONE: Record<string, string> = {
   PENDING_APPROVAL: "bg-amber-50 text-amber-800 border-amber-200",
   PENDING_VERIFICATION: "bg-amber-50 text-amber-800 border-amber-200",
   UNDER_REVIEW: "bg-blue-50 text-blue-800 border-blue-200",
-  APPROVED: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  COMPLETED: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  VERIFIED: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  PAID: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  REJECTED: "bg-rose-50 text-rose-800 border-rose-200",
+  APPROVED: "bg-green-50 text-green-700 border-green-200",
+  COMPLETED: "bg-green-50 text-green-700 border-green-200",
+  VERIFIED: "bg-green-50 text-green-700 border-green-200",
+  PAID: "bg-green-50 text-green-700 border-green-200",
+  REJECTED: "bg-red-50 text-red-700 border-red-200",
   DISCREPANCY: "bg-orange-50 text-orange-800 border-orange-200",
   FLAG_DISCREPANCY: "bg-orange-50 text-orange-800 border-orange-200",
   PARTIAL: "bg-sky-50 text-sky-800 border-sky-200",
   PARTIALLY_USED: "bg-sky-50 text-sky-800 border-sky-200",
-  ACTIVE: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  OVERDUE: "bg-rose-50 text-rose-800 border-rose-200",
-  BLOCKED: "bg-rose-50 text-rose-800 border-rose-200",
+  ACTIVE: "bg-green-50 text-green-700 border-green-200",
+  OVERDUE: "bg-red-50 text-red-700 border-red-200",
+  BLOCKED: "bg-red-50 text-red-700 border-red-200",
   IN_PROGRESS: "bg-blue-50 text-blue-800 border-blue-200",
   CANCELLED: "bg-slate-50 text-slate-600 border-slate-200",
   EXPIRED: "bg-slate-50 text-slate-600 border-slate-200",
@@ -96,8 +96,8 @@ export function MoneyAmount({
     <span
       className={cn(
         "font-mono tabular-nums font-semibold",
-        resolvedTone === "credit" && "text-emerald-700",
-        resolvedTone === "debit" && "text-rose-700",
+        resolvedTone === "credit" && text-green-600,
+        resolvedTone === "debit" && text-red-600,
         resolvedTone === "outstanding" && "text-amber-700",
         resolvedTone === "muted" && "text-slate-500 font-medium",
         resolvedTone === "neutral" && "text-slate-900",
@@ -256,3 +256,4 @@ export function FinanceRejectButton({
     <Button variant="outline" size="sm" className={cn(financeRejectBtn, className)} {...props} />
   );
 }
+

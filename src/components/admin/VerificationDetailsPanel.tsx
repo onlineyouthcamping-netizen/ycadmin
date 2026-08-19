@@ -74,19 +74,19 @@ const STATUS_STYLES: Record<
     label: "Changes Requested",
   },
   VERIFIED: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
+    bg: "bg-green-50",
+    text: "text-green-700",
     label: "Verified",
   },
   APPROVED: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
+    bg: "bg-green-50",
+    text: "text-green-700",
     label: "Approved",
   },
   REJECTED: { bg: "bg-red-50", text: "text-red-600", label: "Rejected" },
   ISSUED: { bg: "bg-blue-50", text: "text-blue-700", label: "Issued" },
   PENDING: { bg: "bg-amber-50", text: "text-amber-700", label: "Pending" },
-  BOOKED: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Booked" },
+  BOOKED: { bg: "bg-green-50", text: "text-green-700", label: "Booked" },
   WAITLISTED: {
     bg: "bg-orange-50",
     text: "text-orange-700",
@@ -121,9 +121,9 @@ function StatusBadge({ status }: { status: string }) {
 function TimelineItem({ log, isLast }: { log: any; isLast: boolean }) {
   const iconMap: Record<string, React.ReactNode> = {
     SUBMITTED: <Send className="w-3.5 h-3.5 text-blue-500" />,
-    VERIFIED: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />,
-    APPROVED: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />,
-    REJECTED: <XCircle className="w-3.5 h-3.5 text-red-500" />,
+    VERIFIED: <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />,
+    APPROVED: <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />,
+    REJECTED: <XCircle className="w-3.5 h-3.5 text-red-600" />,
     CHANGES_REQUESTED: <AlertCircle className="w-3.5 h-3.5 text-orange-500" />,
     ISSUED: <Train className="w-3.5 h-3.5 text-blue-500" />,
   };
@@ -704,7 +704,7 @@ export default function VerificationDetailsPanel({
                           allDocs.length === 0
                             ? "bg-amber-100 text-amber-700"
                             : allComplete
-                            ? "bg-emerald-100 text-emerald-700"
+                            ? "bg-green-100 text-green-700"
                             : "bg-amber-100 text-amber-700"
                         )}>
                           {allDocs.length} doc{allDocs.length !== 1 ? "s" : ""}
@@ -752,7 +752,7 @@ export default function VerificationDetailsPanel({
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   {hasDocs ? (
-                                    <FileCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                    <FileCheck className="w-3.5 h-3.5 text-green-600 shrink-0" />
                                   ) : (
                                     <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                   )}
@@ -764,7 +764,7 @@ export default function VerificationDetailsPanel({
                                 <span className={cn(
                                   "text-[8.5px] font-extrabold uppercase px-1.5 py-0.5 rounded",
                                   hasDocs
-                                    ? "bg-emerald-100 text-emerald-700"
+                                    ? "bg-green-100 text-green-700"
                                     : "bg-amber-100 text-amber-700"
                                 )}>
                                   {hasDocs ? `${pDocs.length} doc${pDocs.length > 1 ? "s" : ""}` : "Missing"}
@@ -863,14 +863,14 @@ export default function VerificationDetailsPanel({
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
-                    <Train className="w-4 h-4 text-[#F97316]" />
+                    <Train className="w-4 h-4 text-[#FF4D00]" />
                     1. Train Tickets ({trainTickets.length > 0 ? trainTickets.length : (fullBooking?.passengers?.length || 1)})
                   </h3>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={openCreateForm}
-                    className="h-6.5 text-[9px] font-bold text-[#F97316] bg-orange-50/70 hover:bg-orange-100 border-orange-200"
+                    className="h-6.5 text-[9px] font-bold text-[#FF4D00] bg-orange-50/70 hover:bg-orange-100 border-orange-200"
                   >
                     <Plus className="w-3 h-3 mr-1" /> Add Ticket
                   </Button>
@@ -1003,7 +1003,7 @@ export default function VerificationDetailsPanel({
                         type="submit"
                         size="sm"
                         disabled={actionLoading}
-                        className="h-7 text-xs bg-[#F97316] hover:bg-orange-600 text-white font-bold"
+                        className="h-7 text-xs bg-[#FF4D00] hover:bg-orange-600 text-white font-bold"
                       >
                         {isEditing ? "Save Changes" : "Create Ticket"}
                       </Button>
@@ -1072,7 +1072,7 @@ export default function VerificationDetailsPanel({
                             <button
                               type="button"
                               onClick={() => openEditForm(t)}
-                              className="text-[#F97316] font-bold hover:underline flex items-center gap-1"
+                              className="text-[#FF4D00] font-bold hover:underline flex items-center gap-1"
                             >
                               <Edit2 className="w-2.5 h-2.5" /> Edit
                             </button>
@@ -1137,7 +1137,7 @@ export default function VerificationDetailsPanel({
                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
                         Customer Paid
                       </p>
-                      <p className="font-mono font-extrabold text-emerald-600 text-[13px] mt-0.5">
+                      <p className="font-mono font-extrabold text-green-600 text-[13px] mt-0.5">
                         ₹{Number(fullBooking?.advancePaid || fullBooking?.advance || 0).toLocaleString("en-IN")}
                       </p>
                       <span className="text-[9px] text-slate-400 block mt-0.5">
@@ -1175,7 +1175,7 @@ export default function VerificationDetailsPanel({
                  ───────────────────────────────────────────────────────────── */}
               <div className="space-y-2.5">
                 <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
-                  <FileText className="w-4 h-4 text-emerald-600" />
+                  <FileText className="w-4 h-4 text-green-600" />
                   3. Booking & Traveler Package
                 </h3>
 
@@ -1243,7 +1243,7 @@ export default function VerificationDetailsPanel({
                     </div>
                     <div className="bg-white p-2 rounded-lg border border-slate-200/60">
                       <p className="text-[8px] font-bold text-slate-400 uppercase">Advance Paid</p>
-                      <p className="font-mono font-extrabold text-emerald-600 mt-0.5">
+                      <p className="font-mono font-extrabold text-green-600 mt-0.5">
                         ₹{Number(fullBooking?.advancePaid || fullBooking?.advance || 0).toLocaleString("en-IN")}
                       </p>
                     </div>
@@ -1308,7 +1308,7 @@ export default function VerificationDetailsPanel({
                       <p className="text-[9.5px] text-slate-500">
                         Contracted room stay & meals
                       </p>
-                      <div className="text-[8.5px] font-bold text-emerald-600 uppercase bg-emerald-50 px-1.5 py-0.5 rounded inline-block">
+                      <div className="text-[8.5px] font-bold text-green-600 uppercase bg-green-50 px-1.5 py-0.5 rounded inline-block">
                         Confirmed
                       </div>
                     </div>
@@ -1429,14 +1429,14 @@ export default function VerificationDetailsPanel({
                   size="sm"
                   variant="outline"
                   onClick={() => handleVerificationAction("REJECT")}
-                  className="border-rose-200 text-rose-650 hover:bg-rose-50 text-[10px] font-bold uppercase tracking-wider font-montserrat h-9"
+                  className="border-red-200 text-red-600 hover:bg-red-50 text-[10px] font-bold uppercase tracking-wider font-montserrat h-9"
                 >
                   Reject
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => handleVerificationAction("VERIFY")}
-                  className="bg-[#16A34A] hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider font-montserrat h-9"
+                  className="bg-[#16A34A] hover:bg-green-700 text-white text-[10px] font-bold uppercase tracking-wider font-montserrat h-9"
                 >
                   {queueType === "train" ? "Verify Ticket" : "Verify Booking"}
                 </Button>
@@ -1462,3 +1462,5 @@ function InfoCell({ label, value }: { label: string; value: string | number }) {
     </div>
   );
 }
+
+

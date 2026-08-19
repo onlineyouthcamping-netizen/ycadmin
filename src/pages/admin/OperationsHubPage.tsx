@@ -293,7 +293,7 @@ export default function OperationsHubPage() {
         const balanceSub =
           pendingCount > 0 ? `${pendingCount} pending` : "All collected";
         const balanceColor =
-          totalOutstanding > 0 ? "text-[#EF4444]" : "text-emerald-605";
+          totalOutstanding > 0 ? "text-[#EF4444]" : "text-green-600";
 
         const isLive = diffDays <= 0;
 
@@ -301,17 +301,17 @@ export default function OperationsHubPage() {
         let daysColor = "text-slate-500";
         if (diffDays < 0) {
           daysLeftStr = `Live (Day ${Math.abs(diffDays) + 1})`;
-          daysColor = "text-[#F97316] font-bold";
+          daysColor = "text-[#FF4D00] font-bold";
         } else if (diffDays === 0) {
           daysLeftStr = "Starts Today";
-          daysColor = "text-[#F97316] font-bold";
+          daysColor = "text-[#FF4D00] font-bold";
         } else if (diffDays === 1) {
           daysLeftStr = "Tomorrow";
-          daysColor = "text-red-500 font-bold";
+          daysColor = "text-red-600 font-bold";
         } else {
           daysLeftStr = `${diffDays} Days`;
           if (diffDays <= 7) daysColor = "text-amber-500 font-semibold";
-          else daysColor = "text-emerald-500";
+          else daysColor = "text-green-600";
         }
 
         const dateOptions: Intl.DateTimeFormatOptions = {
@@ -349,7 +349,7 @@ export default function OperationsHubPage() {
 
         if (readiness >= 90) {
           status = "READY";
-          statusColor = "bg-emerald-50 text-emerald-700 border-emerald-100";
+          statusColor = "bg-green-50 text-green-700 border-green-100";
           readinessColor = "#10B981";
           reason = "Ready to depart";
         } else if (diffDays <= 3) {
@@ -553,7 +553,7 @@ export default function OperationsHubPage() {
                       className={cn(
                         "text-[12px] font-semibold tabular-nums",
                         row.readiness === 100
-                          ? "text-emerald-600"
+                          ? "text-green-600"
                           : "text-[#0B1528]",
                       )}
                     >
@@ -676,10 +676,10 @@ export default function OperationsHubPage() {
                   className={cn(
                     "text-[12px] font-semibold tabular-nums",
                     row.readiness >= 90
-                      ? "text-emerald-600"
+                      ? "text-green-600"
                       : row.readiness >= 50
                         ? "text-amber-600"
-                        : "text-rose-600",
+                        : "text-red-600",
                   )}
                 >
                   {row.readiness}%
@@ -2046,8 +2046,8 @@ export default function OperationsHubPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 md:bg-transparent border-t md:border-t-0 border-slate-100">
-              <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#F97316] mr-2">
-                <span className="w-2 h-2 bg-[#F97316] rounded-full animate-pulse" />
+              <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#FF4D00] mr-2">
+                <span className="w-2 h-2 bg-[#FF4D00] rounded-full animate-pulse" />
                 {selectedDeparture.status}
               </span>
               <button
@@ -2097,11 +2097,11 @@ export default function OperationsHubPage() {
                 {selectedDeparture.tasksPending}
               </p>
             </div>
-            <div className="bg-white border border-emerald-200 rounded p-3 shadow-sm text-center">
-              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">
+            <div className="bg-white border border-green-200 rounded p-3 shadow-sm text-center">
+              <p className="text-[9px] font-bold text-green-600 uppercase tracking-wider">
                 Hotels Confirmed
               </p>
-              <p className="text-xl font-bold text-emerald-600 mt-1">
+              <p className="text-xl font-bold text-green-600 mt-1">
                 {selectedDeparture.hotelsConfirmed}
               </p>
             </div>
@@ -2113,11 +2113,11 @@ export default function OperationsHubPage() {
                 {selectedDeparture.transportReady}
               </p>
             </div>
-            <div className="bg-white border border-rose-200 rounded p-3 shadow-sm text-center">
-              <p className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">
+            <div className="bg-white border border-red-200 rounded p-3 shadow-sm text-center">
+              <p className="text-[9px] font-bold text-red-600 uppercase tracking-wider">
                 Critical Alerts
               </p>
-              <p className="text-xl font-bold text-rose-600 mt-1">
+              <p className="text-xl font-bold text-red-600 mt-1">
                 {selectedDeparture.criticalAlerts}
               </p>
             </div>
@@ -2145,7 +2145,7 @@ export default function OperationsHubPage() {
                 className={cn(
                   "py-3.5 px-4 text-xs font-bold border-b-2 transition-all whitespace-nowrap",
                   activeTab === t.id
-                    ? "border-[#F97316] text-[#F97316]"
+                    ? "border-[#FF4D00] text-[#FF4D00]"
                     : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200",
                 )}
               >
@@ -2255,14 +2255,14 @@ export default function OperationsHubPage() {
                       Overall Progress
                     </p>
                     <p
-                      className={`text-xs font-bold ${selectedDeparture.readiness >= 90 ? "text-emerald-600" : selectedDeparture.readiness >= 60 ? "text-amber-600" : "text-rose-600"}`}
+                      className={`text-xs font-bold ${selectedDeparture.readiness >= 90 ? "text-green-600" : selectedDeparture.readiness >= 60 ? "text-amber-600" : "text-red-600"}`}
                     >
                       {selectedDeparture.readiness}%
                     </p>
                   </div>
                   <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-6">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${selectedDeparture.readiness >= 90 ? "bg-[#FF6B00]" : selectedDeparture.readiness >= 60 ? "bg-amber-500" : "bg-rose-500"}`}
+                      className={`h-full rounded-full transition-all duration-500 ${selectedDeparture.readiness >= 90 ? "bg-[#FF6B00]" : selectedDeparture.readiness >= 60 ? "bg-amber-500" : "bg-red-600"}`}
                       style={{ width: `${selectedDeparture.readiness}%` }}
                     />
                   </div>
@@ -2285,7 +2285,7 @@ export default function OperationsHubPage() {
                         className="flex items-center gap-2.5 p-3 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors text-left group"
                       >
                         <div
-                          className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${item.done ? "bg-emerald-500" : "bg-amber-500"}`}
+                          className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${item.done ? "bg-green-600" : "bg-amber-500"}`}
                         >
                           {item.done ? (
                             <Check className="w-3 h-3 text-white" />
@@ -2309,20 +2309,20 @@ export default function OperationsHubPage() {
                     Critical Alerts
                   </h3>
                   {selectedDeparture.criticalAlerts === 0 ? (
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 text-center">
-                      <p className="text-xs font-bold text-emerald-700">
+                    <div className="bg-green-50 border border-green-100 rounded-lg p-4 text-center">
+                      <p className="text-xs font-bold text-green-700">
                         All clear - No critical alerts
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="flex items-start gap-3 p-3 bg-rose-50 border border-rose-100 rounded-lg">
-                        <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-xs font-bold text-rose-800">
+                          <p className="text-xs font-bold text-red-700">
                             Room allocation pending for 4 participants
                           </p>
-                          <p className="text-[10px] text-rose-600 mt-0.5">
+                          <p className="text-[10px] text-red-600 mt-0.5">
                             Complete room allocation before departure date
                           </p>
                         </div>
@@ -2500,7 +2500,7 @@ export default function OperationsHubPage() {
                         Alerts
                       </span>
                       <span
-                        className={`font-bold ${selectedDeparture.criticalAlerts > 0 ? "text-rose-600" : "text-emerald-600"}`}
+                        className={`font-bold ${selectedDeparture.criticalAlerts > 0 ? "text-red-600" : "text-green-600"}`}
                       >
                         {selectedDeparture.criticalAlerts}
                       </span>
@@ -2561,7 +2561,7 @@ export default function OperationsHubPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => setShowAddItinerary(true)}
-                        className="h-8 text-xs font-semibold text-[#F97316] border-[#F97316]/30 hover:bg-[#F97316]/5 bg-white rounded-[4px]"
+                        className="h-8 text-xs font-semibold text-[#FF4D00] border-[#FF4D00]/30 hover:bg-[#FF4D00]/5 bg-white rounded-[4px]"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" /> Add Day Row
                       </Button>
@@ -2646,7 +2646,7 @@ export default function OperationsHubPage() {
                                     className={cn(
                                       "px-2 py-0.5 rounded-[2px] text-[9px] font-black uppercase tracking-wider border",
                                       row.hotelVerified
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                        ? "bg-green-50 text-green-700 border-green-100"
                                         : "bg-slate-50 text-slate-500 border-slate-250",
                                     )}
                                   >
@@ -2667,7 +2667,7 @@ export default function OperationsHubPage() {
                                     className={cn(
                                       "px-2 py-0.5 rounded-[2px] text-[9px] font-black uppercase tracking-wider border",
                                       row.vehicleVerified
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                        ? "bg-green-50 text-green-700 border-green-100"
                                         : "bg-slate-50 text-slate-500 border-slate-250",
                                     )}
                                   >
@@ -2689,7 +2689,7 @@ export default function OperationsHubPage() {
                                     onChange={() =>
                                       handleItinCheckToggle(row, "checkInDone")
                                     }
-                                    className="w-4 h-4 rounded border-slate-300 accent-emerald-600"
+                                    className="w-4 h-4 rounded border-slate-300 accent-green-600"
                                   />
                                 </td>
                                 <td className="p-3 text-center">
@@ -2699,7 +2699,7 @@ export default function OperationsHubPage() {
                                     onClick={() =>
                                       handleDeleteItineraryRow(row.id)
                                     }
-                                    className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
@@ -2727,7 +2727,7 @@ export default function OperationsHubPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => setShowAddFleet(true)}
-                        className="h-8 text-xs font-semibold text-[#F97316] border-[#F97316]/30 hover:bg-[#F97316]/5 bg-white rounded-[4px]"
+                        className="h-8 text-xs font-semibold text-[#FF4D00] border-[#FF4D00]/30 hover:bg-[#FF4D00]/5 bg-white rounded-[4px]"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" /> Add Vehicle
                       </Button>
@@ -2790,7 +2790,7 @@ export default function OperationsHubPage() {
                                     "en-IN",
                                   )}
                                 </td>
-                                <td className="p-3 border-r border-slate-100 text-right text-emerald-700 font-black">
+                                <td className="p-3 border-r border-slate-100 text-right text-green-700 font-black">
                                   ₹
                                   {(row.advancePaid || 0).toLocaleString(
                                     "en-IN",
@@ -2804,7 +2804,7 @@ export default function OperationsHubPage() {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => handleDeleteFleetRow(row.id)}
-                                    className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
@@ -2830,7 +2830,7 @@ export default function OperationsHubPage() {
                         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                           <div>
                             <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 animate-bounce" />{" "}
+                              <CheckCircle2 className="w-4 h-4 text-green-600 animate-bounce" />{" "}
                               Locked & Confirmed Allotment Run
                             </h3>
                             <p className="text-[10px] text-slate-400 font-medium mt-0.5">
@@ -2842,7 +2842,7 @@ export default function OperationsHubPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-[10px] font-bold h-7 uppercase text-emerald-600 hover:bg-emerald-50"
+                              className="text-[10px] font-bold h-7 uppercase text-green-600 hover:bg-green-50"
                               onClick={() => {
                                 const txt = rebuildRoomText(
                                   confirmedAllocs.rooms,
@@ -2902,7 +2902,7 @@ export default function OperationsHubPage() {
                                 ).map(([roomNum, rData]: any) => (
                                   <div
                                     key={roomNum}
-                                    className="border border-slate-100 rounded-lg p-2.5 bg-slate-50 hover:border-emerald-200 transition-colors"
+                                    className="border border-slate-100 rounded-lg p-2.5 bg-slate-50 hover:border-green-200 transition-colors"
                                   >
                                     <p className="text-[10px] font-bold text-slate-800 flex items-center justify-between">
                                       <span>Room {roomNum}</span>
@@ -2927,7 +2927,7 @@ export default function OperationsHubPage() {
                                             key={i}
                                             className="text-[10px] font-medium text-slate-600 flex items-center gap-1"
                                           >
-                                            <span className="h-1 w-1 bg-emerald-500 rounded-full shrink-0" />
+                                            <span className="h-1 w-1 bg-green-600 rounded-full shrink-0" />
                                             {m}
                                           </li>
                                         ),
@@ -3024,7 +3024,7 @@ export default function OperationsHubPage() {
                     <Button
                       size="sm"
                       onClick={handleTriggerAutoAllocate}
-                      className="h-9 text-xs font-semibold bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-[4px] shadow-sm"
+                      className="h-9 text-xs font-semibold bg-[#FF4D00] hover:bg-[#FF4D00]/90 text-white rounded-[4px] shadow-sm"
                     >
                       <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Run
                       Auto-Allocation
@@ -3046,7 +3046,7 @@ export default function OperationsHubPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => setShowAddRoom(true)}
-                        className="h-8 text-xs font-semibold text-[#F97316] border-[#F97316]/30 hover:bg-[#F97316]/5 bg-white rounded-[4px]"
+                        className="h-8 text-xs font-semibold text-[#FF4D00] border-[#FF4D00]/30 hover:bg-[#FF4D00]/5 bg-white rounded-[4px]"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" /> Add Multiple Rooms
                       </Button>
@@ -3095,7 +3095,7 @@ export default function OperationsHubPage() {
                                 <td className="p-3 border-r border-slate-100 font-bold text-slate-700">
                                   {row.roomLabel}
                                 </td>
-                                <td className="p-3 border-r border-slate-100 text-center font-mono font-bold bg-emerald-50/10 text-slate-655">
+                                <td className="p-3 border-r border-slate-100 text-center font-mono font-bold bg-green-50/10 text-slate-655">
                                   {row.capacity} Beds
                                 </td>
                                 <td className="p-3 border-r border-slate-100 text-center font-semibold text-slate-700">
@@ -3127,7 +3127,7 @@ export default function OperationsHubPage() {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => handleDeleteRoomRow(row.id)}
-                                    className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
@@ -3356,7 +3356,7 @@ export default function OperationsHubPage() {
                                   </td>
                                   <td className="p-3 text-center">
                                     <span
-                                      className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${item.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}
+                                      className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"}`}
                                     >
                                       {item.isActive ? "ACTIVE" : "ARCHIVED"}
                                     </span>
@@ -3391,7 +3391,7 @@ export default function OperationsHubPage() {
                                         onClick={() =>
                                           handleRestoreSop(item.id)
                                         }
-                                        className="h-7 text-emerald-600 font-bold hover:bg-emerald-50"
+                                        className="h-7 text-green-600 font-bold hover:bg-green-50"
                                       >
                                         Restore
                                       </Button>
@@ -3483,7 +3483,7 @@ export default function OperationsHubPage() {
                                   {ld.leaderName}
                                 </span>
                                 {ld.isPrimary && (
-                                  <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-black">
+                                  <span className="text-[9px] text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded font-black">
                                     Primary
                                   </span>
                                 )}
@@ -3639,7 +3639,7 @@ export default function OperationsHubPage() {
                       <Button
                         size="sm"
                         onClick={() => setShowAddIncident(true)}
-                        className="h-9 text-xs font-semibold bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-[4px] shadow-sm"
+                        className="h-9 text-xs font-semibold bg-[#FF4D00] hover:bg-[#FF4D00]/90 text-white rounded-[4px] shadow-sm"
                       >
                         + Log Incident
                       </Button>
@@ -3678,7 +3678,7 @@ export default function OperationsHubPage() {
                                   inc.severity === "CRITICAL"
                                     ? "bg-red-100 text-red-800"
                                     : inc.severity === "HIGH"
-                                      ? "bg-rose-100 text-rose-800"
+                                      ? "bg-red-100 text-red-700"
                                       : inc.severity === "MEDIUM"
                                         ? "bg-amber-100 text-amber-800"
                                         : "bg-blue-100 text-blue-800"
@@ -3689,7 +3689,7 @@ export default function OperationsHubPage() {
                               <span
                                 className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
                                   inc.status === "RESOLVED"
-                                    ? "bg-emerald-100 text-emerald-800"
+                                    ? "bg-green-100 text-green-700"
                                     : "bg-slate-200 text-slate-600"
                                 }`}
                               >
@@ -3703,7 +3703,7 @@ export default function OperationsHubPage() {
                           </p>
 
                           {inc.resolution ? (
-                            <div className="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100 text-xs text-emerald-800 font-mono">
+                            <div className="bg-green-50/50 p-3 rounded-lg border border-green-100 text-xs text-green-700 font-mono">
                               <strong>Resolution:</strong> {inc.resolution}
                               {inc.resolvedBy && (
                                 <p className="text-[9px] text-slate-400 mt-1">
@@ -3712,7 +3712,7 @@ export default function OperationsHubPage() {
                               )}
                             </div>
                           ) : (
-                            <p className="text-[10px] text-rose-500 font-bold">
+                            <p className="text-[10px] text-red-600 font-bold">
                               ⚠️ Action Required: Pending Resolution Notes
                             </p>
                           )}
@@ -3726,7 +3726,7 @@ export default function OperationsHubPage() {
                                   setResolveIncidentId(inc.id);
                                   setResolveIncidentNotes("");
                                 }}
-                                className="h-8 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
+                                className="h-8 text-xs font-bold text-green-700 hover:bg-green-50"
                               >
                                 Mark Resolved
                               </Button>
@@ -3768,7 +3768,7 @@ export default function OperationsHubPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => setShowAddExpense(true)}
-                        className="h-8 text-xs font-semibold text-[#F97316] border-[#F97316]/30 hover:bg-[#F97316]/5 bg-white rounded-[4px]"
+                        className="h-8 text-xs font-semibold text-[#FF4D00] border-[#FF4D00]/30 hover:bg-[#FF4D00]/5 bg-white rounded-[4px]"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" /> Add Expense
                       </Button>
@@ -3830,7 +3830,7 @@ export default function OperationsHubPage() {
                                 <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-800">
                                   ₹{Number(row.totalAmount || 0).toLocaleString("en-IN")}
                                 </td>
-                                <td className="p-3 border-r border-slate-100 text-right text-emerald-750 font-black">
+                                <td className="p-3 border-r border-slate-100 text-right text-green-700 font-black">
                                   ₹{Number(row.amountPaid || 0).toLocaleString("en-IN")}
                                 </td>
                                 <td className="p-3 border-r border-slate-100 text-right text-red-600 font-black">
@@ -3838,7 +3838,7 @@ export default function OperationsHubPage() {
                                 </td>
                                 <td className="p-3 border-r border-slate-100 text-center">
                                   <span
-                                    className={`px-2 py-0.5 rounded-[2px] border text-[9px] font-black uppercase tracking-wider ${row.paymentStatus === "Paid" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-red-50 text-red-700 border-red-100"}`}
+                                    className={`px-2 py-0.5 rounded-[2px] border text-[9px] font-black uppercase tracking-wider ${row.paymentStatus === "Paid" ? "bg-green-50 text-green-700 border-green-100" : "bg-red-50 text-red-700 border-red-100"}`}
                                   >
                                     {row.paymentStatus}
                                   </span>
@@ -3853,7 +3853,7 @@ export default function OperationsHubPage() {
                                     onClick={() =>
                                       handleDeleteExpenseRow(row.id)
                                     }
-                                    className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
@@ -4046,15 +4046,15 @@ export default function OperationsHubPage() {
 
                       {/* ── 🏨 ROOM SHUFFLE TABLE ── */}
                       {allocModal.data.roomAllocations?.length > 0 && (
-                        <div className="border border-emerald-200 rounded-xl overflow-hidden bg-emerald-50/30 p-3.5 space-y-2">
+                        <div className="border border-green-200 rounded-xl overflow-hidden bg-green-50/30 p-3.5 space-y-2">
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                              <ArrowUpDown className="w-3.5 h-3.5 text-emerald-600" />{" "}
+                              <ArrowUpDown className="w-3.5 h-3.5 text-green-600" />{" "}
                               Shuffle Room Assignment (
                               {allocModal.data.roomAllocations.length}{" "}
                               Travelers)
                             </p>
-                            <span className="text-[10px] font-bold text-emerald-500">
+                            <span className="text-[10px] font-bold text-green-600">
                               Edit room number to shuffle traveler
                             </span>
                           </div>
@@ -4080,7 +4080,7 @@ export default function OperationsHubPage() {
                                   (ra, idx) => (
                                     <tr
                                       key={idx}
-                                      className="border-b border-slate-100 hover:bg-emerald-50/40 transition-colors"
+                                      className="border-b border-slate-100 hover:bg-green-50/40 transition-colors"
                                     >
                                       <td className="p-2 text-center">
                                         <GripVertical className="w-3 h-3 text-slate-300" />
@@ -4099,7 +4099,7 @@ export default function OperationsHubPage() {
                                               e.target.value,
                                             )
                                           }
-                                          className="w-full h-7 text-xs font-bold text-emerald-800 bg-emerald-50/50 border border-emerald-200 rounded-md px-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                                          className="w-full h-7 text-xs font-bold text-green-700 bg-green-50/50 border border-green-200 rounded-md px-2 focus:outline-none focus:ring-2 focus:ring-green-600/30"
                                           placeholder="Room 101"
                                         />
                                       </td>
@@ -4113,7 +4113,7 @@ export default function OperationsHubPage() {
                                               e.target.value,
                                             )
                                           }
-                                          className="w-full h-7 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md px-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+                                          className="w-full h-7 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md px-1.5 focus:outline-none focus:ring-2 focus:ring-green-600/30 cursor-pointer"
                                         >
                                           <option value="TWIN">TWIN</option>
                                           <option value="TRIPLE">TRIPLE</option>
@@ -4132,7 +4132,7 @@ export default function OperationsHubPage() {
                                               e.target.value,
                                             )
                                           }
-                                          className="w-full h-7 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md px-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+                                          className="w-full h-7 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md px-1.5 focus:outline-none focus:ring-2 focus:ring-green-600/30 cursor-pointer"
                                         >
                                           <option value="BOYS">BOYS</option>
                                           <option value="GIRLS">GIRLS</option>
@@ -4159,7 +4159,7 @@ export default function OperationsHubPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 text-[11px] text-emerald-600 font-bold hover:bg-emerald-50"
+                            className="h-7 text-[11px] text-green-600 font-bold hover:bg-green-50"
                             onClick={() => {
                               navigator.clipboard.writeText(
                                 allocModal.data!.whatsappRoomText,
@@ -4173,7 +4173,7 @@ export default function OperationsHubPage() {
                         <textarea
                           readOnly
                           value={allocModal.data.whatsappRoomText}
-                          className="w-full h-40 font-mono text-[11px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          className="w-full h-40 font-mono text-[11px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-600/20"
                         />
                       </div>
                     </div>
@@ -4301,7 +4301,7 @@ export default function OperationsHubPage() {
                     <Button
                       size="sm"
                       onClick={handleSaveItineraryRow}
-                      className="text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 h-9"
+                      className="text-xs bg-green-700 hover:bg-green-700 text-white font-bold px-4 h-9"
                     >
                       Save Row
                     </Button>
@@ -4674,7 +4674,7 @@ export default function OperationsHubPage() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => removeRoomRow(idx)}
-                                  className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
+                                  className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -4707,7 +4707,7 @@ export default function OperationsHubPage() {
                     <Button
                       size="sm"
                       onClick={handleSaveRoomRow}
-                      className="text-xs bg-emerald-950 hover:bg-emerald-900 text-white font-bold px-4 h-9"
+                      className="text-xs bg-green-900 hover:bg-green-800 text-white font-bold px-4 h-9"
                     >
                       Save Rooms
                     </Button>
@@ -4933,7 +4933,7 @@ export default function OperationsHubPage() {
                     <Button
                       size="sm"
                       onClick={handleCreateIncident}
-                      className="text-xs bg-rose-700 hover:bg-rose-800 text-white font-bold px-4 h-9"
+                      className="text-xs bg-red-700 hover:bg-red-700 text-white font-bold px-4 h-9"
                     >
                       Log Incident
                     </Button>
@@ -5023,3 +5023,6 @@ export default function OperationsHubPage() {
     </div>
   );
 }
+
+
+

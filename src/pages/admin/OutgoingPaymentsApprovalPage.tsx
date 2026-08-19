@@ -185,9 +185,9 @@ export default function OutgoingPaymentsApprovalPage({
         return <Compass className="w-3.5 h-3.5 text-orange-500" />;
       case "guides":
       case "guide":
-        return <User className="w-3.5 h-3.5 text-emerald-500" />;
+        return <User className="w-3.5 h-3.5 text-green-600" />;
       case "train_ticketing":
-        return <Ticket className="w-3.5 h-3.5 text-rose-500" />;
+        return <Ticket className="w-3.5 h-3.5 text-red-600" />;
       default:
         return <Building2 className="w-3.5 h-3.5 text-slate-500" />;
     }
@@ -200,7 +200,7 @@ export default function OutgoingPaymentsApprovalPage({
         <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
           <div className="space-y-0.5">
             <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none font-montserrat flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-[#F97316]" />
+              <Building2 className="w-5 h-5 text-[#FF4D00]" />
               Outgoing Vendor Payments & Liabilities
             </h1>
             <p className="text-[#74839A] text-[12px] font-[500] leading-none">
@@ -215,7 +215,7 @@ export default function OutgoingPaymentsApprovalPage({
                 placeholder="Search vendor, trip, reference..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#F97316] outline-none"
+                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#FF4D00] outline-none"
               />
             </div>
             <Button
@@ -254,14 +254,14 @@ export default function OutgoingPaymentsApprovalPage({
             <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
               Outstanding Liabilities
             </p>
-            <h3 className="text-[20px] font-extrabold text-rose-600 leading-none mt-1">
+            <h3 className="text-[20px] font-extrabold text-red-600 leading-none mt-1">
               {loading ? "..." : `₹${totalPendingDue.toLocaleString("en-IN")}`}
             </h3>
           </div>
           <p className="text-[9px] text-[#74839A] font-semibold leading-none">
             Hotels, Fleet, Guides, Rail
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100 shrink-0">
+          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100 shrink-0">
             <ArrowUpRight className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -272,14 +272,14 @@ export default function OutgoingPaymentsApprovalPage({
             <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
               Disbursed Payments
             </p>
-            <h3 className="text-[20px] font-extrabold text-emerald-600 leading-none mt-1">
+            <h3 className="text-[20px] font-extrabold text-green-600 leading-none mt-1">
               {loading ? "..." : `₹${totalPaidOut.toLocaleString("en-IN")}`}
             </h3>
           </div>
           <p className="text-[9px] text-[#74839A] font-semibold leading-none">
             Paid to vendors & staff
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shrink-0">
+          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-green-50 flex items-center justify-center text-green-600 border border-green-100 shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -322,7 +322,7 @@ export default function OutgoingPaymentsApprovalPage({
                   className={cn(
                     "px-3 py-1.5 rounded-md text-[11px] font-bold transition-all whitespace-nowrap",
                     activeCategory === cat.key
-                      ? "bg-white text-[#F97316] shadow-sm"
+                      ? "bg-white text-[#FF4D00] shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
                   )}
                 >
@@ -361,7 +361,7 @@ export default function OutgoingPaymentsApprovalPage({
                 placeholder="Search vendor or trip..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-7.5 w-48 pl-8 text-[11px] rounded bg-slate-50 border-[#E3EAF2] focus:border-[#F97316] outline-none"
+                className="h-7.5 w-48 pl-8 text-[11px] rounded bg-slate-50 border-[#E3EAF2] focus:border-[#FF4D00] outline-none"
               />
             </div>
           </div>
@@ -371,7 +371,7 @@ export default function OutgoingPaymentsApprovalPage({
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#F97316] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#FF4D00] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : aggregatedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center h-[200px]">
@@ -415,16 +415,16 @@ export default function OutgoingPaymentsApprovalPage({
                     <td className="px-4 py-2 text-slate-600 font-medium">
                       {item.tripName}
                     </td>
-                    <td className="px-4 py-2 font-mono text-[#F97316] text-[10.5px]">
+                    <td className="px-4 py-2 font-mono text-[#FF4D00] text-[10.5px]">
                       {item.reference}
                     </td>
                     <td className="px-4 py-2 text-right font-mono font-bold text-slate-900">
                       ₹{Number(item.totalCost || 0).toLocaleString("en-IN")}
                     </td>
-                    <td className="px-4 py-2 text-right font-mono font-medium text-emerald-600">
+                    <td className="px-4 py-2 text-right font-mono font-medium text-green-600">
                       ₹{Number(item.paidAmount || 0).toLocaleString("en-IN")}
                     </td>
-                    <td className="px-4 py-2 text-right font-mono font-bold text-rose-600 text-[12px]">
+                    <td className="px-4 py-2 text-right font-mono font-bold text-red-600 text-[12px]">
                       ₹{Number(item.dueAmount || 0).toLocaleString("en-IN")}
                     </td>
                     <td className="px-4 py-2">
@@ -433,9 +433,9 @@ export default function OutgoingPaymentsApprovalPage({
                         className={cn(
                           "text-[9px] font-bold uppercase",
                           item.status === "PAID" || item.status === "COMPLETED" || item.status === "APPROVED"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            ? "bg-green-50 text-green-700 border-green-200"
                             : item.status === "REJECTED"
-                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            ? "bg-red-50 text-red-700 border-red-200"
                             : "bg-amber-50 text-amber-700 border-amber-200"
                         )}
                       >
@@ -450,7 +450,7 @@ export default function OutgoingPaymentsApprovalPage({
                             setSelectedItem(item);
                             setShowPayDialog(true);
                           }}
-                          className="h-6.5 text-[9.5px] font-bold bg-[#F97316] hover:bg-[#EA580C] text-white"
+                          className="h-6.5 text-[9.5px] font-bold bg-[#FF4D00] hover:bg-[#EA580C] text-white"
                         >
                           Approve Payout
                         </Button>
@@ -475,7 +475,7 @@ export default function OutgoingPaymentsApprovalPage({
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-[#F97316]" />
+              <Building2 className="w-5 h-5 text-[#FF4D00]" />
               Approve Vendor Payout
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -496,7 +496,7 @@ export default function OutgoingPaymentsApprovalPage({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Due Balance:</span>
-                  <span className="font-mono font-bold text-rose-600 text-sm">
+                  <span className="font-mono font-bold text-red-600 text-sm">
                     ₹{Number(selectedItem.dueAmount || 0).toLocaleString("en-IN")}
                   </span>
                 </div>
@@ -557,7 +557,7 @@ export default function OutgoingPaymentsApprovalPage({
               size="sm"
               disabled={actionLoading}
               onClick={handleApprovePayment}
-              className="h-8 text-xs font-bold bg-[#F97316] hover:bg-[#EA580C] text-white"
+              className="h-8 text-xs font-bold bg-[#FF4D00] hover:bg-[#EA580C] text-white"
             >
               Confirm Payout
             </Button>
@@ -567,3 +567,4 @@ export default function OutgoingPaymentsApprovalPage({
     </div>
   );
 }
+

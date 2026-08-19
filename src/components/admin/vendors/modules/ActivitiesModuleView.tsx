@@ -103,7 +103,7 @@ export function ActivitiesModuleView({
                       <div>
                         <span
                           onClick={() => onSelectVendor(a)}
-                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#F97316] cursor-pointer transition-colors"
+                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#FF4D00] cursor-pointer transition-colors"
                         >
                           {a.name}
                         </span>
@@ -150,7 +150,7 @@ export function ActivitiesModuleView({
                         type="button"
                         onClick={() => onDeleteVendor(a.id)}
                         title="Deactivate"
-                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -194,3 +194,4 @@ export function ActivitiesModuleView({
     </div>
   );
 }
+

@@ -166,7 +166,7 @@ export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({
                         {trip.shortName || trip.title}
                       </h4>
                       {score < 50 && (
-                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-600" />
                       )}
                     </div>
 
@@ -178,10 +178,10 @@ export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({
                         className={cn(
                           "shrink-0 text-[11px] font-medium tabular-nums",
                           score >= 80
-                            ? "text-emerald-600"
+                            ? "text-green-600"
                             : score >= 50
                               ? "text-[#FF4D00]"
-                              : "text-rose-500",
+                              : "text-red-600",
                         )}
                       >
                         {score}%
@@ -213,3 +213,4 @@ export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({
     </div>
   );
 };
+

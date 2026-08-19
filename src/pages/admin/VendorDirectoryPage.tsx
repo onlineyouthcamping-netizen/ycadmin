@@ -1085,7 +1085,7 @@ export default function VendorDirectoryPage() {
 
             {/* DYNAMIC CATEGORY-SPECIFIC OPERATIONAL PARAMETERS */}
             <div className="pt-2 border-t border-slate-100 space-y-3 mt-4">
-              <h4 className="text-[11px] font-black text-[#F97316] uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-[11px] font-black text-[#FF4D00] uppercase tracking-wider flex items-center gap-1.5">
                 Category-Specific Parameters ({vendorForm.type})
               </h4>
 
@@ -1175,7 +1175,7 @@ export default function VendorDirectoryPage() {
 
               {/* TRANSPORT PARAMETERS */}
               {vendorForm.type === "TRANSPORT" && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 bg-emerald-50/40 p-3.5 rounded-lg border border-emerald-200/60 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 bg-green-50/40 p-3.5 rounded-lg border border-green-200/60 text-xs">
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 uppercase block mb-1">
                       Fleet Vehicle Category
@@ -1282,7 +1282,7 @@ export default function VendorDirectoryPage() {
                         })
                       }
                       placeholder="e.g. 4500"
-                      className="h-8.5 bg-white font-bold text-emerald-700"
+                      className="h-8.5 bg-white font-bold text-green-700"
                     />
                   </div>
                 </div>
@@ -1644,7 +1644,7 @@ export default function VendorDirectoryPage() {
             </Button>
             <Button
               onClick={() => handleSaveVendor()}
-              className="bg-[#F97316] hover:bg-[#E05E00] text-white rounded h-8.5 px-4 cursor-pointer text-xs font-bold"
+              className="bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded h-8.5 px-4 cursor-pointer text-xs font-bold"
             >
               Save {vendorForm.type} Vendor
             </Button>
@@ -1846,7 +1846,7 @@ export default function VendorDirectoryPage() {
             </Button>
             <Button
               onClick={handleSaveRate}
-              className="bg-[#F97316] hover:bg-[#E05E00] text-white rounded h-8.5 px-4 cursor-pointer"
+              className="bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded h-8.5 px-4 cursor-pointer"
             >
               Register Rate
             </Button>
@@ -1975,7 +1975,7 @@ export default function VendorDirectoryPage() {
             </Button>
             <Button
               onClick={handleSavePayment}
-              className="bg-[#F97316] hover:bg-[#E05E00] text-white rounded h-8.5 px-4 cursor-pointer"
+              className="bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded h-8.5 px-4 cursor-pointer"
             >
               Log Payment
             </Button>
@@ -1985,3 +1985,4 @@ export default function VendorDirectoryPage() {
     </div>
   );
 }
+

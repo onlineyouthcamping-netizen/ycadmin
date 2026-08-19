@@ -330,7 +330,7 @@ export default function IncomingPaymentsApprovalPage({
         <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
           <div className="space-y-0.5">
             <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none font-montserrat flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-[#F97316]" />
+              <CreditCard className="w-5 h-5 text-[#FF4D00]" />
               Incoming Payments Verification
             </h1>
             <p className="text-[#74839A] text-[12px] font-[500] leading-none">
@@ -345,7 +345,7 @@ export default function IncomingPaymentsApprovalPage({
                 placeholder="Search Booking ID, UTR, customer..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#F97316] outline-none"
+                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#FF4D00] outline-none"
               />
             </div>
             <Button
@@ -409,7 +409,7 @@ export default function IncomingPaymentsApprovalPage({
           <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
             Verified entries
           </p>
-          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#138A68]">
+          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-green-50 text-[#138A68]">
             <CheckCircle2 className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -578,7 +578,7 @@ export default function IncomingPaymentsApprovalPage({
           <div className="p-3 space-y-4">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 border-2 border-[#F97316] border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-[#FF4D00] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : !stationCashData?.dateGroups || stationCashData.dateGroups.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center h-[220px]">
@@ -616,7 +616,7 @@ export default function IncomingPaymentsApprovalPage({
 
                       <div className="flex items-center gap-2">
                         <div className="text-right">
-                          <div className="text-[13px] font-bold font-mono text-emerald-600">
+                          <div className="text-[13px] font-bold font-mono text-green-600">
                             ₹{Number(dg.totalAmount).toLocaleString("en-IN")}
                           </div>
                           <div className="text-[9px] text-slate-400">
@@ -655,14 +655,14 @@ export default function IncomingPaymentsApprovalPage({
 
                               <div className="flex items-center gap-2 shrink-0">
                                 <div className="text-right mr-1">
-                                  <span className="text-[12px] font-bold font-mono text-emerald-600 block">
+                                  <span className="text-[12px] font-bold font-mono text-green-600 block">
                                     ₹{Number(sg.totalAmount).toLocaleString("en-IN")}
                                   </span>
                                   <span className="text-[9px] text-slate-400">
                                     {sg.pendingItems > 0 ? (
                                       <span className="text-amber-600 font-semibold">{sg.pendingItems} Pending Review</span>
                                     ) : (
-                                      <span className="text-emerald-600 font-semibold">All {sg.verifiedItems} Verified</span>
+                                      <span className="text-green-600 font-semibold">All {sg.verifiedItems} Verified</span>
                                     )}
                                   </span>
                                 </div>
@@ -673,7 +673,7 @@ export default function IncomingPaymentsApprovalPage({
                                     onClick={() => handleBatchVerifyStation(sg)}
                                     disabled={!isSuperuserFounder}
                                     title={!isSuperuserFounder ? "Founder access required" : "Batch verify all collections at this station"}
-                                    className="h-7 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
+                                    className="h-7 text-[10px] font-bold bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
                                   >
                                     <CheckCheck className="w-3.5 h-3.5" />
                                     Verify Station Batch (₹{sg.pendingAmount.toLocaleString("en-IN")})
@@ -719,7 +719,7 @@ export default function IncomingPaymentsApprovalPage({
                                             <div className="text-[9.5px] text-slate-400 font-mono">{item.collectedFromMobile}</div>
                                           )}
                                         </td>
-                                        <td className="px-3.5 py-2 text-right font-mono font-bold text-emerald-600 text-[11px]">
+                                        <td className="px-3.5 py-2 text-right font-mono font-bold text-green-600 text-[11px]">
                                           ₹{Number(item.amount).toLocaleString("en-IN")}
                                         </td>
                                         <td className="px-3.5 py-2 font-mono text-slate-600 text-[10px]">
@@ -737,9 +737,9 @@ export default function IncomingPaymentsApprovalPage({
                                             className={cn(
                                               "text-[8.5px] font-bold uppercase",
                                               item.status === "VERIFIED"
-                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                ? "bg-green-50 text-green-700 border-green-200"
                                                 : item.status === "REJECTED"
-                                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                                ? "bg-red-50 text-red-700 border-red-200"
                                                 : "bg-amber-50 text-amber-700 border-amber-200"
                                             )}
                                           >
@@ -753,7 +753,7 @@ export default function IncomingPaymentsApprovalPage({
                                                 size="sm"
                                                 disabled={!isSuperuserFounder}
                                                 onClick={() => handleSingleStationAction(item, "APPROVE")}
-                                                className="h-6 px-2 text-[9px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                className="h-6 px-2 text-[9px] font-bold bg-green-600 hover:bg-green-700 text-white"
                                               >
                                                 Verify
                                               </Button>
@@ -762,7 +762,7 @@ export default function IncomingPaymentsApprovalPage({
                                                 variant="outline"
                                                 disabled={!isSuperuserFounder}
                                                 onClick={() => handleSingleStationAction(item, "REJECT")}
-                                                className="h-6 px-2 text-[9px] font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
+                                                className="h-6 px-2 text-[9px] font-bold text-red-600 border-red-200 hover:bg-red-50"
                                               >
                                                 Reject
                                               </Button>
@@ -793,7 +793,7 @@ export default function IncomingPaymentsApprovalPage({
             <div className="hidden overflow-x-auto lg:block">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-[#F97316] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-[#FF4D00] border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : allItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center h-[200px]">
@@ -829,7 +829,7 @@ export default function IncomingPaymentsApprovalPage({
 
                       return (
                         <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors h-[44px]">
-                          <td className="px-4 py-2 font-bold font-mono text-[#F97316]">
+                          <td className="px-4 py-2 font-bold font-mono text-[#FF4D00]">
                             {item.bookingId || "—"}
                           </td>
                           <td className="px-4 py-2 font-bold text-[#162B45]">
@@ -856,7 +856,7 @@ export default function IncomingPaymentsApprovalPage({
                           <td className="px-4 py-2 font-mono text-slate-700 text-[10.5px]">
                             {item.reference || "—"}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono font-bold text-emerald-600 text-[12px]">
+                          <td className="px-4 py-2 text-right font-mono font-bold text-green-600 text-[12px]">
                             ₹{Number(item.amount || 0).toLocaleString("en-IN")}
                           </td>
                           <td className="px-4 py-2 text-slate-500 font-medium text-[10.5px]">
@@ -898,9 +898,9 @@ export default function IncomingPaymentsApprovalPage({
                               className={cn(
                                 "text-[9px] font-bold uppercase",
                                 item.status === "VERIFIED" || item.status === "APPROVED" || item.status === "COMPLETED"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  ? "bg-green-50 text-green-700 border-green-200"
                                   : item.status === "REJECTED"
-                                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  ? "bg-red-50 text-red-700 border-red-200"
                                   : "bg-amber-50 text-amber-700 border-amber-200"
                               )}
                             >
@@ -929,7 +929,7 @@ export default function IncomingPaymentsApprovalPage({
                                         setSelectedPayment(item);
                                         setActionModalType("verify");
                                       }}
-                                      className="h-6.5 text-[9.5px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                                      className="h-6.5 text-[9.5px] font-bold bg-green-600 hover:bg-green-700 text-white"
                                     >
                                       {isCash ? "Approve Cash" : "Verify Online"}
                                     </Button>
@@ -940,7 +940,7 @@ export default function IncomingPaymentsApprovalPage({
                                         setSelectedPayment(item);
                                         setActionModalType("reject");
                                       }}
-                                      className="h-6.5 text-[9.5px] font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
+                                      className="h-6.5 text-[9.5px] font-bold text-red-600 border-red-200 hover:bg-red-50"
                                     >
                                       Reject
                                     </Button>
@@ -1011,9 +1011,9 @@ export default function IncomingPaymentsApprovalPage({
                               item.status === "VERIFIED" ||
                                 item.status === "APPROVED" ||
                                 item.status === "COMPLETED"
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                ? "border-green-200 bg-green-50 text-green-700"
                                 : item.status === "REJECTED"
-                                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                                  ? "border-red-200 bg-red-50 text-red-700"
                                   : "border-amber-200 bg-amber-50 text-amber-700",
                             )}
                           >
@@ -1059,7 +1059,7 @@ export default function IncomingPaymentsApprovalPage({
                                   setSelectedPayment(item);
                                   setActionModalType("verify");
                                 }}
-                                className="h-9 flex-1 bg-emerald-600 text-[10px] font-bold hover:bg-emerald-700"
+                                className="h-9 flex-1 bg-green-600 text-[10px] font-bold hover:bg-green-700"
                               >
                                 {isCash ? "Approve cash" : "Verify payment"}
                               </Button>
@@ -1070,7 +1070,7 @@ export default function IncomingPaymentsApprovalPage({
                                   setSelectedPayment(item);
                                   setActionModalType("reject");
                                 }}
-                                className="h-9 flex-1 border-rose-200 text-[10px] font-bold text-rose-600 hover:bg-rose-50"
+                                className="h-9 flex-1 border-red-200 text-[10px] font-bold text-red-600 hover:bg-red-50"
                               >
                                 Reject
                               </Button>
@@ -1093,8 +1093,8 @@ export default function IncomingPaymentsApprovalPage({
       <Dialog open={actionModalType === "station_batch"} onOpenChange={() => setActionModalType(null)}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-emerald-800 flex items-center gap-2">
-              <CheckCheck className="w-5 h-5 text-emerald-600" />
+            <DialogTitle className="text-base font-bold text-green-700 flex items-center gap-2">
+              <CheckCheck className="w-5 h-5 text-green-600" />
               Verify Station Cash Batch
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -1119,7 +1119,7 @@ export default function IncomingPaymentsApprovalPage({
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-1.5 mt-1.5">
                   <span className="text-slate-700 font-bold">Total Batch Amount:</span>
-                  <span className="font-mono font-bold text-emerald-600 text-sm">
+                  <span className="font-mono font-bold text-green-600 text-sm">
                     ₹{Number(selectedStationBatch.pendingAmount || selectedStationBatch.totalAmount || 0).toLocaleString("en-IN")}
                   </span>
                 </div>
@@ -1152,7 +1152,7 @@ export default function IncomingPaymentsApprovalPage({
               size="sm"
               disabled={actionLoading}
               onClick={confirmBatchVerify}
-              className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="h-8 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
             >
               Confirm Station Batch Verified
             </Button>
@@ -1166,8 +1166,8 @@ export default function IncomingPaymentsApprovalPage({
       <Dialog open={actionModalType === "verify"} onOpenChange={() => setActionModalType(null)}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <DialogTitle className="text-base font-bold text-green-700 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
               Verify & Approve Payment
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -1188,7 +1188,7 @@ export default function IncomingPaymentsApprovalPage({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Amount:</span>
-                  <span className="font-mono font-bold text-emerald-600 text-sm">
+                  <span className="font-mono font-bold text-green-600 text-sm">
                     ₹{Number(selectedPayment.amount || 0).toLocaleString("en-IN")}
                   </span>
                 </div>
@@ -1225,7 +1225,7 @@ export default function IncomingPaymentsApprovalPage({
               size="sm"
               disabled={actionLoading}
               onClick={handleVerify}
-              className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="h-8 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
             >
               Confirm Verified
             </Button>
@@ -1239,8 +1239,8 @@ export default function IncomingPaymentsApprovalPage({
       <Dialog open={actionModalType === "reject"} onOpenChange={() => setActionModalType(null)}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-rose-700 flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-rose-600" />
+            <DialogTitle className="text-base font-bold text-red-700 flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-600" />
               Reject Payment Entry
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -1249,14 +1249,14 @@ export default function IncomingPaymentsApprovalPage({
           </DialogHeader>
 
           <div className="space-y-2 py-2 text-xs">
-            <label className="text-[10px] font-bold uppercase text-rose-600">
+            <label className="text-[10px] font-bold uppercase text-red-600">
               Rejection Reason (Required)
             </label>
             <Textarea
               placeholder="State reason (e.g. UTR mismatch, payment declined by bank)..."
               value={actionNotes}
               onChange={(e) => setActionNotes(e.target.value)}
-              className="text-xs resize-none h-20 border-rose-300"
+              className="text-xs resize-none h-20 border-red-300"
             />
           </div>
 
@@ -1273,7 +1273,7 @@ export default function IncomingPaymentsApprovalPage({
               size="sm"
               disabled={actionLoading}
               onClick={handleReject}
-              className="h-8 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white"
+              className="h-8 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
             >
               Confirm Rejection
             </Button>
@@ -1283,3 +1283,5 @@ export default function IncomingPaymentsApprovalPage({
     </div>
   );
 }
+
+

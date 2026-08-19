@@ -151,12 +151,12 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
             onClick={() => setPublished(!published)}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold rounded-xl cursor-pointer border transition-all duration-150 ease-out active:scale-95 ${
               published
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
                 : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
             }`}
           >
             {published ? (
-              <ToggleRight className="w-4 h-4 text-emerald-600 transition-transform duration-150 ease-out" />
+              <ToggleRight className="w-4 h-4 text-green-600 transition-transform duration-150 ease-out" />
             ) : (
               <ToggleLeft className="w-4 h-4 text-slate-400 transition-transform duration-150 ease-out" />
             )}
@@ -180,7 +180,7 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
             disabled={!dirty || saving}
             className={`inline-flex items-center gap-1.5 px-5 py-2 text-xs font-extrabold rounded-xl cursor-pointer shadow-sm transition-all duration-150 ease-out active:scale-[0.97] motion-reduce:transition-none ${
               justSaved
-                ? "bg-emerald-600 text-white shadow-emerald-500/20"
+                ? "bg-green-600 text-white shadow-green-600/20"
                 : dirty && !saving
                   ? "bg-[#D4541A] hover:bg-[#C04A16] text-white shadow-orange-500/20"
                   : "bg-slate-200 text-slate-400 cursor-not-allowed"
@@ -321,7 +321,7 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
                 <div className="flex gap-1">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
                 </div>
                 <span className="text-[11px] font-bold text-slate-400 font-mono ml-2">
                   {frontendUrl}/{slug}
@@ -361,3 +361,5 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
     </div>
   );
 }
+
+

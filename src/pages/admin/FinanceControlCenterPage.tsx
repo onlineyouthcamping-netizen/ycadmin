@@ -1269,7 +1269,7 @@ export default function FinanceControlCenterPage({
                         <span className={cn(
                           "font-semibold",
                           new Date(item.tripDepartureDate) < new Date()
-                            ? "text-red-500"
+                            ? "text-red-600"
                             : new Date(item.tripDepartureDate).getTime() - Date.now() < 7 * 86400000
                               ? "text-amber-600"
                               : "text-slate-700",
@@ -1735,9 +1735,9 @@ export default function FinanceControlCenterPage({
                             className={cn(
                               "text-[10px] font-bold uppercase",
                               ref.status === "COMPLETED" || ref.status === "APPROVED"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                ? "bg-green-50 text-green-700 border-green-200"
                                 : ref.status === "REJECTED"
-                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                ? "bg-red-50 text-red-700 border-red-200"
                                 : "bg-amber-50 text-amber-700 border-amber-200"
                             )}
                           >
@@ -1827,7 +1827,7 @@ export default function FinanceControlCenterPage({
                         <td className="py-3 px-4 text-right font-mono font-medium text-slate-500">
                           ₹{Number(cred.totalUsed || 0).toLocaleString("en-IN")}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600">
+                        <td className="py-3 px-4 text-right font-mono font-bold text-green-600">
                           ₹{Number(cred.remainingBalance || 0).toLocaleString("en-IN")}
                         </td>
                         <td className="py-3 px-4">
@@ -1835,7 +1835,7 @@ export default function FinanceControlCenterPage({
                             {cred.expiresAt ? new Date(cred.expiresAt).toLocaleDateString("en-IN") : "No Expiry"}
                           </span>
                           {cred.isExpiringSoon && (
-                            <Badge variant="outline" className="ml-1.5 text-[9px] bg-rose-50 text-rose-600 border-rose-200">
+                            <Badge variant="outline" className="ml-1.5 text-[9px] bg-red-50 text-red-600 border-red-200">
                               Expiring Soon
                             </Badge>
                           )}
@@ -1846,7 +1846,7 @@ export default function FinanceControlCenterPage({
                             className={cn(
                               "text-[10px] font-bold uppercase",
                               cred.status === "ACTIVE"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                ? "bg-green-50 text-green-700 border-green-200"
                                 : cred.status === "PARTIALLY_USED"
                                 ? "bg-blue-50 text-blue-700 border-blue-200"
                                 : "bg-slate-50 text-slate-600 border-slate-200"
@@ -1958,9 +1958,9 @@ export default function FinanceControlCenterPage({
                             <span
                               className={cn(
                                 tix.ticketingMargin !== null && tix.ticketingMargin >= 0
-                                  ? "text-emerald-600"
+                                  ? "text-green-600"
                                   : tix.ticketingMargin !== null
-                                  ? "text-rose-600"
+                                  ? "text-red-600"
                                   : "text-slate-400"
                               )}
                             >
@@ -1975,9 +1975,9 @@ export default function FinanceControlCenterPage({
                               className={cn(
                                 "text-[10px] font-bold uppercase",
                                 tix.status === "VERIFIED"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  ? "bg-green-50 text-green-700 border-green-200"
                                   : tix.status === "REJECTED"
-                                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  ? "bg-red-50 text-red-700 border-red-200"
                                   : "bg-amber-50 text-amber-700 border-amber-200"
                               )}
                             >
@@ -1989,12 +1989,12 @@ export default function FinanceControlCenterPage({
                               <Button
                                 size="sm"
                                 onClick={() => setConfirmTicketVerifyId(tix.id)}
-                                className="h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                className="h-7 text-xs font-bold bg-green-600 hover:bg-green-700 text-white shadow-2xs"
                               >
                                 Verify
                               </Button>
                             ) : (
-                              <span className="text-[11px] font-mono text-emerald-700 font-bold">
+                              <span className="text-[11px] font-mono text-green-700 font-bold">
                                 Verified
                               </span>
                             )}
@@ -2031,16 +2031,16 @@ export default function FinanceControlCenterPage({
                 <div className="text-xl font-extrabold text-blue-600 mt-1 font-mono">{taskDashboard.inProgressCount}</div>
               </Card>
               <Card className="p-3 bg-white border border-slate-200 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase text-rose-600">Blocked</div>
-                <div className="text-xl font-extrabold text-rose-600 mt-1 font-mono">{taskDashboard.blockedCount}</div>
+                <div className="text-[10px] font-bold uppercase text-red-600">Blocked</div>
+                <div className="text-xl font-extrabold text-red-600 mt-1 font-mono">{taskDashboard.blockedCount}</div>
               </Card>
               <Card className="p-3 bg-white border border-slate-200 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase text-emerald-600">Completed</div>
-                <div className="text-xl font-extrabold text-emerald-600 mt-1 font-mono">{taskDashboard.completedCount}</div>
+                <div className="text-[10px] font-bold uppercase text-green-600">Completed</div>
+                <div className="text-xl font-extrabold text-green-600 mt-1 font-mono">{taskDashboard.completedCount}</div>
               </Card>
               <Card className="p-3 bg-white border border-slate-200 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase text-rose-700">Overdue</div>
-                <div className="text-xl font-extrabold text-rose-700 mt-1 font-mono">{taskDashboard.overdueCount}</div>
+                <div className="text-[10px] font-bold uppercase text-red-700">Overdue</div>
+                <div className="text-xl font-extrabold text-red-700 mt-1 font-mono">{taskDashboard.overdueCount}</div>
               </Card>
             </div>
           )}
@@ -2050,8 +2050,8 @@ export default function FinanceControlCenterPage({
             {[
               { id: "PENDING", title: "Pending", color: "border-slate-300" },
               { id: "IN_PROGRESS", title: "In Progress", color: "border-blue-400" },
-              { id: "BLOCKED", title: "Blocked", color: "border-rose-400" },
-              { id: "COMPLETED", title: "Completed", color: "border-emerald-400" },
+              { id: "BLOCKED", title: "Blocked", color: "border-red-400" },
+              { id: "COMPLETED", title: "Completed", color: "border-green-400" },
               { id: "CANCELLED", title: "Cancelled", color: "border-slate-300" },
             ].map((col) => {
               const colTasks = tasksList.filter((t) => t.status === col.id);
@@ -2076,7 +2076,7 @@ export default function FinanceControlCenterPage({
                           }}
                           className={cn(
                             "p-3 rounded-md bg-white border shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-1.5",
-                            isOverdue ? "border-rose-300 bg-rose-50/20" : "border-slate-200"
+                            isOverdue ? "border-red-300 bg-red-50/20" : "border-slate-200"
                           )}
                         >
                           <div className="flex items-start justify-between gap-1.5">
@@ -2086,7 +2086,7 @@ export default function FinanceControlCenterPage({
                               className={cn(
                                 "text-[9px] font-bold uppercase shrink-0",
                                 t.priority === "URGENT"
-                                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  ? "bg-red-50 text-red-700 border-red-200"
                                   : t.priority === "HIGH"
                                   ? "bg-orange-50 text-orange-700 border-orange-200"
                                   : "bg-slate-50 text-slate-600 border-slate-200"
@@ -2105,7 +2105,7 @@ export default function FinanceControlCenterPage({
                           <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
                             <span className="truncate">{t.assignedTo?.name || "Staff"}</span>
                             {t.deadline && (
-                              <span className={cn("font-mono font-bold", isOverdue ? "text-rose-600" : "text-slate-500")}>
+                              <span className={cn("font-mono font-bold", isOverdue ? "text-red-600" : "text-slate-500")}>
                                 {new Date(t.deadline).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
                               </span>
                             )}
@@ -2180,7 +2180,7 @@ export default function FinanceControlCenterPage({
                                 className={cn(
                                   "text-[10px] font-bold uppercase",
                                   c.status === "ACTIVE"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    ? "bg-green-50 text-green-700 border-green-200"
                                     : "bg-slate-50 text-slate-600 border-slate-200"
                                 )}
                               >
@@ -2264,15 +2264,15 @@ export default function FinanceControlCenterPage({
                     className={cn(
                       "p-3 rounded-lg border text-xs space-y-1.5",
                       couponValidationResult.isValid
-                        ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                        : "bg-rose-50 border-rose-200 text-rose-900"
+                        ? "bg-green-50 border-green-200 text-green-900"
+                        : "bg-red-50 border-red-200 text-red-900"
                     )}
                   >
                     <div className="font-bold">{couponValidationResult.message}</div>
                     {couponValidationResult.data && (
-                      <div className="space-y-0.5 font-mono text-[11px] pt-1 border-t border-emerald-200/60">
+                      <div className="space-y-0.5 font-mono text-[11px] pt-1 border-t border-green-200/60">
                         <div>Original: ₹{Number(couponValidationResult.data.originalAmount || 0).toLocaleString("en-IN")}</div>
-                        <div className="text-emerald-700 font-bold">
+                        <div className="text-green-700 font-bold">
                           Discount: -₹{Number(couponValidationResult.data.discountAmount || 0).toLocaleString("en-IN")}
                         </div>
                         <div className="font-extrabold">
@@ -2364,9 +2364,9 @@ export default function FinanceControlCenterPage({
                             className={cn(
                               "text-[9px] font-bold uppercase",
                               log.action === "APPROVE" || log.action === "VERIFY"
-                                ? "bg-emerald-100 text-emerald-800"
+                                ? "bg-green-100 text-green-700"
                                 : log.action === "REJECT"
-                                ? "bg-rose-100 text-rose-800"
+                                ? "bg-red-100 text-red-700"
                                 : "bg-slate-100 text-slate-800"
                             )}
                           >
@@ -2435,8 +2435,8 @@ export default function FinanceControlCenterPage({
                       selectedCashItem.difference === 0
                         ? "text-slate-500"
                         : (selectedCashItem.difference || 0) < 0
-                        ? "text-rose-600"
-                        : "text-emerald-600"
+                        ? "text-red-600"
+                        : "text-green-600"
                     )}
                   >
                     ₹{Number(selectedCashItem.difference || 0).toLocaleString("en-IN")}
@@ -2446,8 +2446,8 @@ export default function FinanceControlCenterPage({
 
               {/* Separation of Duties Warning */}
               {currentUser?.id && selectedCashItem.salespersonId && currentUser.id === selectedCashItem.salespersonId && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 font-semibold text-xs flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 font-semibold text-xs flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
                   Separation of Duties violation: You submitted this cash and cannot approve it.
                 </div>
               )}
@@ -2469,12 +2469,12 @@ export default function FinanceControlCenterPage({
 
               {cashAction === "REJECT" && (
                 <div>
-                  <label className="text-[10px] font-bold uppercase text-rose-600">Rejection Reason (Required)</label>
+                  <label className="text-[10px] font-bold uppercase text-red-600">Rejection Reason (Required)</label>
                   <Input
                     placeholder="State reason for rejecting cash submission..."
                     value={actionReason}
                     onChange={(e) => setActionReason(e.target.value)}
-                    className="h-8 text-xs mt-1 border-rose-300"
+                    className="h-8 text-xs mt-1 border-red-300"
                   />
                 </div>
               )}
@@ -2504,7 +2504,7 @@ export default function FinanceControlCenterPage({
               }
               className={cn(
                 "h-8 text-xs font-bold text-white shadow-xs",
-                cashAction === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : "bg-[#FF4D00] hover:bg-[#E04400]"
+                cashAction === "REJECT" ? "bg-red-600 hover:bg-red-700" : "bg-[#FF4D00] hover:bg-[#E04400]"
               )}
             >
               {isSubmittingAction ? "Processing..." : "Confirm Decision"}
@@ -2655,7 +2655,7 @@ export default function FinanceControlCenterPage({
             <Button variant="outline" size="sm" onClick={() => setShowRefundApproveDialog(false)} className="h-8 text-xs">
               Cancel
             </Button>
-            <Button size="sm" onClick={handleApproveRefund} className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button size="sm" onClick={handleApproveRefund} className="h-8 text-xs font-bold bg-green-600 hover:bg-green-700 text-white">
               Approve Refund
             </Button>
           </DialogFooter>
@@ -2668,19 +2668,19 @@ export default function FinanceControlCenterPage({
       <Dialog open={showRefundRejectDialog} onOpenChange={setShowRefundRejectDialog}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-rose-700">Reject Refund Request</DialogTitle>
+            <DialogTitle className="text-base font-bold text-red-700">Reject Refund Request</DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               An explicit reason is mandatory to reject a financial refund request.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2 py-2 text-xs">
-            <label className="text-[10px] font-bold uppercase text-rose-600">Rejection Reason</label>
+            <label className="text-[10px] font-bold uppercase text-red-600">Rejection Reason</label>
             <Textarea
               placeholder="State reason for rejecting..."
               value={refundRejectReason}
               onChange={(e) => setRefundRejectReason(e.target.value)}
-              className="text-xs resize-none h-20 border-rose-300"
+              className="text-xs resize-none h-20 border-red-300"
             />
           </div>
 
@@ -2688,7 +2688,7 @@ export default function FinanceControlCenterPage({
             <Button variant="outline" size="sm" onClick={() => setShowRefundRejectDialog(false)} className="h-8 text-xs">
               Cancel
             </Button>
-            <Button size="sm" onClick={handleRejectRefund} className="h-8 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white">
+            <Button size="sm" onClick={handleRejectRefund} className="h-8 text-xs font-bold bg-red-600 hover:bg-red-700 text-white">
               Reject Request
             </Button>
           </DialogFooter>
@@ -2711,7 +2711,7 @@ export default function FinanceControlCenterPage({
             <div className="space-y-3 py-2 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
                 <div>Credit Code: <span className="font-mono font-bold text-slate-900">{selectedCreditForApply.code || selectedCreditForApply.refundId}</span></div>
-                <div>Available Balance: <span className="font-mono font-bold text-emerald-600">₹{Number(selectedCreditForApply.remainingBalance || 0).toLocaleString("en-IN")}</span></div>
+                <div>Available Balance: <span className="font-mono font-bold text-green-600">₹{Number(selectedCreditForApply.remainingBalance || 0).toLocaleString("en-IN")}</span></div>
               </div>
 
               <div>
@@ -2884,9 +2884,9 @@ export default function FinanceControlCenterPage({
 
             {bulkUploadResult && (
               <div className="bg-slate-50 p-3 rounded-lg border text-xs space-y-1 font-mono">
-                <div className="text-emerald-700 font-bold">Ingested: {bulkUploadResult.ingestedCount}</div>
+                <div className="text-green-700 font-bold">Ingested: {bulkUploadResult.ingestedCount}</div>
                 <div className="text-amber-700 font-bold">Duplicates Skipped: {bulkUploadResult.duplicateCount}</div>
-                <div className="text-rose-700 font-bold">Unmatched Records: {bulkUploadResult.unmatchedCount}</div>
+                <div className="text-red-700 font-bold">Unmatched Records: {bulkUploadResult.unmatchedCount}</div>
               </div>
             )}
           </div>
@@ -3020,8 +3020,8 @@ export default function FinanceControlCenterPage({
               </div>
               {incomingAction === "REJECT" && (
                 <div>
-                  <label className="text-[10px] font-bold uppercase text-rose-600">Rejection reason</label>
-                  <Input value={incomingReason} onChange={(e) => setIncomingReason(e.target.value)} className="h-8 text-xs mt-1 border-rose-300" />
+                  <label className="text-[10px] font-bold uppercase text-red-600">Rejection reason</label>
+                  <Input value={incomingReason} onChange={(e) => setIncomingReason(e.target.value)} className="h-8 text-xs mt-1 border-red-300" />
                 </div>
               )}
               <div>
@@ -3036,7 +3036,7 @@ export default function FinanceControlCenterPage({
               size="sm"
               onClick={handleIncomingActionSubmit}
               disabled={isSubmittingAction}
-              className={cn("h-8 text-xs font-bold text-white", incomingAction === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : financePrimaryBtn)}
+              className={cn("h-8 text-xs font-bold text-white", incomingAction === "REJECT" ? "bg-red-600 hover:bg-red-700" : financePrimaryBtn)}
             >
               {isSubmittingAction ? "Saving…" : "Confirm"}
             </Button>
@@ -3155,7 +3155,7 @@ export default function FinanceControlCenterPage({
               size="sm"
               onClick={handleTicketAuditSubmit}
               disabled={isSubmittingAction}
-              className={cn("h-8 text-xs font-bold text-white", ticketAction === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : financePrimaryBtn)}
+              className={cn("h-8 text-xs font-bold text-white", ticketAction === "REJECT" ? "bg-red-600 hover:bg-red-700" : financePrimaryBtn)}
             >
               {isSubmittingAction ? "Saving…" : "Confirm decision"}
             </Button>
@@ -3247,14 +3247,14 @@ export default function FinanceControlCenterPage({
 
               {/* Notes — required on reject */}
               <div>
-                <label className={cn("text-[10px] font-bold uppercase", queueReviewAction === "REJECT" ? "text-rose-600" : "text-slate-500")}>
+                <label className={cn("text-[10px] font-bold uppercase", queueReviewAction === "REJECT" ? "text-red-600" : "text-slate-500")}>
                   {queueReviewAction === "REJECT" ? "Reason (required)" : "Notes (optional)"}
                 </label>
                 <Textarea
                   value={queueActionNotes}
                   onChange={(e) => setQueueActionNotes(e.target.value)}
                   placeholder={queueReviewAction === "REJECT" ? "Explain why this is being rejected…" : "Internal notes for the audit trail…"}
-                  className={cn("text-xs resize-none h-16 mt-1", queueReviewAction === "REJECT" && "border-rose-300")}
+                  className={cn("text-xs resize-none h-16 mt-1", queueReviewAction === "REJECT" && "border-red-300")}
                 />
               </div>
             </div>
@@ -3266,7 +3266,7 @@ export default function FinanceControlCenterPage({
               size="sm"
               onClick={handleQueueActionConfirm}
               disabled={isSubmittingAction}
-              className={cn("h-8 text-xs font-bold text-white", queueReviewAction === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700")}
+              className={cn("h-8 text-xs font-bold text-white", queueReviewAction === "REJECT" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700")}
             >
               {isSubmittingAction ? "Saving…" : queueReviewAction === "APPROVE" ? "Confirm Approval" : "Confirm Rejection"}
             </Button>
@@ -3311,7 +3311,7 @@ export default function FinanceControlCenterPage({
             {/* Trip ID & departure date */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] font-bold uppercase text-slate-500">Trip ID <span className="text-rose-500">*</span></label>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Trip ID <span className="text-red-600">*</span></label>
                 <Input
                   className="h-8 text-xs mt-1"
                   placeholder="e.g. cldxxxx…"
@@ -3320,7 +3320,7 @@ export default function FinanceControlCenterPage({
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold uppercase text-slate-500">Departure Date <span className="text-rose-500">*</span></label>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Departure Date <span className="text-red-600">*</span></label>
                 <Input
                   type="date"
                   className="h-8 text-xs mt-1"
@@ -3353,7 +3353,7 @@ export default function FinanceControlCenterPage({
                     </Select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Amount (₹) <span className="text-rose-500">*</span></label>
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Amount (₹) <span className="text-red-600">*</span></label>
                     <Input
                       type="number"
                       min={0}
@@ -3365,7 +3365,7 @@ export default function FinanceControlCenterPage({
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold uppercase text-slate-500">Description <span className="text-rose-500">*</span></label>
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Description <span className="text-red-600">*</span></label>
                   <Input
                     className="h-8 text-xs mt-1"
                     placeholder="Brief description of the expense"
@@ -3378,7 +3378,7 @@ export default function FinanceControlCenterPage({
               <>
                 {/* Activity fields */}
                 <div>
-                  <label className="text-[10px] font-bold uppercase text-slate-500">Activity Name <span className="text-rose-500">*</span></label>
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Activity Name <span className="text-red-600">*</span></label>
                   <Input
                     className="h-8 text-xs mt-1"
                     placeholder="e.g. River Rafting, Camping Equipment"
@@ -3388,7 +3388,7 @@ export default function FinanceControlCenterPage({
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Total Amount (₹) <span className="text-rose-500">*</span></label>
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Total Amount (₹) <span className="text-red-600">*</span></label>
                     <Input
                       type="number"
                       min={0}
@@ -3469,7 +3469,7 @@ export default function FinanceControlCenterPage({
                     <label
                       className={cn(
                         "flex-1 flex items-center gap-2 h-8 px-3 border rounded-md cursor-pointer text-xs text-slate-500 hover:border-slate-400 transition-colors bg-white",
-                        expenseProofFile ? "border-emerald-400 text-emerald-700" : "border-slate-200"
+                        expenseProofFile ? "border-green-400 text-green-700" : "border-slate-200"
                       )}
                     >
                       <Upload className="h-3 w-3 shrink-0" />
@@ -3498,7 +3498,7 @@ export default function FinanceControlCenterPage({
                       <button
                         type="button"
                         onClick={() => { setExpenseProofFile(null); setExpenseProofPreview(null); }}
-                        className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:border-rose-300 hover:text-rose-500 transition-colors"
+                        className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-600 transition-colors"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -3581,7 +3581,7 @@ export default function FinanceControlCenterPage({
             <Button variant="outline" size="sm" onClick={() => setConfirmTicketVerifyId(null)} className="h-8 text-xs">Cancel</Button>
             <Button
               size="sm"
-              className="h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="h-7 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
               onClick={async () => {
                 const tix = financeTicketsList.find((t) => t.id === confirmTicketVerifyId);
                 if (!tix) return;
@@ -3606,3 +3606,6 @@ export default function FinanceControlCenterPage({
     </div>
   );
 }
+
+
+

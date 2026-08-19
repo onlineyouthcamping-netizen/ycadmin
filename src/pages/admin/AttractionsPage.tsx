@@ -131,7 +131,7 @@ export default function AttractionsPage() {
     <div className="admin-page animate-fade-in">
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <MapPin className="w-5 h-5 text-[#F97316]" />
+          <MapPin className="w-5 h-5 text-[#FF4D00]" />
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
               Attractions Library
@@ -169,3 +169,4 @@ export default function AttractionsPage() {
     </div>
   );
 }
+

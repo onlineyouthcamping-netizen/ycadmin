@@ -95,7 +95,7 @@ export default function TripControlRowDrawer({
         {/* Drawer Header */}
         <div className="bg-slate-900 text-white p-5 border-b border-slate-800">
           <div className="flex items-center justify-between mb-2">
-            <Badge className="bg-[#F97316] text-white hover:bg-[#F97316] font-bold text-[10px] uppercase tracking-wider">
+            <Badge className="bg-[#FF4D00] text-white hover:bg-[#FF4D00] font-bold text-[10px] uppercase tracking-wider">
               {rowData.dayLabel}
             </Badge>
             <div className="flex items-center gap-1.5 text-xs text-slate-300 font-mono">
@@ -104,7 +104,7 @@ export default function TripControlRowDrawer({
             </div>
           </div>
           <h2 className="text-xl font-black flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-[#F97316]" />
+            <MapPin className="w-5 h-5 text-[#FF4D00]" />
             {rowData.destination}
           </h2>
           <div className="flex items-center gap-4 text-xs text-slate-400 mt-2 font-medium">
@@ -121,13 +121,13 @@ export default function TripControlRowDrawer({
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Building className="w-4 h-4 text-[#F97316]" /> Hotel Booking
+                <Building className="w-4 h-4 text-[#FF4D00]" /> Hotel Booking
               </span>
               <Badge
                 className={cn(
                   "text-[10px] font-extrabold uppercase px-2 py-0.5 border",
                   rowData.hotelStatus === "BOOKED"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    ? "bg-green-50 text-green-700 border-green-200"
                     : rowData.hotelStatus === "CANCELLED"
                     ? "bg-red-50 text-red-700 border-red-200"
                     : rowData.hotelStatus === "NOT REQUIRED"
@@ -153,7 +153,7 @@ export default function TripControlRowDrawer({
                 onClose();
                 onEditHotel(rowData);
               }}
-              className="w-full h-8 text-xs font-bold border-slate-300 text-slate-700 hover:bg-white hover:border-[#F97316] hover:text-[#F97316] transition-colors"
+              className="w-full h-8 text-xs font-bold border-slate-300 text-slate-700 hover:bg-white hover:border-[#FF4D00] hover:text-[#FF4D00] transition-colors"
             >
               <Hotel className="w-3.5 h-3.5 mr-1.5" /> Edit Hotel Assignment
             </Button>
@@ -163,13 +163,13 @@ export default function TripControlRowDrawer({
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Bus className="w-4 h-4 text-[#F97316]" /> Transport Fleet
+                <Bus className="w-4 h-4 text-[#FF4D00]" /> Transport Fleet
               </span>
               <Badge
                 className={cn(
                   "text-[10px] font-extrabold uppercase px-2 py-0.5 border",
                   isTransportIncluded
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    ? "bg-green-50 text-green-700 border-green-200"
                     : "bg-slate-100 text-slate-500 border-slate-200"
                 )}
               >
@@ -190,8 +190,8 @@ export default function TripControlRowDrawer({
                 className={cn(
                   "h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center gap-1.5 px-2",
                   isTransportIncluded
-                    ? "bg-emerald-600 text-white border-transparent shadow-xs"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-200"
+                    ? "bg-green-600 text-white border-transparent shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-green-50 hover:border-green-200"
                 )}
               >
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
@@ -221,12 +221,12 @@ export default function TripControlRowDrawer({
                   value={transportInput}
                   onChange={(e) => setTransportInput(e.target.value)}
                   placeholder={`e.g. ${defaultTransport}`}
-                  className="w-full text-xs p-2 border border-slate-200 rounded bg-white focus:outline-none focus:border-[#F97316]"
+                  className="w-full text-xs p-2 border border-slate-200 rounded bg-white focus:outline-none focus:border-[#FF4D00]"
                 />
                 <Button
                   size="sm"
                   onClick={() => onSaveDayDetail(rowData, "vehicleType", transportInput.trim() || defaultTransport)}
-                  className="h-[34px] px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold"
+                  className="h-[34px] px-3 bg-[#FF4D00] hover:bg-[#E05E00] text-white text-xs font-bold"
                 >
                   Save
                 </Button>
@@ -238,13 +238,13 @@ export default function TripControlRowDrawer({
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <UserCheck className="w-4 h-4 text-[#F97316]" /> Guide / Driver
+                <UserCheck className="w-4 h-4 text-[#FF4D00]" /> Guide / Driver
               </span>
               <Badge
                 className={cn(
                   "text-[10px] font-extrabold uppercase px-2 py-0.5 border",
                   isGuideIncluded
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    ? "bg-green-50 text-green-700 border-green-200"
                     : "bg-slate-100 text-slate-500 border-slate-200"
                 )}
               >
@@ -270,8 +270,8 @@ export default function TripControlRowDrawer({
                 className={cn(
                   "h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center gap-1.5 px-2",
                   isGuideIncluded
-                    ? "bg-emerald-600 text-white border-transparent shadow-xs"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-200"
+                    ? "bg-green-600 text-white border-transparent shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-green-50 hover:border-green-200"
                 )}
               >
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
@@ -301,12 +301,12 @@ export default function TripControlRowDrawer({
                   value={guideInput}
                   onChange={(e) => setGuideInput(e.target.value)}
                   placeholder={`e.g. ${defaultGuide}`}
-                  className="w-full text-xs p-2 border border-slate-200 rounded bg-white focus:outline-none focus:border-[#F97316]"
+                  className="w-full text-xs p-2 border border-slate-200 rounded bg-white focus:outline-none focus:border-[#FF4D00]"
                 />
                 <Button
                   size="sm"
                   onClick={() => onSaveDayDetail(rowData, "guideDriverDetails", guideInput.trim() || defaultGuide)}
-                  className="h-[34px] px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold"
+                  className="h-[34px] px-3 bg-[#FF4D00] hover:bg-[#E05E00] text-white text-xs font-bold"
                 >
                   Save
                 </Button>
@@ -318,12 +318,12 @@ export default function TripControlRowDrawer({
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Hotel Check-in Update
+                <CheckCircle2 className="w-4 h-4 text-green-600" /> Hotel Check-in Update
               </span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "CHECKED-IN", label: "Checked In", color: "bg-emerald-600 text-white" },
+                { id: "CHECKED-IN", label: "Checked In", color: "bg-green-600 text-white" },
                 { id: "PENDING", label: "Pending", color: "bg-amber-500 text-white" },
                 { id: "NOT REQUIRED", label: "N/A", color: "bg-slate-500 text-white" },
               ].map((st) => (
@@ -347,19 +347,19 @@ export default function TripControlRowDrawer({
           {/* SECTION 5: OPERATIONAL REMARK */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
             <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <MessageSquare className="w-4 h-4 text-[#F97316]" /> Operational Remark
+              <MessageSquare className="w-4 h-4 text-[#FF4D00]" /> Operational Remark
             </label>
             <textarea
               rows={3}
               value={remarkInput}
               onChange={(e) => setRemarkInput(e.target.value)}
               placeholder="e.g. Guest arriving late, room upgrade requested..."
-              className="w-full text-xs p-3 border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[#F97316] text-slate-800"
+              className="w-full text-xs p-3 border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[#FF4D00] text-slate-800"
             />
             <Button
               size="sm"
               onClick={() => onSaveRemark(rowData, remarkInput)}
-              className="w-full h-8 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-lg shadow-sm"
+              className="w-full h-8 text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-lg shadow-sm"
             >
               Save Operational Remark
             </Button>
@@ -369,3 +369,4 @@ export default function TripControlRowDrawer({
     </Sheet>
   );
 }
+

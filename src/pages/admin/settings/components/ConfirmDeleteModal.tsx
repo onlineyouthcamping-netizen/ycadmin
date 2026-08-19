@@ -61,10 +61,10 @@ export function ConfirmDeleteModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md bg-white p-6 rounded-xl border border-rose-200">
+      <DialogContent className="max-w-md bg-white p-6 rounded-xl border border-red-200">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-base font-bold text-rose-600 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-rose-600" />
+          <DialogTitle className="text-base font-bold text-red-600 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
             Delete Account Permanently?
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-500">
@@ -74,7 +74,7 @@ export function ConfirmDeleteModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">
             ⚠️ <strong>Warning:</strong> You will be immediately logged out of
             all active devices once deleted.
           </div>
@@ -122,7 +122,7 @@ export function ConfirmDeleteModal({
               type="submit"
               size="sm"
               disabled={isDeleting || !confirmedCheck || !password}
-              className="h-9 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white"
+              className="h-9 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Permanently Delete Account"}
             </Button>
@@ -132,3 +132,4 @@ export function ConfirmDeleteModal({
     </Dialog>
   );
 }
+

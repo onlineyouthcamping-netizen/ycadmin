@@ -507,13 +507,13 @@ export default function Activity5StepWizardModal({
                     isCurrent
                       ? "bg-orange-600 border-orange-500 text-white font-bold shadow-md"
                       : isCompleted
-                        ? "bg-slate-800 border-slate-700 text-emerald-400 font-medium"
+                        ? "bg-slate-800 border-slate-700 text-green-500 font-medium"
                         : "bg-slate-800/50 border-slate-700/50 text-slate-500 opacity-60",
                   )}
                 >
                   <div className="flex items-center gap-0.5 sm:gap-1">
                     {isCompleted ? (
-                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
                     ) : (
                       <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     )}
@@ -1029,7 +1029,7 @@ export default function Activity5StepWizardModal({
                     className={cn(
                       "px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all",
                       isIncluded
-                        ? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
+                        ? "bg-green-600 text-white border-green-700 shadow-sm"
                         : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                     )}
                   >
@@ -1051,13 +1051,13 @@ export default function Activity5StepWizardModal({
               </div>
 
               {isIncluded ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-emerald-50/70 p-5 rounded-xl border border-emerald-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-green-50/70 p-5 rounded-xl border border-green-200">
                   <div>
-                    <label className="block text-xs font-bold text-emerald-900 mb-1">
+                    <label className="block text-xs font-bold text-green-900 mb-1">
                       Vendor Cost / Pax (Company Pays)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2 text-emerald-700 font-bold">
+                      <span className="absolute left-3 top-2 text-green-700 font-bold">
                         ₹
                       </span>
                       <input
@@ -1066,19 +1066,19 @@ export default function Activity5StepWizardModal({
                         onChange={(e) =>
                           setVendorCost(Number(e.target.value) || 0)
                         }
-                        className="w-full pl-7 pr-3 py-1.5 font-bold text-emerald-950 rounded-lg border border-emerald-300 bg-white"
+                        className="w-full pl-7 pr-3 py-1.5 font-bold text-green-900 rounded-lg border border-green-300 bg-white"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-emerald-900 mb-1">
+                    <label className="block text-xs font-bold text-green-900 mb-1">
                       Total Payable to Vendor (Auto Calc)
                     </label>
-                    <div className="text-xl font-black text-emerald-700 mt-1">
+                    <div className="text-xl font-black text-green-700 mt-1">
                       ₹{(selectedPaxIds.length * vendorCost).toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-emerald-600">
+                    <span className="text-[11px] text-green-600">
                       Based on {selectedPaxIds.length} manifested passengers
                     </span>
                   </div>
@@ -1128,7 +1128,7 @@ export default function Activity5StepWizardModal({
                       <label className="block text-xs font-bold text-orange-900 mb-1">
                         Profit / Pax
                       </label>
-                      <div className="text-lg font-black text-emerald-600 mt-1">
+                      <div className="text-lg font-black text-green-600 mt-1">
                         ₹{profitPerPax}
                       </div>
                     </div>
@@ -1242,7 +1242,7 @@ export default function Activity5StepWizardModal({
                 type="button"
                 onClick={handleFinish}
                 disabled={saving}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 px-6 text-xs"
+                className="bg-green-600 hover:bg-green-700 text-white font-bold h-9 px-6 text-xs"
               >
                 {saving ? "Adding..." : "Finish & Add to Departure"}
               </Button>
@@ -1253,3 +1253,5 @@ export default function Activity5StepWizardModal({
     </Dialog>
   );
 }
+
+

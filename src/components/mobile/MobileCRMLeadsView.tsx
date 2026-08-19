@@ -142,7 +142,7 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-slate-900">{l.name}</h3>
                   {l.priority === "HIGH" && (
-                    <span className="text-[9px] font-black bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded border border-rose-100 uppercase">
+                    <span className="text-[9px] font-black bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-100 uppercase">
                       HOT
                     </span>
                   )}
@@ -186,7 +186,7 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
                   href={`https://wa.me/${l.phone.replace(/[^0-9]/g, "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 hover:bg-emerald-200 flex items-center justify-center active:scale-95 transition-all"
+                  className="w-9 h-9 rounded-xl bg-green-100 text-green-700 hover:bg-green-200 flex items-center justify-center active:scale-95 transition-all"
                   aria-label="WhatsApp Lead"
                 >
                   <MessageSquare className="w-4 h-4" />
@@ -197,7 +197,7 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onUpdateStatus && onUpdateStatus(l.id, "converted")}
-                  className="h-9 px-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shadow-2xs"
+                  className="h-9 px-3 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shadow-2xs"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
                   Convert
@@ -212,3 +212,5 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
 };
 
 export default MobileCRMLeadsView;
+
+

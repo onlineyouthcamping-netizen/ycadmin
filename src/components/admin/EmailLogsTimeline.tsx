@@ -94,8 +94,8 @@ export default function EmailLogsTimeline({
                 log.isTest
                   ? "border-l-4 border-l-amber-400"
                   : log.status === "FAILED"
-                    ? "border-l-4 border-l-rose-400"
-                    : "border-l-4 border-l-emerald-400"
+                    ? "border-l-4 border-l-red-400"
+                    : "border-l-4 border-l-green-500"
               }`}
             >
               <div className="space-y-1.5 grow max-w-full truncate">
@@ -105,8 +105,8 @@ export default function EmailLogsTimeline({
                       log.isTest
                         ? "bg-amber-50 text-amber-700"
                         : log.status === "FAILED"
-                          ? "bg-rose-50 text-rose-700"
-                          : "bg-emerald-50 text-emerald-700"
+                          ? "bg-red-50 text-red-700"
+                          : "bg-green-50 text-green-700"
                     }`}
                   >
                     {log.isTest
@@ -173,7 +173,7 @@ export default function EmailLogsTimeline({
                   )}
 
                 {log.status === "FAILED" && log.error && (
-                  <div className="text-xs font-semibold text-rose-500 flex items-center gap-1 mt-1 bg-rose-50/50 p-1.5 rounded border border-rose-100">
+                  <div className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1 bg-red-50/50 p-1.5 rounded border border-red-100">
                     <AlertCircle className="h-3 w-3 shrink-0" />
                     Error: {log.error}
                   </div>
@@ -301,3 +301,6 @@ export default function EmailLogsTimeline({
     </div>
   );
 }
+
+
+

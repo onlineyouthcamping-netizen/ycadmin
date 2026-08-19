@@ -81,7 +81,7 @@ export const TravelDeskSops: React.FC<TravelDeskSopsProps> = ({ trip }) => {
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={(e) => handleDeleteSop(e, sop.id)}
-                  className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete SOP"
                 >
                   <svg
@@ -139,3 +139,4 @@ export const TravelDeskSops: React.FC<TravelDeskSopsProps> = ({ trip }) => {
     </div>
   );
 };
+

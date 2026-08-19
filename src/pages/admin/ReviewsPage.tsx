@@ -215,7 +215,7 @@ export default function ReviewsPage() {
               <h1 className="text-xl font-extrabold text-slate-900 tracking-tight font-montserrat">
                 Customer Reviews Hub
               </h1>
-              <span className="bg-emerald-100 text-emerald-800 font-extrabold text-[9px] px-2 py-0.5 rounded-full uppercase">
+              <span className="bg-green-100 text-green-700 font-extrabold text-[9px] px-2 py-0.5 rounded-full uppercase">
                 Synced Live
               </span>
             </div>
@@ -255,11 +255,11 @@ export default function ReviewsPage() {
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
               Featured on Web
             </p>
-            <p className="text-2xl font-black text-emerald-600 mt-1">
+            <p className="text-2xl font-black text-green-600 mt-1">
               {stats.featured}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center font-bold">
             <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
@@ -375,7 +375,7 @@ export default function ReviewsPage() {
                 key={r.id || r._id}
                 className={`bg-white border rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 relative group ${
                   r.isFeatured
-                    ? "border-emerald-200 bg-emerald-50/20"
+                    ? "border-green-200 bg-green-50/20"
                     : "border-slate-200/80"
                 }`}
               >
@@ -424,7 +424,7 @@ export default function ReviewsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(r.id || r._id)}
-                        className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg"
+                        className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-lg"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -480,7 +480,7 @@ export default function ReviewsPage() {
                       onCheckedChange={() => toggleFeatured(r)}
                     />
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wider ${r.isFeatured ? "text-emerald-700" : "text-slate-400"}`}
+                      className={`text-[10px] font-bold uppercase tracking-wider ${r.isFeatured ? "text-green-700" : "text-slate-400"}`}
                     >
                       {r.isFeatured ? "Featured" : "Hidden"}
                     </span>
@@ -675,7 +675,7 @@ export default function ReviewsPage() {
                             );
                             setFormData({ ...formData, photos: updated });
                           }}
-                          className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-1 shadow-md opacity-90 hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md opacity-90 hover:opacity-100 transition-opacity"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>
@@ -738,3 +738,4 @@ export default function ReviewsPage() {
     </div>
   );
 }
+

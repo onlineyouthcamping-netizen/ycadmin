@@ -616,7 +616,7 @@ export default function PageEditorPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-red-500"
+                      className="text-red-600"
                       onClick={() => deleteSection(activeSection.id)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -953,3 +953,4 @@ function getDefaultData(type: string) {
       return { title: `New ${type} Section` };
   }
 }
+

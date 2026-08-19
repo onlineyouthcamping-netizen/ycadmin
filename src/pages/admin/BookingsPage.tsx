@@ -1080,7 +1080,7 @@ export default function BookingsPage() {
                   </div>
                   <div className="flex justify-between text-xs py-1 border-b border-slate-100">
                     <span className="text-slate-400">Pending</span>
-                    <span className="font-bold text-rose-600">
+                    <span className="font-bold text-red-600">
                       ₹
                       {Number(
                         previewTarget.remainingAmount || 0,
@@ -1380,3 +1380,4 @@ function AlertCircleIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+

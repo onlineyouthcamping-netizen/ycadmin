@@ -350,7 +350,7 @@ export default function TripSopEditorTab({
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#F97316]">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF4D00]">
               <Zap className="w-5 h-5" />
             </div>
             <div>
@@ -399,7 +399,7 @@ export default function TripSopEditorTab({
               setIsTaskModalOpen(true);
             }}
             size="sm"
-            className="h-9 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white shadow-xs gap-1.5"
+            className="h-9 text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white shadow-xs gap-1.5"
           >
             <Plus className="w-4 h-4" /> + Add SOP Task Template
           </Button>
@@ -678,7 +678,7 @@ export default function TripSopEditorTab({
               type="button"
               size="sm"
               onClick={handleSaveTask}
-              className="h-9 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white"
+              className="h-9 text-xs font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white"
             >
               Save SOP Task
             </Button>
@@ -688,3 +688,4 @@ export default function TripSopEditorTab({
     </div>
   );
 }
+

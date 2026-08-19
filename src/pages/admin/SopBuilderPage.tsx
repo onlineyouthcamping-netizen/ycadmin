@@ -372,7 +372,7 @@ export default function SopBuilderPage() {
           </button>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="text-xs font-bold px-2.5 py-1 rounded bg-green-50 text-green-700 border border-green-200">
               {activeVersion.status} ({activeVersion.versionLabel})
             </span>
 
@@ -396,7 +396,7 @@ export default function SopBuilderPage() {
 
             <Button
               onClick={handleOpenAddTask}
-              className="h-8 text-xs font-bold bg-[#F97316] hover:bg-[#EA580C] text-white"
+              className="h-8 text-xs font-bold bg-[#FF4D00] hover:bg-[#EA580C] text-white"
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
               Add Task
@@ -406,7 +406,7 @@ export default function SopBuilderPage() {
 
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 bg-orange-100 rounded-lg text-[#F97316]">
+            <span className="p-2 bg-orange-100 rounded-lg text-[#FF4D00]">
               <FileText className="w-5 h-5" />
             </span>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -471,7 +471,7 @@ export default function SopBuilderPage() {
                   onClick={() => setActiveStage(s.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 cursor-pointer ${
                     isSelected
-                      ? "bg-[#F97316] text-white border-[#F97316] shadow-xs"
+                      ? "bg-[#FF4D00] text-white border-[#FF4D00] shadow-xs"
                       : "bg-slate-50/80 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100"
                   }`}
                 >
@@ -560,7 +560,7 @@ export default function SopBuilderPage() {
                   <div className="flex items-center justify-center gap-2 pt-2">
                     <Button
                       onClick={handleOpenAddTask}
-                      className="h-7.5 text-xs font-bold bg-[#F97316] hover:bg-[#EA580C] text-white px-3 cursor-pointer"
+                      className="h-7.5 text-xs font-bold bg-[#FF4D00] hover:bg-[#EA580C] text-white px-3 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
                       Add Task for {visibleStages.find((s) => s.id === activeStage)?.label || activeStage}
@@ -621,7 +621,7 @@ export default function SopBuilderPage() {
                       <span
                         className={`inline-flex items-center whitespace-nowrap text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${
                           t.priority?.toUpperCase() === "CRITICAL"
-                            ? "bg-rose-50 text-rose-700 border border-rose-200"
+                            ? "bg-red-50 text-red-700 border border-red-200"
                             : t.priority?.toUpperCase() === "HIGH"
                             ? "bg-amber-50 text-amber-700 border border-amber-200"
                             : t.priority?.toUpperCase() === "MEDIUM"
@@ -634,7 +634,7 @@ export default function SopBuilderPage() {
                     </td>
                     <td className="p-3 border-r border-slate-100 text-center whitespace-nowrap">
                       {t.isRequired ? (
-                        <span className="inline-flex items-center whitespace-nowrap text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                        <span className="inline-flex items-center whitespace-nowrap text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">
                           YES
                         </span>
                       ) : (
@@ -687,7 +687,7 @@ export default function SopBuilderPage() {
           <form onSubmit={handleSaveTask} className="space-y-3.5 mt-2">
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                Task Name <span className="text-red-500">*</span>
+                Task Name <span className="text-red-600">*</span>
               </label>
               <Input
                 placeholder="e.g. Room allocation finalized"
@@ -797,7 +797,7 @@ export default function SopBuilderPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-[#F97316] hover:bg-[#EA580C] text-white h-9 text-xs font-bold"
+                className="bg-[#FF4D00] hover:bg-[#EA580C] text-white h-9 text-xs font-bold"
               >
                 {isSubmitting ? "Saving..." : "Save SOP Task Template"}
               </Button>
@@ -831,7 +831,7 @@ export default function SopBuilderPage() {
             />
             <Button
               onClick={handlePreviewSchedule}
-              className="h-8 text-xs bg-[#F97316] hover:bg-[#EA580C] text-white font-bold"
+              className="h-8 text-xs bg-[#FF4D00] hover:bg-[#EA580C] text-white font-bold"
             >
               Recalculate
             </Button>
@@ -850,7 +850,7 @@ export default function SopBuilderPage() {
               <tbody className="divide-y divide-slate-100">
                 {previewSchedule.map((item, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
-                    <td className="p-2 font-bold text-[#F97316]">{item.offsetLabel}</td>
+                    <td className="p-2 font-bold text-[#FF4D00]">{item.offsetLabel}</td>
                     <td className="p-2 font-extrabold text-slate-800">{item.dueDate}</td>
                     <td className="p-2 font-semibold text-slate-800">{item.taskName}</td>
                     <td className="p-2">
@@ -882,7 +882,7 @@ export default function SopBuilderPage() {
           <form onSubmit={handleAddCustomStage} className="space-y-4 mt-2">
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                Stage Label / Name <span className="text-red-500">*</span>
+                Stage Label / Name <span className="text-red-600">*</span>
               </label>
               <Input
                 placeholder="e.g. PRE-TRIP 45D or GEAR CHECK 5D"
@@ -920,7 +920,7 @@ export default function SopBuilderPage() {
               </Button>
               <Button
                 type="submit"
-                className="h-8 text-xs font-bold bg-[#F97316] hover:bg-[#EA580C] text-white"
+                className="h-8 text-xs font-bold bg-[#FF4D00] hover:bg-[#EA580C] text-white"
               >
                 Generate Stage Pill
               </Button>
@@ -931,3 +931,4 @@ export default function SopBuilderPage() {
     </div>
   );
 }
+

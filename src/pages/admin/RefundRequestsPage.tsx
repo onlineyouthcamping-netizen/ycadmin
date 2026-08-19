@@ -135,7 +135,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
         <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
           <div className="space-y-0.5">
             <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none font-montserrat flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 text-[#F97316]" />
+              <RefreshCw className="w-5 h-5 text-[#FF4D00]" />
               Refund Requests & Store Credits
             </h1>
             <p className="text-[#74839A] text-[12px] font-[500] leading-none">
@@ -150,7 +150,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                 placeholder="Search Booking ID, reason, status..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#F97316] outline-none"
+                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#FF4D00] outline-none"
               />
             </div>
             <Button
@@ -189,14 +189,14 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
             <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
               Pending Refund Value
             </p>
-            <h3 className="text-[20px] font-extrabold text-rose-600 leading-none mt-1">
+            <h3 className="text-[20px] font-extrabold text-red-600 leading-none mt-1">
               {loading ? "..." : `₹${totalPendingAmount.toLocaleString("en-IN")}`}
             </h3>
           </div>
           <p className="text-[9px] text-[#74839A] font-semibold leading-none">
             Cash & credit claims
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100 shrink-0">
+          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100 shrink-0">
             <DollarSign className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -207,14 +207,14 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
             <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
               Active Store Credits
             </p>
-            <h3 className="text-[20px] font-extrabold text-emerald-600 leading-none mt-1">
+            <h3 className="text-[20px] font-extrabold text-green-600 leading-none mt-1">
               {loading ? "..." : `₹${totalCreditsBalance.toLocaleString("en-IN")}`}
             </h3>
           </div>
           <p className="text-[9px] text-[#74839A] font-semibold leading-none">
             {credits.length} credit notes issued
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shrink-0">
+          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-green-50 flex items-center justify-center text-green-600 border border-green-100 shrink-0">
             <CreditCard className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -249,7 +249,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
                   activeSubTab === "refunds"
-                    ? "bg-white text-[#F97316] shadow-sm"
+                    ? "bg-white text-[#FF4D00] shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
@@ -261,7 +261,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
                   activeSubTab === "credits"
-                    ? "bg-white text-[#F97316] shadow-sm"
+                    ? "bg-white text-[#FF4D00] shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
@@ -303,7 +303,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-7.5 w-48 pl-8 text-[11px] rounded bg-slate-50 border-[#E3EAF2] focus:border-[#F97316] outline-none"
+                className="h-7.5 w-48 pl-8 text-[11px] rounded bg-slate-50 border-[#E3EAF2] focus:border-[#FF4D00] outline-none"
               />
             </div>
           </div>
@@ -313,7 +313,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#F97316] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#FF4D00] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : activeSubTab === "refunds" ? (
             refunds.length === 0 ? (
@@ -343,7 +343,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                 <tbody className="divide-y divide-[#E3EAF2] text-[11px] font-semibold text-[#162B45]">
                   {refunds.map((ref) => (
                     <tr key={ref.id} className="hover:bg-[#F8FAFD] transition-colors h-[44px]">
-                      <td className="px-4 py-2 font-bold font-mono text-[#F97316]">
+                      <td className="px-4 py-2 font-bold font-mono text-[#FF4D00]">
                         {ref.bookingId}
                       </td>
                       <td className="px-4 py-2 text-slate-700 font-medium capitalize">
@@ -373,9 +373,9 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                           className={cn(
                             "text-[9px] font-bold uppercase",
                             ref.status === "COMPLETED" || ref.status === "APPROVED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-green-50 text-green-700 border-green-200"
                               : ref.status === "REJECTED"
-                              ? "bg-rose-50 text-rose-700 border-rose-200"
+                              ? "bg-red-50 text-red-700 border-red-200"
                               : "bg-amber-50 text-amber-700 border-amber-200"
                           )}
                         >
@@ -391,7 +391,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                                 setSelectedRefund(ref);
                                 setShowApproveDialog(true);
                               }}
-                              className="h-6.5 text-[9.5px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                              className="h-6.5 text-[9.5px] font-bold bg-green-600 hover:bg-green-700 text-white"
                             >
                               Approve
                             </Button>
@@ -402,7 +402,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                                 setSelectedRefund(ref);
                                 setShowRejectDialog(true);
                               }}
-                              className="h-6.5 text-[9.5px] font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
+                              className="h-6.5 text-[9.5px] font-bold text-red-600 border-red-200 hover:bg-red-50"
                             >
                               Reject
                             </Button>
@@ -449,7 +449,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                       <td className="px-4 py-2 font-mono font-bold text-slate-900">
                         {cred.code || cred.id}
                       </td>
-                      <td className="px-4 py-2 font-mono text-[#F97316]">
+                      <td className="px-4 py-2 font-mono text-[#FF4D00]">
                         {cred.bookingId || "—"}
                       </td>
                       <td className="px-4 py-2 text-right font-mono font-medium text-slate-700">
@@ -458,7 +458,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                       <td className="px-4 py-2 text-right font-mono font-medium text-slate-500">
                         ₹{Number(cred.totalUsed || 0).toLocaleString("en-IN")}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-emerald-600">
+                      <td className="px-4 py-2 text-right font-mono font-bold text-green-600">
                         ₹{Number(cred.remainingBalance || 0).toLocaleString("en-IN")}
                       </td>
                       <td className="px-4 py-2 text-slate-500 font-mono text-[10.5px]">
@@ -470,7 +470,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                           className={cn(
                             "text-[9px] font-bold uppercase",
                             Number(cred.remainingBalance || 0) > 0
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-green-50 text-green-700 border-green-200"
                               : "bg-slate-100 text-slate-500 border-slate-200"
                           )}
                         >
@@ -492,8 +492,8 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <DialogTitle className="text-base font-bold text-green-700 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
               Approve Customer Refund
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -549,7 +549,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
               size="sm"
               disabled={actionLoading}
               onClick={handleApprove}
-              className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="h-8 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
             >
               Confirm Approval
             </Button>
@@ -563,8 +563,8 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-rose-700 flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-rose-600" />
+            <DialogTitle className="text-base font-bold text-red-700 flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-600" />
               Reject Refund Request
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -573,14 +573,14 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
           </DialogHeader>
 
           <div className="space-y-2 py-2 text-xs">
-            <label className="text-[10px] font-bold uppercase text-rose-600">
+            <label className="text-[10px] font-bold uppercase text-red-600">
               Rejection Reason (Required)
             </label>
             <Textarea
               placeholder="State reason for rejecting refund..."
               value={refundRejectReason}
               onChange={(e) => setRefundRejectReason(e.target.value)}
-              className="text-xs resize-none h-20 border-rose-300"
+              className="text-xs resize-none h-20 border-red-300"
             />
           </div>
 
@@ -597,7 +597,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
               size="sm"
               disabled={actionLoading}
               onClick={handleReject}
-              className="h-8 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white"
+              className="h-8 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
             >
               Confirm Rejection
             </Button>
@@ -607,3 +607,5 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
     </div>
   );
 }
+
+

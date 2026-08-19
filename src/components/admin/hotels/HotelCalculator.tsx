@@ -293,7 +293,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
                     {Object.entries(result.sharing_wise_per_person).map(([key, item]: [string, any]) => (
                       <div key={key} className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700 text-center hover:border-orange-500/50 transition-all">
                         <p className="text-[11px] font-bold text-slate-300 truncate">{item.sharing}</p>
-                        <p className="text-sm font-extrabold text-emerald-400 mt-1">₹{item.cost_per_pax_per_night.toLocaleString('en-IN')}</p>
+                        <p className="text-sm font-extrabold text-green-500 mt-1">₹{item.cost_per_pax_per_night.toLocaleString('en-IN')}</p>
                         <p className="text-[10px] text-slate-400 font-semibold">/ pax / night</p>
                         <p className="text-[10px] text-slate-500 mt-1 font-mono">Total: ₹{item.cost_per_pax_total_stay.toLocaleString('en-IN')}</p>
                       </div>
@@ -309,7 +309,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
                   <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Grand Total</p>
                   <p className="text-xs text-orange-400/80">Cost Per Pax: ₹{result.cost_breakdown.cost_per_pax.toLocaleString('en-IN')}</p>
                 </div>
-                <div className="text-3xl font-bold text-emerald-400">
+                <div className="text-3xl font-bold text-green-500">
                   {result.summary.display_total}
                 </div>
               </div>
@@ -333,3 +333,4 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
     </div>
   );
 }
+

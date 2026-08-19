@@ -1272,7 +1272,7 @@ export default function TripFormEditor({
                           </span>
                         </div>
                         <X
-                          className="h-3.5 w-3.5 text-slate-400 cursor-pointer hover:text-red-500"
+                          className="h-3.5 w-3.5 text-slate-400 cursor-pointer hover:text-red-600"
                           onClick={() => removeFromList("inclusions", i)}
                         />
                       </div>
@@ -1313,13 +1313,13 @@ export default function TripFormEditor({
                         className="flex items-center justify-between p-2 bg-white rounded border border-slate-200 text-xs shadow-sm"
                       >
                         <div className="flex items-center gap-2">
-                          <XCircle className="h-3.5 w-3.5 text-red-500" />
+                          <XCircle className="h-3.5 w-3.5 text-red-600" />
                           <span className="font-medium text-slate-700">
                             {item}
                           </span>
                         </div>
                         <X
-                          className="h-3.5 w-3.5 text-slate-400 cursor-pointer hover:text-red-500"
+                          className="h-3.5 w-3.5 text-slate-400 cursor-pointer hover:text-red-600"
                           onClick={() => removeFromList("exclusions", i)}
                         />
                       </div>
@@ -1867,7 +1867,7 @@ export default function TripFormEditor({
                       onChange={(e) =>
                         setNewDeduction(parseFloat(e.target.value) || 0)
                       }
-                      className="h-9 text-xs rounded-xl font-mono text-emerald-600 font-bold"
+                      className="h-9 text-xs rounded-xl font-mono text-green-600 font-bold"
                     />
                     <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tight">
                       Deducted from base package price
@@ -3439,7 +3439,7 @@ export default function TripFormEditor({
                             <button
                               type="button"
                               onClick={() => removeDayPhoto(idx, pIdx)}
-                              className="text-slate-400 hover:text-rose-600 p-1 rounded-md transition-colors shrink-0"
+                              className="text-slate-400 hover:text-red-600 p-1 rounded-md transition-colors shrink-0"
                               title="Delete photo"
                             >
                               <X className="h-3.5 w-3.5" />
@@ -3538,7 +3538,7 @@ export default function TripFormEditor({
                           setForm({ ...form, gallery: [] });
                         }
                       }}
-                      className="text-xs text-rose-600 hover:bg-rose-50 h-7"
+                      className="text-xs text-red-600 hover:bg-red-50 h-7"
                     >
                       Clear All
                     </Button>
@@ -3569,7 +3569,7 @@ export default function TripFormEditor({
                               );
                               setForm({ ...form, gallery: updated });
                             }}
-                            className="absolute top-1.5 right-1.5 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all shadow-md"
+                            className="absolute top-1.5 right-1.5 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all shadow-md"
                             title="Remove photo"
                           >
                             <X className="w-3 h-3" />
@@ -3685,7 +3685,7 @@ export default function TripFormEditor({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute top-2.5 right-2.5 h-6 w-6 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                        className="absolute top-2.5 right-2.5 h-6 w-6 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         onClick={() => {
                           const updated = form.highlights.filter(
                             (_: any, idx: number) => idx !== i,
@@ -5436,7 +5436,7 @@ export default function TripFormEditor({
                             ),
                           })
                         }
-                        className="self-start text-slate-300 hover:text-rose-500 p-1 rounded transition-colors shrink-0"
+                        className="self-start text-slate-300 hover:text-red-600 p-1 rounded transition-colors shrink-0"
                         title="Remove property"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -5545,7 +5545,7 @@ export default function TripFormEditor({
                                       accommodations: updated,
                                     });
                                   }}
-                                  className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-0.5 opacity-0 group-hover/photo:opacity-100 transition-all shadow-sm"
+                                  className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover/photo:opacity-100 transition-all shadow-sm"
                                 >
                                   <X className="w-2.5 h-2.5" />
                                 </button>
@@ -5938,7 +5938,7 @@ export default function TripFormEditor({
                                   updated.splice(idx, 1);
                                   setForm({ ...form, reviews: updated });
                                 }}
-                                className="h-7 w-7 text-rose-600 hover:bg-rose-50 rounded-lg"
+                                className="h-7 w-7 text-red-600 hover:bg-red-50 rounded-lg"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
@@ -6150,3 +6150,4 @@ export default function TripFormEditor({
     </Tabs>
   );
 }
+

@@ -80,7 +80,7 @@ export default function WebsiteEditorPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-4 font-sans">
         <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center border border-red-100">
-          <AlertTriangle className="w-7 h-7 text-red-500" />
+          <AlertTriangle className="w-7 h-7 text-red-600" />
         </div>
         <div className="text-center space-y-1">
           <h2 className="text-lg font-black text-[#0B1528]">Page Not Found</h2>
@@ -100,3 +100,4 @@ export default function WebsiteEditorPage() {
 
   return <WebsiteEditor page={page} onSave={handleSave} onBack={handleBack} />;
 }
+

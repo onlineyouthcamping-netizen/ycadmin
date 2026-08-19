@@ -211,7 +211,7 @@ export default function DepartureDocuments({
             className={cn(
               "border text-left rounded-[6px] p-3 shadow-3xs hover:border-slate-350 transition-all",
               categoryFilter === tile.key
-                ? "bg-[#F97316]/5 border-[#F97316] text-[#F97316]"
+                ? "bg-[#FF4D00]/5 border-[#FF4D00] text-[#FF4D00]"
                 : "bg-white border-[#E2E8F0] text-slate-800",
             )}
           >
@@ -220,7 +220,7 @@ export default function DepartureDocuments({
                 className={cn(
                   "w-4.5 h-4.5 mb-1.5",
                   categoryFilter === tile.key
-                    ? "text-[#F97316]"
+                    ? "text-[#FF4D00]"
                     : "text-slate-400",
                 )}
               />
@@ -274,7 +274,7 @@ export default function DepartureDocuments({
         </div>
         <button
           onClick={() => setUploadModalOpen(true)}
-          className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-3.5 flex items-center gap-1.5 shadow-xs ml-auto"
+          className="h-8 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E05E00] text-white rounded-[4px] px-3.5 flex items-center gap-1.5 shadow-xs ml-auto"
         >
           <Upload className="w-3.5 h-3.5" /> Upload Document
         </button>
@@ -323,7 +323,7 @@ export default function DepartureDocuments({
                 >
                   <td className="p-3 border-r border-slate-100">
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-[#F97316]" />
+                      <FileText className="w-4 h-4 text-[#FF4D00]" />
                       <div>
                         <p className="font-extrabold text-slate-800">
                           {d.originalFileName}
@@ -351,7 +351,7 @@ export default function DepartureDocuments({
                       className={cn(
                         "text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider inline-flex items-center gap-1",
                         d.verificationStatus === "Verified"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                          ? "bg-green-50 text-green-700 border-green-100"
                           : d.verificationStatus === "Rejected"
                             ? "bg-red-50 text-red-700 border-red-100"
                             : d.verificationStatus === "Action Required"
@@ -419,7 +419,7 @@ export default function DepartureDocuments({
       <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>
         <DialogContent className="max-w-md bg-white p-5 rounded-lg border border-slate-200">
           <DialogTitle className="text-sm font-black uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
-            <Upload className="w-4 h-4 text-[#F97316]" /> Upload Departure
+            <Upload className="w-4 h-4 text-[#FF4D00]" /> Upload Departure
             Document
           </DialogTitle>
           <DialogDescription className="text-[11px] text-slate-450 mt-1">
@@ -505,7 +505,7 @@ export default function DepartureDocuments({
               <Button
                 type="submit"
                 disabled={uploading}
-                className="h-8 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
+                className="h-8 bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
               >
                 {uploading ? "Saving Document..." : "Save Upload"}
               </Button>
@@ -578,7 +578,7 @@ export default function DepartureDocuments({
               </Button>
               <Button
                 type="submit"
-                className="h-8 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
+                className="h-8 bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
               >
                 Submit Review
               </Button>
@@ -589,3 +589,4 @@ export default function DepartureDocuments({
     </div>
   );
 }
+
