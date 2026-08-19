@@ -717,38 +717,49 @@ export default function DepartureTransport({
               {allocFleet.map((fleetItem: any, fleetIdx: number) => {
                 const fleetId = fleetItem.id || `tempo-${fleetIdx + 1}`;
                 const fleetName = fleetItem.name || `Tempo ${fleetIdx + 1}`;
-                const travelers = (computedVehicleAllocations && computedVehicleAllocations.length > 0
-                  ? computedVehicleAllocations
-                  : allPassengers.map((p: any) => {
-                      const alloc = passengerAllocations[p.id] || passengerAllocations[p.name];
-                      return {
-                        fleetId: alloc?.vehicle || fleetId,
-                        vehicleName: alloc?.vehicle || fleetName,
-                        vehicle: alloc?.vehicle || fleetName,
-                        seatNumber: alloc?.seat || "—",
-                        travelerName: p.name,
-                        passengerId: p.id,
-                        rawGender: p.gender,
-                      };
-                    })
-                ).filter((v: any) => {
-                  if (!v.vehicle || v.vehicle === "—" || v.vehicle === "Unassigned") return false;
-                  if (allocFleet.length === 1) return true;
-                  const vName = (v.vehicleName || v.vehicle || "").toLowerCase().trim();
-                  const fName = (fleetName || "").toLowerCase().trim();
-                  const fId = (fleetId || "").toLowerCase().trim();
-                  const vId = (v.fleetId || "").toLowerCase().trim();
-                  return (
-                    vId === fId ||
-                    vName === fName ||
-                    v.vehicle === fleetName ||
-                    v.vehicle === fleetId ||
-                    (vName && fName && (vName.includes(fName) || fName.includes(vName))) ||
-                    (fId.startsWith("tempo") && vName.includes(`tempo ${fleetIdx + 1}`)) ||
-                    (fId.startsWith("tempo") && vId.includes(`tempo-${fleetIdx + 1}`)) ||
-                    (fleetIdx === 0 && (vName === "tempo 1" || vName.startsWith("tempo 1") || vId === "tempo-1" || vName.includes("tempo 1")))
-                  );
-                });
+                const travelers = allPassengers
+                  .filter((p: any) => {
+                    if (isPassengerCancelled(p)) return false;
+                    const alloc =
+                      passengerAllocations[p.id] ||
+                      passengerAllocations[p.name] ||
+                      passengerAllocations[(p.name || "").trim().toLowerCase()];
+                    if (!alloc || !alloc.vehicle || alloc.vehicle === "—" || alloc.vehicle === "Unassigned") {
+                      return false;
+                    }
+                    if (allocFleet.length === 1) {
+                      return true;
+                    }
+                    const vName = (alloc.vehicle || "").toLowerCase().trim();
+                    const fName = (fleetName || "").toLowerCase().trim();
+                    const fId = (fleetId || "").toLowerCase().trim();
+                    return (
+                      vName === fName ||
+                      vName === fId ||
+                      alloc.vehicle === fleetName ||
+                      alloc.vehicle === fleetId ||
+                      vName.includes(fName) ||
+                      fName.includes(vName) ||
+                      (fId.startsWith("tempo") && vName.includes(`tempo ${fleetIdx + 1}`)) ||
+                      (fleetIdx === 0 && (vName === "tempo 1" || vName.startsWith("tempo 1") || vName.includes("tempo 1")))
+                    );
+                  })
+                  .map((p: any) => {
+                    const alloc =
+                      passengerAllocations[p.id] ||
+                      passengerAllocations[p.name] ||
+                      passengerAllocations[(p.name || "").trim().toLowerCase()];
+                    const isFemale = normalizeGenderCode(p.gender, p.name) === "F";
+                    return {
+                      fleetId,
+                      vehicleName: fleetName,
+                      vehicle: fleetName,
+                      seatNumber: alloc?.seat && alloc.seat !== "—" ? String(alloc.seat) : "—",
+                      travelerName: p.name,
+                      passengerId: p.id,
+                      rawGender: isFemale ? "Female" : "Male",
+                    };
+                  });
                 const capacity = Number(fleetItem.capacity) || 14;
                 const isOverCapacity = travelers.length > capacity;
 
