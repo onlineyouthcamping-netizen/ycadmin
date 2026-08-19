@@ -395,14 +395,14 @@ export default function DepartureActivities({
   const handleAddActivityFromWizard = async (newActivity: any) => {
     try {
       const persisted = await saveActivityToBackend(api, tripId, departureDateStr, newActivity);
-      const nextList = [...currentActivities, persisted];
+      const nextList = [...(activitiesList || []), persisted];
       setActivitiesList(nextList);
       const depKey = `yc_activities_${tripId}_${departureDateStr}`;
       try {
         localStorage.setItem(depKey, JSON.stringify(nextList));
       } catch (e) {}
       if (typeof fetchPageData === "function") {
-        fetchPageData();
+        await fetchPageData();
       }
     } catch (e) {
       // API error toast is shown by saveActivityToBackend; UI state is not mutated on failure

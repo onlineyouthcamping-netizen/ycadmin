@@ -2099,6 +2099,7 @@ export default function DepartureHubPage() {
         hotelsRes,
         transportRes,
         guidesRes,
+        activitiesRes,
       ] = await Promise.allSettled([
         api.get(`/bookings?status=all&tripId=${tripId}&limit=100`, { signal }),
         api.get(`/departures/resolve?tripId=${tripId}&date=${departureDateStr}`, { signal }),
@@ -2109,6 +2110,7 @@ export default function DepartureHubPage() {
         api.get(`/ops/hotels/${tripId}?departureDate=${departureDateStr}`, { signal }),
         api.get(`/ops/transport/${tripId}?departureDate=${departureDateStr}`, { signal }),
         api.get(`/ops/guides/${tripId}?departureDate=${departureDateStr}`, { signal }),
+        api.get(`/ops/activities/${tripId}?departureDate=${departureDateStr}`, { signal }),
       ]);
 
       // Stale response check — ignore if user switched departure while fetching
@@ -2232,6 +2234,15 @@ export default function DepartureHubPage() {
       ];
 
       setTripVendors(mappedVendors);
+
+      // 9. Ops Activities
+      if (activitiesRes.status === "fulfilled" && Array.isArray(activitiesRes.value?.data?.data)) {
+        setActivitiesList(activitiesRes.value.data.data);
+        const depKey = `yc_activities_${tripId}_${departureDateStr}`;
+        try {
+          localStorage.setItem(depKey, JSON.stringify(activitiesRes.value.data.data));
+        } catch (e) {}
+      }
 
       const checkRes = await api
         .get(`/ops/checklists/${tripId}?departureDate=${departureDateStr}`)

@@ -160,18 +160,23 @@ export default function DeparturePayments({
     status?: string;
   } | null>(null);
 
+  const [editingActivityPayment, setEditingActivityPayment] = useState<any | null>(null);
   const [addActivityPaymentOpen, setAddActivityPaymentOpen] = useState(false);
   const [activityPaymentForm, setActivityPaymentForm] = useState({
     activityId: "",
     activityName: "",
-    activityType: "Adventure",
+    activityType: "Activities",
     costPerPerson: "",
-    participantCount: "",
+    participantCount: "1",
     vendorName: "",
     amountPaid: "",
     paymentDate: new Date().toISOString().substring(0, 10),
-    paymentMode: "UPI",
+    paymentMode: "BANK_TRANSFER",
+    collectionAccountId: "",
+    customPayerName: "",
+    needsReimbursement: false,
     transactionId: "",
+    invoiceProof: "",
     remarks: "",
   });
 
@@ -550,9 +555,9 @@ export default function DeparturePayments({
         const paid = Number(tv.paidAmount || tv.advancePaid || 0);
 
         if (existingIdx >= 0) {
-          // If vendor is booked for multiple days/records, accumulate the agreed & paid amounts
-          mergedVendors[existingIdx].agreedAmount = (mergedVendors[existingIdx].agreedAmount || 0) + agreed;
-          mergedVendors[existingIdx].advancePaid = (mergedVendors[existingIdx].advancePaid || 0) + paid;
+          // Ensure agreed amount and advance paid are authoritative without doubling
+          mergedVendors[existingIdx].agreedAmount = Math.max(mergedVendors[existingIdx].agreedAmount || 0, agreed);
+          mergedVendors[existingIdx].advancePaid = Math.max(mergedVendors[existingIdx].advancePaid || 0, paid);
           mergedVendors[existingIdx].balanceAmount = Math.max(0, mergedVendors[existingIdx].agreedAmount - mergedVendors[existingIdx].advancePaid);
           const totalAgreed = mergedVendors[existingIdx].agreedAmount;
           const totalPaid = mergedVendors[existingIdx].advancePaid;
@@ -562,6 +567,9 @@ export default function DeparturePayments({
               : totalPaid > 0
               ? "Advance Paid"
               : "Pending";
+          if (tv.rawAssignment) {
+            mergedVendors[existingIdx].rawAssignment = tv.rawAssignment;
+          }
         } else {
           const statusLabel =
             paid >= agreed && agreed > 0
@@ -579,6 +587,7 @@ export default function DeparturePayments({
             advancePaid: paid,
             balanceAmount: Math.max(0, agreed - paid),
             status: statusLabel,
+            rawAssignment: tv.rawAssignment,
             history:
               paid > 0
                 ? [
@@ -1129,6 +1138,7 @@ export default function DeparturePayments({
       try {
         await opsService.updateVendorPayment(tripId, editingVendorPayment.id, {
           ...vendorPaymentForm,
+          departureDate: departureDateStr,
           advancePaid: newTotalPaid,
           remainingPayable: remaining,
           status,
@@ -1136,7 +1146,14 @@ export default function DeparturePayments({
           paidBy: isCustomPayer ? accountNameTag : staffName,
           history: updatedHistory,
         });
-      } catch {}
+        toast.success(
+          `Recorded ₹${inputAmount.toLocaleString("en-IN")} payment for ${vendorPaymentForm.vendorName} (Paid from ${accountNameTag})!`,
+        );
+        await fetchData();
+      } catch (err: any) {
+        console.error("updateVendorPayment error:", err);
+        toast.error(err?.response?.data?.message || "Failed to record payment on server");
+      }
 
       setVendorPayments((prev) =>
         prev.map((v) =>
@@ -1159,9 +1176,6 @@ export default function DeparturePayments({
               }
             : v,
         ),
-      );
-      toast.success(
-        `Recorded ₹${inputAmount.toLocaleString("en-IN")} payment for ${vendorPaymentForm.vendorName} (Paid from ${accountNameTag})!`,
       );
     } else {
       const remaining = Math.max(0, agreedNum - inputAmount);
@@ -1229,11 +1243,15 @@ export default function DeparturePayments({
           ...newVnd,
           departureDate: departureDateStr,
         });
-      } catch {}
+        toast.success(
+          `Logged vendor payable for ${vendorPaymentForm.vendorName} (Paid from ${accountNameTag})!`,
+        );
+        await fetchData();
+      } catch (err: any) {
+        console.error("createVendorPayment error:", err);
+        toast.error(err?.response?.data?.message || "Failed to create vendor payment");
+      }
       setVendorPayments((prev) => [newVnd, ...prev]);
-      toast.success(
-        `Logged vendor payable for ${vendorPaymentForm.vendorName} (Paid from ${accountNameTag})!`,
-      );
     }
     setAddVendorPaymentOpen(false);
     setEditingVendorPayment(null);
@@ -1340,44 +1358,96 @@ export default function DeparturePayments({
     const cost = Number(activityPaymentForm.costPerPerson) || 0;
     const pax = Number(activityPaymentForm.participantCount) || 1;
     const total = cost * pax;
-    const paid = Number(activityPaymentForm.amountPaid) || 0;
-    const balance = Math.max(0, total - paid);
+    const inputPaid = Number(activityPaymentForm.amountPaid) || 0;
+    const targetActivity = editingActivityPayment || activityPayments.find((a) => a.id === activityPaymentForm.activityId || a.activityId === activityPaymentForm.activityId);
+    const prevPaid = Number(targetActivity?.amountPaid || 0);
+    const newTotalPaid = prevPaid > 0 && inputPaid !== prevPaid ? prevPaid + inputPaid : inputPaid;
+    const balance = Math.max(0, total - newTotalPaid);
     const status =
-      paid >= total && total > 0 ? "PAID" : paid > 0 ? "PARTIAL" : "PENDING";
+      newTotalPaid >= total && total > 0 ? "PAID" : newTotalPaid > 0 ? "PARTIAL" : "PENDING";
+    const staffName = admin?.name || admin?.email || "Operations Staff";
+
+    const isCustomPayer =
+      activityPaymentForm.collectionAccountId === "__someone_else__" ||
+      activityPaymentForm.collectionAccountId === "__trek_leader__" ||
+      activityPaymentForm.collectionAccountId === "__driver__" ||
+      activityPaymentForm.collectionAccountId === "__founder_personal__";
+
+    const selectedAcc = isCustomPayer
+      ? null
+      : collectionAccounts.find(
+          (acc) => acc.id === activityPaymentForm.collectionAccountId,
+        );
+
+    let accountNameTag = "";
+    if (isCustomPayer) {
+      const customPayer =
+        activityPaymentForm.customPayerName.trim() ||
+        (activityPaymentForm.collectionAccountId === "__trek_leader__"
+          ? "Trek Leader (Personal Pocket)"
+          : activityPaymentForm.collectionAccountId === "__driver__"
+            ? "Driver / Transporter Direct"
+            : activityPaymentForm.collectionAccountId === "__founder_personal__"
+              ? "Founder (Personal Account)"
+              : "Someone Else (Personal Pocket)");
+      accountNameTag = `${customPayer}${activityPaymentForm.needsReimbursement ? " [Reimbursement Due]" : ""}`;
+    } else if (selectedAcc) {
+      accountNameTag = `${selectedAcc.accountName}${selectedAcc.bankName ? ` (${selectedAcc.bankName})` : selectedAcc.accountType === "CASH" ? " (Cash Desk)" : ""}`;
+    } else {
+      accountNameTag =
+        activityPaymentForm.paymentMode === "CASH"
+          ? "Cash Collection Account (Cash Desk)"
+          : "YouthCamping Company Account";
+    }
+
+    const effectiveCollectionAccountId = isCustomPayer
+      ? null
+      : activityPaymentForm.collectionAccountId || null;
 
     try {
-      if (activityPaymentForm.activityId) {
-        await api.put(`/ops/activities/${tripId}/${activityPaymentForm.activityId}`, {
-          actualCost: paid,
+      if (activityPaymentForm.activityId && !activityPaymentForm.activityId.startsWith("ACT-PAY-")) {
+        await api.put(`/ops/activities/${tripId}/${activityPaymentForm.activityId}?departureDate=${encodeURIComponent(departureDateStr)}`, {
+          actualCost: newTotalPaid,
           vendorCost: cost,
           bookedCount: pax,
-        });
-        toast.success(`Updated payment for activity "${activityPaymentForm.activityName}"`);
-      } else {
-        const newAct = {
-          id: `ACT-PAY-${Date.now()}`,
-          activityName: activityPaymentForm.activityName,
-          activityType: activityPaymentForm.activityType,
-          costPerPerson: cost,
-          participantCount: pax,
-          totalCost: total,
-          amountPaid: paid,
-          balanceDue: balance,
-          vendorName: activityPaymentForm.vendorName || "External Vendor",
-          isIncluded: false,
-          status,
-          category: "ACTIVITIES",
-        };
-        await opsService.upsertTripExpense(tripId, newAct as any);
-        toast.success(`Recorded activity payment for "${newAct.activityName}"`);
+          name: activityPaymentForm.activityName,
+          type: activityPaymentForm.activityType,
+          vendorName: activityPaymentForm.vendorName,
+          departureDate: departureDateStr,
+        }).catch((err) => console.warn("Activity update note:", err?.message));
       }
-      fetchData();
-    } catch (err) {
+
+      // Record/sync to OpsVendorPayment so it reflects in Finance Outgoing Disbursements and Cash Desk
+      const vName = activityPaymentForm.vendorName || activityPaymentForm.activityName || "Activity Supplier";
+      await opsService.createVendorPayment(tripId, {
+        departureDate: departureDateStr,
+        vendorName: vName,
+        category: "Activities",
+        serviceDescription: `${activityPaymentForm.activityName || "Activity Service"} (${pax} pax @ ₹${cost}/ppl)`,
+        agreedAmount: total,
+        advancePaid: newTotalPaid,
+        remainingPayable: balance,
+        paymentDate: activityPaymentForm.paymentDate,
+        paymentMode: activityPaymentForm.paymentMode,
+        collectionAccountId: effectiveCollectionAccountId,
+        transactionId: activityPaymentForm.transactionId || `ACT-${Date.now()}`,
+        invoiceProof: activityPaymentForm.invoiceProof || "",
+        status: newTotalPaid >= total && total > 0 ? "Paid" : newTotalPaid > 0 ? "Advance Paid" : "Pending",
+        paidBy: isCustomPayer ? accountNameTag : staffName,
+        remarks: activityPaymentForm.remarks || "",
+      });
+
+      toast.success(
+        `Recorded ₹${inputPaid.toLocaleString("en-IN")} payment for "${activityPaymentForm.activityName}" (Paid from ${accountNameTag})!`,
+      );
+      await fetchData();
+    } catch (err: any) {
       console.error("Error recording activity payment:", err);
-      toast.error("Failed to record activity payment");
+      toast.error(err?.response?.data?.message || "Failed to record activity payment");
     }
 
     setAddActivityPaymentOpen(false);
+    setEditingActivityPayment(null);
   };
 
   const handleMiscPaymentSubmit = async (e: React.FormEvent) => {
@@ -2125,17 +2195,22 @@ export default function DeparturePayments({
               <Button
                 size="sm"
                 onClick={() => {
+                  setEditingActivityPayment(null);
                   setActivityPaymentForm({
                     activityId: "",
                     activityName: "",
-                    activityType: "Adventure",
+                    activityType: "Activities",
                     costPerPerson: "",
-                    participantCount: "",
+                    participantCount: "1",
                     vendorName: "",
                     amountPaid: "",
                     paymentDate: new Date().toISOString().substring(0, 10),
-                    paymentMode: "UPI",
+                    paymentMode: "BANK_TRANSFER",
+                    collectionAccountId: collectionAccounts[0]?.id || "",
+                    customPayerName: "",
+                    needsReimbursement: false,
                     transactionId: "",
+                    invoiceProof: "",
                     remarks: "",
                   });
                   setAddActivityPaymentOpen(true);
@@ -3224,17 +3299,22 @@ export default function DeparturePayments({
             <Button
               size="sm"
               onClick={() => {
+                setEditingActivityPayment(null);
                 setActivityPaymentForm({
                   activityId: "",
                   activityName: "",
-                  activityType: "Adventure",
+                  activityType: "Activities",
                   costPerPerson: "",
-                  participantCount: "",
+                  participantCount: "1",
                   vendorName: "",
                   amountPaid: "",
                   paymentDate: new Date().toISOString().substring(0, 10),
-                  paymentMode: "UPI",
+                  paymentMode: "BANK_TRANSFER",
+                  collectionAccountId: collectionAccounts[0]?.id || "",
+                  customPayerName: "",
+                  needsReimbursement: false,
                   transactionId: "",
+                  invoiceProof: "",
                   remarks: "",
                 });
                 setAddActivityPaymentOpen(true);
@@ -3339,20 +3419,27 @@ export default function DeparturePayments({
                           <Button
                             size="sm"
                             onClick={() => {
+                              const totalCost = Number(act.totalCost) || Number(act.costPerPerson) * Number(act.participantCount) || 0;
+                              const alreadyPaid = Number(act.amountPaid) || 0;
+                              const balance = Math.max(0, totalCost - alreadyPaid);
+
+                              setEditingActivityPayment(act);
                               setActivityPaymentForm({
-                                activityId: act.activityId || "",
+                                activityId: act.activityId || act.id || "",
                                 activityName: act.activityName,
-                                activityType: act.activityType,
-                                costPerPerson: String(act.costPerPerson),
-                                participantCount: String(act.participantCount),
-                                vendorName: act.vendorName,
-                                amountPaid: String(act.totalCost),
-                                paymentDate: new Date()
-                                  .toISOString()
-                                  .substring(0, 10),
-                                paymentMode: "UPI",
-                                transactionId: `ACT-TXN-${Date.now()}`,
-                                remarks: "Full activity settlement",
+                                activityType: act.activityType || "Activities",
+                                costPerPerson: String(act.costPerPerson || ""),
+                                participantCount: String(act.participantCount || "1"),
+                                vendorName: act.vendorName || "",
+                                amountPaid: String(balance > 0 ? balance : totalCost),
+                                paymentDate: new Date().toISOString().substring(0, 10),
+                                paymentMode: "BANK_TRANSFER",
+                                collectionAccountId: collectionAccounts[0]?.id || "",
+                                customPayerName: "",
+                                needsReimbursement: false,
+                                transactionId: "",
+                                invoiceProof: "",
+                                remarks: "",
                               });
                               setAddActivityPaymentOpen(true);
                             }}
@@ -3361,8 +3448,8 @@ export default function DeparturePayments({
                             Record Pay
                           </Button>
                         ) : (
-                          <span className="text-[11px] text-slate-400 font-semibold">
-                            Settled
+                          <span className="text-[11px] text-emerald-600 font-bold">
+                            Settled ✓
                           </span>
                         )}
                       </td>
@@ -4458,23 +4545,62 @@ export default function DeparturePayments({
       {/* ──────────────────────── MODAL 3: RECORD ACTIVITY PAYMENT ──────────────────────── */}
       <Dialog
         open={addActivityPaymentOpen}
-        onOpenChange={setAddActivityPaymentOpen}
+        onOpenChange={(open) => {
+          setAddActivityPaymentOpen(open);
+          if (!open) setEditingActivityPayment(null);
+        }}
       >
-        <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200">
+        <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200 overflow-y-auto max-h-[85vh]">
           <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
-            Record Activity Vendor Payment
+            {editingActivityPayment
+              ? `Record Payment — ${editingActivityPayment.activityName || editingActivityPayment.vendorName}`
+              : "Record Activity Vendor Payment"}
           </h3>
+
+          {/* Top Summary Banner */}
+          {(() => {
+            const cost = Number(activityPaymentForm.costPerPerson) || 0;
+            const pax = Number(activityPaymentForm.participantCount) || 1;
+            const computedTotal = cost * pax;
+            const alreadyPaid = Number(editingActivityPayment?.amountPaid || 0);
+            const remainingDue = Math.max(0, computedTotal - alreadyPaid);
+
+            return (
+              <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 text-xs space-y-1 my-2">
+                <div className="flex justify-between font-bold text-slate-800">
+                  <span>Agreed Total:</span>
+                  <span className="font-mono">
+                    ₹{computedTotal.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <div className="flex justify-between font-bold text-emerald-700">
+                  <span>Already Paid:</span>
+                  <span className="font-mono">
+                    ₹{alreadyPaid.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <div className="flex justify-between font-black text-red-600 pt-1 border-t border-orange-200">
+                  <span>Remaining Settlement Due:</span>
+                  <span className="font-mono">
+                    ₹{remainingDue.toLocaleString("en-IN")}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
           <form
             onSubmit={handleActivityPaymentSubmit}
-            className="space-y-3 mt-3"
+            className="space-y-3 mt-2"
           >
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Activity Name
+                Activity / Service Name
               </label>
               <input
                 type="text"
                 required
+                placeholder="e.g. Musafir Dhama (Kullu) or River Rafting"
                 value={activityPaymentForm.activityName}
                 onChange={(e) =>
                   setActivityPaymentForm((prev) => ({
@@ -4482,9 +4608,52 @@ export default function DeparturePayments({
                     activityName: e.target.value,
                   }))
                 }
-                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Category / Type
+                </label>
+                <select
+                  value={activityPaymentForm.activityType}
+                  onChange={(e) =>
+                    setActivityPaymentForm((prev) => ({
+                      ...prev,
+                      activityType: e.target.value,
+                    }))
+                  }
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-orange-500"
+                >
+                  <option value="Activities">Activities</option>
+                  <option value="Meals">Meals</option>
+                  <option value="Adventure">Adventure</option>
+                  <option value="Permits">Permits</option>
+                  <option value="Local Transport">Local Transport</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Vendor / Supplier Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Bal Gopal or Musafir Dhama"
+                  value={activityPaymentForm.vendorName}
+                  onChange={(e) =>
+                    setActivityPaymentForm((prev) => ({
+                      ...prev,
+                      vendorName: e.target.value,
+                    }))
+                  }
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-bold text-slate-700 block mb-1">
@@ -4492,6 +4661,8 @@ export default function DeparturePayments({
                 </label>
                 <input
                   type="number"
+                  required
+                  placeholder="130"
                   value={activityPaymentForm.costPerPerson}
                   onChange={(e) =>
                     setActivityPaymentForm((prev) => ({
@@ -4499,15 +4670,17 @@ export default function DeparturePayments({
                       costPerPerson: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
                 />
               </div>
               <div>
                 <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                  Participant Count
+                  Participant Count (Pax)
                 </label>
                 <input
                   type="number"
+                  required
+                  placeholder="6"
                   value={activityPaymentForm.participantCount}
                   onChange={(e) =>
                     setActivityPaymentForm((prev) => ({
@@ -4515,27 +4688,234 @@ export default function DeparturePayments({
                       participantCount: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Payment Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="780"
+                  value={activityPaymentForm.amountPaid}
+                  onChange={(e) =>
+                    setActivityPaymentForm((prev) => ({
+                      ...prev,
+                      amountPaid: e.target.value,
+                    }))
+                  }
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Payment Mode
+                </label>
+                <select
+                  value={activityPaymentForm.paymentMode}
+                  onChange={(e) => {
+                    const mode = e.target.value;
+                    let targetAccId = activityPaymentForm.collectionAccountId;
+                    if (mode === "CASH") {
+                      const cashAcc = collectionAccounts.find(
+                        (a) =>
+                          a.accountType === "CASH" ||
+                          a.accountName?.toLowerCase().includes("cash"),
+                      );
+                      if (cashAcc) targetAccId = cashAcc.id;
+                    } else if (mode === "BANK_TRANSFER" || mode === "UPI") {
+                      const bankAcc = collectionAccounts.find(
+                        (a) =>
+                          a.accountType !== "CASH" &&
+                          !a.accountName?.toLowerCase().includes("cash"),
+                      );
+                      if (bankAcc) targetAccId = bankAcc.id;
+                    }
+                    setActivityPaymentForm((prev) => ({
+                      ...prev,
+                      paymentMode: mode,
+                      collectionAccountId: targetAccId,
+                    }));
+                  }}
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-orange-500"
+                >
+                  <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
+                  <option value="UPI">UPI / GPay</option>
+                  <option value="CASH">Cash Payment</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Paid From Account / Payer Type */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Vendor Name (External)
+                Paid From Account / Payer Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={activityPaymentForm.collectionAccountId}
+                onChange={(e) => {
+                  const accId = e.target.value;
+                  const isCustom =
+                    accId === "__someone_else__" ||
+                    accId === "__trek_leader__" ||
+                    accId === "__driver__" ||
+                    accId === "__founder_personal__";
+                  const acc = collectionAccounts.find((a) => a.id === accId);
+                  const isCash =
+                    acc?.accountType === "CASH" ||
+                    acc?.accountName?.toLowerCase().includes("cash");
+                  setActivityPaymentForm((prev) => ({
+                    ...prev,
+                    collectionAccountId: accId,
+                    paymentMode: isCash
+                      ? "CASH"
+                      : prev.paymentMode === "CASH"
+                        ? "UPI"
+                        : prev.paymentMode,
+                    customPayerName:
+                      accId === "__trek_leader__"
+                        ? "Trek Leader (Personal Pocket)"
+                        : accId === "__driver__"
+                          ? "Driver / Transporter Direct"
+                          : accId === "__founder_personal__"
+                            ? "Founder Personal Account"
+                            : isCustom
+                              ? prev.customPayerName || ""
+                              : "",
+                  }));
+                }}
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+              >
+                <optgroup label="Company Finance Accounts (Bank & Cash)">
+                  {collectionAccounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.accountName}{" "}
+                      {acc.bankName
+                        ? `(${acc.bankName}${acc.maskedAccountNumber || (acc.accountNumber ? ` ••••${acc.accountNumber.slice(-4)}` : "")})`
+                        : acc.upiId
+                          ? `(${acc.upiId})`
+                          : acc.accountType === "CASH"
+                            ? "(Cash Desk)"
+                            : `(${acc.accountType})`}
+                    </option>
+                  ))}
+                </optgroup>
+
+                <optgroup label="Someone Else / Personal / External Account">
+                  <option value="__someone_else__">
+                    👤 Paid by Someone Else / Staff / Other Personal Account
+                  </option>
+                  <option value="__trek_leader__">
+                    🏔️ Paid by Trek Leader / Tour Guide (Personal Pocket)
+                  </option>
+                  <option value="__driver__">
+                    🚐 Paid by Driver / Local Transporter Directly
+                  </option>
+                  <option value="__founder_personal__">
+                    👑 Paid by Founder (Personal Account)
+                  </option>
+                </optgroup>
+              </select>
+            </div>
+
+            {/* If Someone Else / Custom Payer */}
+            {(activityPaymentForm.collectionAccountId === "__someone_else__" ||
+              activityPaymentForm.collectionAccountId === "__trek_leader__" ||
+              activityPaymentForm.collectionAccountId === "__driver__" ||
+              activityPaymentForm.collectionAccountId === "__founder_personal__") && (
+              <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
+                <div>
+                  <label className="text-[11px] font-bold text-orange-950 block mb-1">
+                    Payer Name / Personal Account Details <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dikshu Sharma (Trek Leader Personal UPI / GPay)"
+                    value={activityPaymentForm.customPayerName}
+                    onChange={(e) =>
+                      setActivityPaymentForm((prev) => ({
+                        ...prev,
+                        customPayerName: e.target.value,
+                      }))
+                    }
+                    className="w-full h-8 text-xs font-bold border border-orange-300 rounded-md px-3 bg-white text-slate-900 outline-none focus:border-orange-600"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-[11px] font-bold text-orange-900 cursor-pointer pt-1">
+                  <input
+                    type="checkbox"
+                    checked={activityPaymentForm.needsReimbursement}
+                    onChange={(e) =>
+                      setActivityPaymentForm((prev) => ({
+                        ...prev,
+                        needsReimbursement: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-orange-300"
+                  />
+                  <span>Mark as "Pending Reimbursement from Company"</span>
+                </label>
+              </div>
+            )}
+
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Transaction ID / Ref
               </label>
               <input
                 type="text"
-                value={activityPaymentForm.vendorName}
+                placeholder="e.g. UPI/UTR or NEFT123456 or Cash Receipt"
+                value={activityPaymentForm.transactionId}
                 onChange={(e) =>
                   setActivityPaymentForm((prev) => ({
                     ...prev,
-                    vendorName: e.target.value,
+                    transactionId: e.target.value,
                   }))
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
               />
             </div>
-            <div className="flex gap-2 justify-end pt-2">
+
+            {/* Payment Proof / Receipt Screenshot Upload */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Payment Proof / Receipt Screenshot
+              </label>
+              <ImageUpload
+                label="Upload Payment Proof Screenshot"
+                value={activityPaymentForm.invoiceProof}
+                onUpload={(url) =>
+                  setActivityPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
+                }
+                compact
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Service Description / Notes
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Enter meal / activity notes or location..."
+                value={activityPaymentForm.remarks}
+                onChange={(e) =>
+                  setActivityPaymentForm((prev) => ({
+                    ...prev,
+                    remarks: e.target.value,
+                  }))
+                }
+                className="w-full text-xs font-bold border border-slate-300 rounded-lg p-2 bg-white text-slate-800 outline-none"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2 border-t border-slate-100">
               <Button
                 type="button"
                 variant="ghost"
@@ -4546,9 +4926,9 @@ export default function DeparturePayments({
               </Button>
               <Button
                 type="submit"
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
               >
-                Record Activity Pay
+                Save & Record Payment
               </Button>
             </div>
           </form>
