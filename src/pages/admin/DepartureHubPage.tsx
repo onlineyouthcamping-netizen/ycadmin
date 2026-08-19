@@ -2100,6 +2100,7 @@ export default function DepartureHubPage() {
         transportRes,
         guidesRes,
         activitiesRes,
+        opsPaymentsRes,
       ] = await Promise.allSettled([
         api.get(`/bookings?status=all&tripId=${tripId}&limit=100`, { signal }),
         api.get(`/departures/resolve?tripId=${tripId}&date=${departureDateStr}`, { signal }),
@@ -2111,6 +2112,7 @@ export default function DepartureHubPage() {
         api.get(`/ops/transport/${tripId}?departureDate=${departureDateStr}`, { signal }),
         api.get(`/ops/guides/${tripId}?departureDate=${departureDateStr}`, { signal }),
         api.get(`/ops/activities/${tripId}?departureDate=${departureDateStr}`, { signal }),
+        api.get(`/ops/payments/vendor-payments?tripId=${encodeURIComponent(tripId)}&departureDate=${encodeURIComponent(departureDateStr)}`, { signal }),
       ]);
 
       // Stale response check — ignore if user switched departure while fetching
@@ -2173,6 +2175,61 @@ export default function DepartureHubPage() {
         guidesRes.status === "fulfilled" ? guidesRes.value?.data?.data || [] : [];
       setDbGuides(guides);
 
+      // 9. Ops Activities
+      const rawActivities =
+        activitiesRes.status === "fulfilled" &&
+        Array.isArray(activitiesRes.value?.data?.data)
+          ? activitiesRes.value.data.data
+          : [];
+
+      if (rawActivities.length > 0) {
+        setActivitiesList(rawActivities);
+        const depKey = `yc_activities_${tripId}_${departureDateStr}`;
+        try {
+          localStorage.setItem(depKey, JSON.stringify(rawActivities));
+        } catch (e) {}
+      }
+
+      const mappedActivities = rawActivities.map((a: any) => {
+        const pax = Number(
+          a.bookedCount || a.maxParticipants || totalPaxCount || 1,
+        );
+        const costPerPerson = Number(a.adultPrice || a.sellingPrice || 0);
+        const calcCost = Number(
+          a.vendorCost || a.actualCost || costPerPerson * pax || 0,
+        );
+        const paid = Number(
+          a.advancePaid !== undefined
+            ? a.advancePaid
+            : a.status === "PAID" || a.status === "CONFIRMED"
+              ? a.actualCost || calcCost
+              : 0,
+        );
+        return {
+          id: a.id || `act-${a.name}`,
+          name: a.vendorName || a.name || a.responsibleGuide || "Activity Vendor",
+          vendorType: "activity",
+          category: "Activities",
+          vendorId: {
+            name:
+              a.vendorName || a.name || a.responsibleGuide || "Activity Vendor",
+            location: a.startTime ? `Time: ${a.startTime}` : "Activity",
+            notes: a.remarks || a.name,
+          },
+          paymentStatus:
+            paid >= calcCost && calcCost > 0
+              ? "paid"
+              : paid > 0
+                ? "advance_paid"
+                : "pending",
+          notes: a.remarks || a.name,
+          agreedCost: calcCost,
+          paidAmount: paid,
+          balanceDue: Math.max(0, calcCost - paid),
+          rawAssignment: a,
+        };
+      });
+
       // Fleet
       const initialFleet = transports.map((t: any) => ({
         id: t.id,
@@ -2190,6 +2247,7 @@ export default function DepartureHubPage() {
           id: h.id,
           name: h.hotelName || h.vendor?.name || "Hotel Vendor",
           vendorType: "hotel",
+          category: "Hotels",
           vendorId: {
             name: h.hotelName || h.vendor?.name || "Hotel Vendor",
             location: h.location,
@@ -2208,6 +2266,7 @@ export default function DepartureHubPage() {
           id: t.id,
           name: t.vendor?.name || t.notes || t.driverName || "Transport Partner",
           vendorType: "transport",
+          category: "Transport",
           vendorId: {
             name: t.vendor?.name || t.notes || t.driverName || "Transport Partner",
             location: t.notes || "Local",
@@ -2222,6 +2281,7 @@ export default function DepartureHubPage() {
           id: g.id,
           name: g.guideName || g.guide?.name || "Lead Guide",
           vendorType: "guide",
+          category: "Guides",
           vendorId: {
             name: g.guideName || g.guide?.name || "Lead Guide",
             location: "Guide Partner",
@@ -2230,19 +2290,85 @@ export default function DepartureHubPage() {
           agreedCost: g.agreedAmount,
           paidAmount: g.advancePaid,
           balanceDue: g.balanceAmount,
+          rawAssignment: g,
         })),
+        ...mappedActivities,
       ];
 
-      setTripVendors(mappedVendors);
+      // Merge explicit OpsVendorPayment records
+      const recordedPayments =
+        opsPaymentsRes.status === "fulfilled" &&
+        Array.isArray(opsPaymentsRes.value?.data?.data)
+          ? opsPaymentsRes.value.data.data
+          : [];
 
-      // 9. Ops Activities
-      if (activitiesRes.status === "fulfilled" && Array.isArray(activitiesRes.value?.data?.data)) {
-        setActivitiesList(activitiesRes.value.data.data);
-        const depKey = `yc_activities_${tripId}_${departureDateStr}`;
-        try {
-          localStorage.setItem(depKey, JSON.stringify(activitiesRes.value.data.data));
-        } catch (e) {}
-      }
+      recordedPayments.forEach((vp: any) => {
+        const vName = (vp.vendorName || "").trim();
+        if (!vName || vName === "NO_STAY" || vName === "—") return;
+        const existingIdx = mappedVendors.findIndex(
+          (v) => (v.name || "").toLowerCase().trim() === vName.toLowerCase(),
+        );
+        const agreed = Number(vp.agreedAmount || 0);
+        const paid = Number(vp.advancePaid || 0);
+        if (existingIdx >= 0) {
+          mappedVendors[existingIdx].agreedCost = Math.max(
+            mappedVendors[existingIdx].agreedCost || 0,
+            agreed,
+          );
+          mappedVendors[existingIdx].paidAmount = Math.max(
+            mappedVendors[existingIdx].paidAmount || 0,
+            paid,
+          );
+          mappedVendors[existingIdx].balanceDue = Math.max(
+            0,
+            mappedVendors[existingIdx].agreedCost -
+              mappedVendors[existingIdx].paidAmount,
+          );
+          mappedVendors[existingIdx].paymentStatus =
+            mappedVendors[existingIdx].paidAmount >=
+              mappedVendors[existingIdx].agreedCost &&
+            mappedVendors[existingIdx].agreedCost > 0
+              ? "paid"
+              : mappedVendors[existingIdx].paidAmount > 0
+                ? "advance_paid"
+                : "pending";
+        } else {
+          const cat = (vp.category || "").toLowerCase();
+          const vType = cat.includes("hotel")
+            ? "hotel"
+            : cat.includes("transport")
+              ? "transport"
+              : cat.includes("guide")
+                ? "guide"
+                : cat.includes("activit")
+                  ? "activity"
+                  : "other";
+          mappedVendors.push({
+            id: vp.id,
+            name: vName,
+            vendorType: vType,
+            category: vp.category || "Other",
+            vendorId: {
+              name: vName,
+              location: vp.serviceDescription || "Service",
+              notes: vp.remarks || "",
+            },
+            paymentStatus:
+              paid >= agreed && agreed > 0
+                ? "paid"
+                : paid > 0
+                  ? "advance_paid"
+                  : "pending",
+            notes: vp.remarks || vp.serviceDescription || "",
+            agreedCost: agreed,
+            paidAmount: paid,
+            balanceDue: Math.max(0, agreed - paid),
+            rawAssignment: vp,
+          });
+        }
+      });
+
+      setTripVendors(mappedVendors);
 
       const checkRes = await api
         .get(`/ops/checklists/${tripId}?departureDate=${departureDateStr}`)

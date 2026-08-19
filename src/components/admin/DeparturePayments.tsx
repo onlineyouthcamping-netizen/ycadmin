@@ -606,11 +606,22 @@ export default function DeparturePayments({
               ? "Advance Paid"
               : "Pending";
 
+          const vCat =
+            tv.vendorType === "hotel" || tv.category === "Hotels"
+              ? "Hotels"
+              : tv.vendorType === "guide" || tv.category === "Guides"
+                ? "Guides"
+                : tv.vendorType === "activity" || tv.category === "Activities"
+                  ? "Activities"
+                  : tv.vendorType === "transport" || tv.category === "Transport"
+                    ? "Transport"
+                    : tv.category || "Other";
+
           mergedVendors.push({
             id: tv.id || `auto-${vName}`,
             vendorName: vName,
-            category: tv.vendorType === "hotel" ? "Hotels" : tv.vendorType === "guide" ? "Guides" : "Transport",
-            serviceDescription: tv.notes || `${tv.vendorType} services`,
+            category: vCat,
+            serviceDescription: tv.notes || `${tv.vendorType || "vendor"} services`,
             agreedAmount: agreed,
             advancePaid: paid,
             balanceAmount: Math.max(0, agreed - paid),

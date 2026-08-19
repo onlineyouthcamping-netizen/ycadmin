@@ -48,23 +48,96 @@ export default function DepartureMoneySummary({
 
   const fmtPax = (n: number) => `₹${Math.round((n || 0) / totalPax).toLocaleString("en-IN")}/pax`;
 
-  const hotels = tripVendors.filter((v: any) => v.vendorType === "hotel");
-  const transports = tripVendors.filter((v: any) => v.vendorType === "transport");
-  const guides = tripVendors.filter((v: any) => v.vendorType === "guide");
+  const hotels = (tripVendors || []).filter(
+    (v: any) => v.vendorType === "hotel" || v.category?.toLowerCase() === "hotels",
+  );
+  const transports = (tripVendors || []).filter(
+    (v: any) =>
+      v.vendorType === "transport" ||
+      v.category?.toLowerCase() === "transport",
+  );
+  const guides = (tripVendors || []).filter(
+    (v: any) => v.vendorType === "guide" || v.category?.toLowerCase() === "guides",
+  );
+  const activities = (tripVendors || []).filter(
+    (v: any) =>
+      v.vendorType === "activity" ||
+      v.category?.toLowerCase() === "activities" ||
+      v.category?.toLowerCase() === "activity",
+  );
+  const otherVendors = (tripVendors || []).filter(
+    (v: any) =>
+      v.vendorType !== "hotel" &&
+      v.vendorType !== "transport" &&
+      v.vendorType !== "guide" &&
+      v.vendorType !== "activity" &&
+      v.category?.toLowerCase() !== "hotels" &&
+      v.category?.toLowerCase() !== "transport" &&
+      v.category?.toLowerCase() !== "guides" &&
+      v.category?.toLowerCase() !== "activities" &&
+      v.category?.toLowerCase() !== "activity",
+  );
 
-  const hotelsCost = hotels.reduce((s: number, v: any) => s + (v.agreedCost || 0), 0);
-  const transportsCost = transports.reduce((s: number, v: any) => s + (v.agreedCost || 0), 0);
-  const guidesCost = guides.reduce((s: number, v: any) => s + (v.agreedCost || 0), 0);
-  const trainCost = stats.totalTrainCost || 0;
+  const hotelsCost = hotels.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.agreedCost ?? v.agreedAmount ?? v.totalAmount) || 0),
+    0,
+  );
+  const transportsCost = transports.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.agreedCost ?? v.agreedAmount ?? v.totalAmount) || 0),
+    0,
+  );
+  const guidesCost = guides.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.agreedCost ?? v.agreedAmount ?? v.totalAmount) || 0),
+    0,
+  );
+  const activitiesCost = activities.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.agreedCost ?? v.agreedAmount ?? v.totalAmount) || 0),
+    0,
+  );
+  const otherCost = otherVendors.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.agreedCost ?? v.agreedAmount ?? v.totalAmount) || 0),
+    0,
+  );
+  const trainCost = Number(stats.totalTrainCost) || 0;
 
-  const hotelsPaid = hotels.reduce((s: number, v: any) => s + (v.paidAmount || 0), 0);
-  const transportsPaid = transports.reduce((s: number, v: any) => s + (v.paidAmount || 0), 0);
-  const guidesPaid = guides.reduce((s: number, v: any) => s + (v.paidAmount || 0), 0);
-  const trainPaid = stats.totalTrainPaid || 0;
+  const hotelsPaid = hotels.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.paidAmount ?? v.advancePaid) || 0),
+    0,
+  );
+  const transportsPaid = transports.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.paidAmount ?? v.advancePaid) || 0),
+    0,
+  );
+  const guidesPaid = guides.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.paidAmount ?? v.advancePaid) || 0),
+    0,
+  );
+  const activitiesPaid = activities.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.paidAmount ?? v.advancePaid) || 0),
+    0,
+  );
+  const otherPaid = otherVendors.reduce(
+    (s: number, v: any) =>
+      s + (Number(v.paidAmount ?? v.advancePaid) || 0),
+    0,
+  );
+  const trainPaid = Number(stats.totalTrainPaid) || 0;
 
-  const totalVendorCost = hotelsCost + transportsCost + guidesCost + trainCost;
-  const totalVendorPaid = hotelsPaid + transportsPaid + guidesPaid + trainPaid;
-  const totalVendorDue = totalVendorCost - totalVendorPaid;
+  // Gross Vendor Cost (Total Invoice Amount across all vendor categories)
+  const totalVendorCost =
+    hotelsCost + transportsCost + guidesCost + activitiesCost + otherCost + trainCost;
+  const totalVendorPaid =
+    hotelsPaid + transportsPaid + guidesPaid + activitiesPaid + otherPaid + trainPaid;
+  const totalVendorDue = Math.max(0, totalVendorCost - totalVendorPaid);
 
   const revenue = stats.totalRevenue;
   const received = stats.customerPaid;
@@ -77,6 +150,7 @@ export default function DepartureMoneySummary({
   const revenuePerPax = Math.round(revenue / totalPax);
   const hotelPerPax = Math.round(hotelsCost / totalPax);
   const transportPerPax = Math.round(transportsCost / totalPax);
+  const activityPerPax = Math.round(activitiesCost / totalPax);
   const trainPerPax = Math.round(trainCost / totalPax);
   const costPerPax = Math.round(totalVendorCost / totalPax);
   const profitPerPax = Math.round(netProfit / totalPax);
@@ -85,6 +159,7 @@ export default function DepartureMoneySummary({
     { label: "Rev / pax", value: revenuePerPax },
     { label: "Stay / pax", value: hotelPerPax },
     { label: "Fleet / pax", value: transportPerPax },
+    ...(activitiesCost > 0 ? [{ label: "Activity / pax", value: activityPerPax }] : []),
     ...(trainCost > 0 ? [{ label: "Train / pax", value: trainPerPax }] : []),
     { label: "Cost / pax", value: costPerPax },
   ];
@@ -232,6 +307,18 @@ export default function DepartureMoneySummary({
               <span className="text-[12px] text-slate-500">Guides ({guides.length})</span>
               {amountBlock(guidesCost)}
             </div>
+            {activities.length > 0 && (
+              <div className="flex justify-between items-baseline gap-2">
+                <span className="text-[12px] text-slate-500">Activities ({activities.length})</span>
+                {amountBlock(activitiesCost)}
+              </div>
+            )}
+            {otherVendors.length > 0 && (
+              <div className="flex justify-between items-baseline gap-2">
+                <span className="text-[12px] text-slate-500">Other ({otherVendors.length})</span>
+                {amountBlock(otherCost)}
+              </div>
+            )}
             <div className="flex justify-between items-baseline gap-2 pt-2 border-t border-[#E8EEF4]">
               <span className="text-[12px] font-medium text-[#0B1528]">Paid / due</span>
               <div className="text-right min-w-0">
