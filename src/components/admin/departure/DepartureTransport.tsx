@@ -221,14 +221,23 @@ export default function DepartureTransport({
                     setSelectedVendorId(
                       item.vendor?.id ?? item.vendorId ?? "",
                     );
+                  } else {
+                    const std = STANDARD_VEHICLE_TYPES.find((s) => s.id === val);
+                    if (std) {
+                      setNewVehicleType(std.type);
+                      setNewVehicleCapacity(std.capacity);
+                      const sameTypeCount = allocFleet.filter((f) => f.vehicleType === std.type || f.name?.includes(std.type.split(" ")[0])).length;
+                      setNewVehicleName(`${std.type} #${sameTypeCount + 1}`);
+                      setNewVehicleVendor(newVehicleVendor || "Transport Partner");
+                    }
                   }
                 }
               }}
               className={nativeSelect}
             >
-              <option value="">Select vendor vehicle</option>
+              <option value="">Select vehicle type</option>
               {fleetVehicles.length > 0 && (
-                <optgroup label="Available Vendor Fleet">
+                <optgroup label="Contracted Vendor Fleet">
                   {fleetVehicles.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.vendor?.name ? `${v.vendor.name} — ` : ""}
@@ -237,6 +246,13 @@ export default function DepartureTransport({
                   ))}
                 </optgroup>
               )}
+              <optgroup label="Standard Vehicle Options">
+                {STANDARD_VEHICLE_TYPES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </optgroup>
               <option value="custom">+ Custom Entry</option>
             </select>
           </div>
