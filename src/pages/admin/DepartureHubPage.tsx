@@ -1682,9 +1682,12 @@ export default function DepartureHubPage() {
         .get(
           `/ops/auto-allocate/${tripId}/confirmed?departureDate=${departureDateStr}`,
         )
-        .catch(() => null);
+        .catch((err: any) => { console.warn("[HYDRATE] allocRes fetch failed:", err?.message); return null; });
+      console.log("[HYDRATE] allocRes success?", allocRes?.data?.success, "vehicles:", allocRes?.data?.data?.vehicles?.length, "rooms:", allocRes?.data?.data?.rooms?.length);
+      console.log("[HYDRATE] initialFleet:", initialFleet.map((f: any) => ({ id: f.id, name: f.name })));
       if (allocRes?.data?.success) {
         const { rooms = [], vehicles = [] } = allocRes.data.data;
+        console.log("[HYDRATE] Will hydrate", vehicles.length, "vehicles,", rooms.length, "rooms");
         if (rooms.length > 0 || vehicles.length > 0) {
           // Extract passengers directly from allBookings for immediate synchronous resolution
           const currentPassengersList: any[] = [];
@@ -1801,6 +1804,9 @@ export default function DepartureHubPage() {
 
             return next;
           });
+
+          // Debug: log what was hydrated
+          console.log("[HYDRATE] passengerAllocations set with", vehicles.length, "vehicles. Sample keys will be logged next render.");
 
           // Also restore manualRooms from saved allocation room numbers
           const savedRoomNumbers = [...new Set((rooms as any[]).map((r: any) => r.roomNumber as string))].filter(Boolean) as string[];
