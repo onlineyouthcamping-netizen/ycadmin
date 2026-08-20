@@ -311,12 +311,18 @@ export default function BookingDetailsView({
   const [confirmTicketFilesList, setConfirmTicketFilesList] = useState<
     Array<{ name: string; content: string }>
   >([]);
+  const [confirmUtr, setConfirmUtr] = useState("");
+  const [confirmProofFile, setConfirmProofFile] = useState<File | null>(null);
+  const [confirmProofFileName, setConfirmProofFileName] = useState("");
   const [revertingLoading, setRevertingLoading] = useState(false);
 
   // Manual payment recording inline form
   const [showAddPaymentInline, setShowAddPaymentInline] = useState(false);
   const [newPaymentAmount, setNewPaymentAmount] = useState("");
   const [newPaymentMode, setNewPaymentMode] = useState("UPI");
+  const [newPaymentUtr, setNewPaymentUtr] = useState("");
+  const [newPaymentProofFile, setNewPaymentProofFile] = useState<File | null>(null);
+  const [newPaymentProofFileName, setNewPaymentProofFileName] = useState("");
   const [recordingPayment, setRecordingPayment] = useState(false);
 
   // Quick edit note/comment states
@@ -1788,10 +1794,22 @@ export default function BookingDetailsView({
       toast.error("Enter a valid total amount");
       return;
     }
+    const tot = parseFloat(confirmTotal);
+    const adv = parseFloat(confirmAdvance) || 0;
+
+    if (
+      (confirmMode === "UPI" || confirmMode === "Bank Transfer") &&
+      adv > 0 &&
+      !confirmUtr.trim() &&
+      !confirmProofFile
+    ) {
+      return toast.error(
+        `Please provide a UTR reference number or upload a Payment Proof screenshot for ${confirmMode} payment.`
+      );
+    }
+
     setConfirmingLoading(true);
     try {
-      const tot = parseFloat(confirmTotal);
-      const adv = parseFloat(confirmAdvance) || 0;
       await bookingsService.confirm(booking.id, {
         totalAmount: tot,
         advancePaid: adv,
@@ -1800,7 +1818,20 @@ export default function BookingDetailsView({
         email: confirmEmail,
         trainTicketStatus: confirmTrainStatus,
         collectionAccountId: confirmCollectionAccountId || undefined,
+        transactionId: confirmUtr.trim() || undefined,
       });
+
+      if (confirmProofFile) {
+        try {
+          await bookingsService.uploadDocument(
+            booking.id,
+            "PAYMENT_PROOF",
+            confirmProofFile
+          );
+        } catch (proofErr) {
+          console.warn("Payment proof upload notice:", proofErr);
+        }
+      }
 
       // Auto create or update train tickets for passengers in this booking with the selected status
       const passengersList =
@@ -3065,6 +3096,44 @@ export default function BookingDetailsView({
                 className="h-8 text-xs bg-white"
               />
             </div>
+            {(confirmMode === "UPI" || confirmMode === "Bank Transfer") && (
+              <>
+                <div>
+                  <label className="text-[9px] font-semibold uppercase text-slate-400">
+                    {confirmMode === "UPI" ? "UPI Ref / UTR *" : "Bank Ref / UTR *"}
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. 423589123456"
+                    value={confirmUtr}
+                    onChange={(e) => setConfirmUtr(e.target.value)}
+                    className="h-8 text-xs font-mono bg-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-[9px] font-semibold uppercase text-slate-400 block mb-0.5">
+                    Payment Proof (Screenshot / Receipt) *
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setConfirmProofFile(file);
+                        setConfirmProofFileName(file.name);
+                      }
+                    }}
+                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-[#FF4D00] file:text-white hover:file:bg-[#E04400] cursor-pointer"
+                  />
+                  {confirmProofFileName && (
+                    <p className="text-[10px] text-green-600 font-semibold truncate mt-0.5">
+                      ✓ {confirmProofFileName}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
           {confirmTrainStatus !== "SELF_BOOKED" && (
             <div className="flex flex-col gap-2 p-3 bg-[#F4F7FB] rounded-lg border border-[#E8EEF4] max-w-md">
