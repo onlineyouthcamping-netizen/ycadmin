@@ -1451,21 +1451,23 @@ export default function DepartureHubPage() {
             rawAssignment: t,
           };
         }),
-        ...guides.map((g: any) => ({
-          id: g.id,
-          name: g.guideName || g.guide?.name || "Lead Guide",
-          vendorType: "guide",
-          category: "Guides",
-          vendorId: {
+        ...guides
+          .filter((g: any) => g.assignmentStatus !== "CANCELLED" && g.status !== "CANCELLED")
+          .map((g: any) => ({
+            id: g.id,
             name: g.guideName || g.guide?.name || "Lead Guide",
-            location: "Guide Partner",
-          },
-          paymentStatus: (g.advancePaid >= g.agreedAmount && g.agreedAmount > 0) ? "paid" : (g.advancePaid > 0 ? "advance_paid" : "pending"),
-          agreedCost: g.agreedAmount,
-          paidAmount: g.advancePaid,
-          balanceDue: g.balanceAmount,
-          rawAssignment: g,
-        })),
+            vendorType: "guide",
+            category: "Guides",
+            vendorId: {
+              name: g.guideName || g.guide?.name || "Lead Guide",
+              location: "Guide Partner",
+            },
+            paymentStatus: (g.advancePaid >= g.agreedAmount && g.agreedAmount > 0) ? "paid" : (g.advancePaid > 0 ? "advance_paid" : "pending"),
+            agreedCost: g.agreedAmount,
+            paidAmount: g.advancePaid,
+            balanceDue: g.balanceAmount,
+            rawAssignment: g,
+          })),
         ...mappedActivities,
       ];
 

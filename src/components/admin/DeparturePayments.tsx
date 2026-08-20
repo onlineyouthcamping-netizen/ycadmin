@@ -576,6 +576,9 @@ export default function DeparturePayments({
       // Merge auto-assigned vendors from the trip (Hotels, Guides, Transport)
       const mergedVendors = [...apiVendors];
       (tripVendors || []).forEach((tv) => {
+        if (tv.assignmentStatus === "CANCELLED" || tv.status === "CANCELLED" || tv.rawAssignment?.assignmentStatus === "CANCELLED") {
+          return;
+        }
         const vName = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId) || tv.vendor?.name;
         if (!vName || vName === "NO_STAY" || vName === "—" || vName.toLowerCase().includes("night journey")) return;
         
@@ -2724,9 +2727,24 @@ export default function DeparturePayments({
                     const matchCat =
                       vendorCategoryFilter === "All Categories" ||
                       v.category === vendorCategoryFilter;
-                    const matchStatus =
-                      vendorStatusFilter === "All Status" ||
-                      v.status === vendorStatusFilter;
+                    const matchStatus = (() => {
+                      if (vendorStatusFilter === "All Status") return true;
+                      const sNorm = (v.status || "").trim().toLowerCase();
+                      const fNorm = vendorStatusFilter.trim().toLowerCase();
+                      const agreed = Number(v.agreedAmount || v.totalCost || 0);
+                      const paid = Number(v.advancePaid || 0);
+
+                      if (fNorm === "not paid" || fNorm === "unpaid" || fNorm === "pending") {
+                        return sNorm === "pending" || sNorm === "not paid" || sNorm === "unpaid" || (paid === 0 && agreed > 0);
+                      }
+                      if (fNorm === "advance paid" || fNorm === "advance" || fNorm === "partially paid" || fNorm === "partial") {
+                        return sNorm === "advance paid" || sNorm === "partially paid" || sNorm === "partial" || (paid > 0 && paid < agreed);
+                      }
+                      if (fNorm === "paid") {
+                        return sNorm === "paid" || (agreed > 0 && paid >= agreed);
+                      }
+                      return sNorm === fNorm;
+                    })();
                     return matchSearch && matchCat && matchStatus;
                   });
 
