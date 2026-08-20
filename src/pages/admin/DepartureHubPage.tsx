@@ -99,7 +99,7 @@ import DepartureTransport from "@/components/admin/departure/DepartureTransport"
 import { findHotelForDay, calculateAccommodationCost } from "@/utils/accommodationCalculator";
 import HotelAssignmentWizardModal from "@/components/admin/departure/HotelAssignmentWizardModal";
 import DepartureTripControl from "@/components/admin/departure/DepartureTripControl";
-import DepartureMoneySummary from "@/components/admin/departure/DepartureMoneySummary";
+
 import { MobileDepartureWorkspace } from "@/components/mobile/MobileDepartureWorkspace";
 import { useAuthStore } from "@/store/auth.store";
 import {
@@ -8568,12 +8568,6 @@ useEffect(() => {
           {/* ══════════════════════════ MONEY TAB ══════════════════════════ */}
           {activeTab === "finance" && (
             <div className="space-y-4">
-              <DepartureMoneySummary
-                tripId={tripId}
-                departureDateStr={departureDateStr}
-                stats={stats}
-                tripVendors={tripVendors}
-              />
               <DeparturePayments
                 tripId={tripId}
                 departureDateStr={departureDateStr}
