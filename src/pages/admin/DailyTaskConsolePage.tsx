@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CheckCircle2,
   Clock,
@@ -355,8 +355,8 @@ export default function DailyTaskConsolePage() {
         const compDate = t.completedAt ? String(t.completedAt).split("T")[0] : "";
         if (compDate !== todayStr && dueStr !== todayStr) return false;
       } else {
-        // Pending/overdue tasks due today or requiring action today
-        if (dueStr && dueStr > todayStr) return false;
+        // Strictly tasks due today
+        if (dueStr !== todayStr) return false;
       }
     } else if (viewMode === "OVERDUE") {
       if (isDone) return false;
