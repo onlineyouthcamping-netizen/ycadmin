@@ -5803,10 +5803,19 @@ useEffect(() => {
           {activeTab === "overview" && (
             <div className="space-y-3 min-w-0">
               {(() => {
-                const stayDays = (computedItinerary || []).filter((d: any) => {
-                  const dest = (d.destination || d.location || d.sub || "").toLowerCase();
+                const stayDays = (computedItinerary || []).filter((d: any, idx: number, arr: any[]) => {
+                  const dest = (d.destination || d.location || d.sub || d.plan || "").toLowerCase();
                   const day = (d.day || "").toLowerCase();
-                  return !d.isNoStay && !dest.includes("train") && !dest.includes("night journey") && !day.includes("no stay");
+                  const isEnroute =
+                    dest.includes("train") ||
+                    dest.includes("night journey") ||
+                    dest.includes("arrival in your city") ||
+                    dest.includes("your city") ||
+                    dest.includes("departure to your") ||
+                    day.includes("no stay") ||
+                    idx === 0 ||
+                    idx === arr.length - 1;
+                  return !d.isNoStay && !isEnroute;
                 });
                 const hotelsTarget = stayDays.length;
                 const realOpsHotels = (opsHotels || []).filter((h: any) => {
