@@ -1391,7 +1391,7 @@ export default function DepartureHubPage() {
       // Only overwrite fleet when the API actually returned vehicles OR when switching
       // departures (resetFleet=true already cleared it above).  This prevents a
       // successful-but-empty transport response from wiping a fleet the user just built.
-      if (transportFetched && (initialFleet.length > 0 || resetFleet)) {
+      if (transportFetched) {
         setAllocFleet(initialFleet);
       }
 
@@ -1761,7 +1761,7 @@ useEffect(() => {
           cost: Number(t.totalAmount) || 0,
           vendor: t.vendor?.name || t.notes || "Self-driven",
         }));
-        setAllocFleet((prev) => (prev.length === 0 ? mapped : prev));
+        setAllocFleet(mapped);
       }
     })
     .catch(() => setFleetVehicles([]));
