@@ -738,7 +738,10 @@ export default function DepartureTransport({
                 const fleetId = fleetItem.id || `tempo-${fleetIdx + 1}`;
                 const fleetName = fleetItem.name || `Tempo ${fleetIdx + 1}`;
 
-                const isAssignedToThisVehicle = (allocVehicle?: string) => {
+                const isAssignedToThisVehicle = (alloc?: any) => {
+                  if (!alloc) return false;
+                  const allocVehicle = alloc.vehicle;
+                  const allocFleetId = alloc.fleetId;
                   if (!allocVehicle || allocVehicle === "—" || allocVehicle === "Unassigned") {
                     return false;
                   }
@@ -746,26 +749,31 @@ export default function DepartureTransport({
                     return true;
                   }
 
-                  const vNorm = allocVehicle.trim().toLowerCase();
+                  // 1. Direct fleetId match
+                  if (allocFleetId && (allocFleetId === fleetId || allocFleetId === fleetItem.id)) {
+                    return true;
+                  }
+
+                  const vNorm = String(allocVehicle).trim().toLowerCase();
                   const fName = String(fleetName).trim().toLowerCase();
                   const fId = String(fleetId).trim().toLowerCase();
 
-                  // 1. Direct exact match
+                  // 2. Direct exact match (name or id)
                   if (vNorm === fName || vNorm === fId) {
                     return true;
                   }
 
-                  // 2. Generic tempo index match (e.g. "tempo 1", "tempo-1", "tempo #1", "tempo1")
+                  // 3. Generic tempo index match (e.g. "tempo 1", "tempo-1", "tempo #1", "tempo1")
                   const tempoIdxPattern = /^(?:tempo|vehicle)[-\s#]*(\d+)$/i;
-                  const vTempoMatch = allocVehicle.trim().match(tempoIdxPattern);
+                  const vTempoMatch = String(allocVehicle).trim().match(tempoIdxPattern);
                   if (vTempoMatch) {
                     const targetIdx = parseInt(vTempoMatch[1], 10);
                     return targetIdx === fleetIdx + 1;
                   }
 
-                  // 3. Instance hash match (e.g. "... #1" vs "... #2")
-                  const vNumMatch = allocVehicle.match(/#(\d+)/);
-                  const fNumMatch = fleetName.match(/#(\d+)/);
+                  // 4. Instance hash match (e.g. "... #1" vs "... #2")
+                  const vNumMatch = String(allocVehicle).match(/#(\d+)/);
+                  const fNumMatch = String(fleetName).match(/#(\d+)/);
                   if (vNumMatch && fNumMatch) {
                     return vNumMatch[1] === fNumMatch[1];
                   }
@@ -783,7 +791,7 @@ export default function DepartureTransport({
                       passengerAllocations[p.id] ||
                       passengerAllocations[p.name] ||
                       passengerAllocations[(p.name || "").trim().toLowerCase()];
-                    return isAssignedToThisVehicle(alloc?.vehicle);
+                    return isAssignedToThisVehicle(alloc);
                   })
                   .map((p: any) => {
                     const alloc =
@@ -836,6 +844,7 @@ export default function DepartureTransport({
                         const entry = {
                           ...current,
                           vehicle: fleetName,
+                          fleetId: fleetId,
                           seat: nextSeat,
                         };
                         const updated = { ...prev, [travelerName]: entry };

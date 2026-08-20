@@ -701,14 +701,14 @@ export default function DepartureHubPage() {
         ) {
           const fleet = allocFleet.find(
             (f) =>
-              f.name === alloc.vehicle ||
+              (alloc.fleetId && f.id === alloc.fleetId) ||
               f.id === alloc.vehicle ||
+              f.name === alloc.vehicle ||
               f.vehicleType === alloc.vehicle ||
-              (f.name && alloc.vehicle && f.name.toLowerCase().trim() === alloc.vehicle.toLowerCase().trim()) ||
-              (f.name && alloc.vehicle && f.name.toLowerCase().includes(alloc.vehicle.toLowerCase())),
+              (f.name && alloc.vehicle && f.name.toLowerCase().trim() === alloc.vehicle.toLowerCase().trim()),
           ) || allocFleet[0];
           vehicleAllocations.push({
-            fleetId: fleet?.id || "tempo-1",
+            fleetId: fleet?.id || alloc.fleetId || "tempo-1",
             bookingId: bookingId,
             travelerName: p.name,
             seatNumber:
@@ -1705,6 +1705,7 @@ export default function DepartureHubPage() {
               const entry = {
                 ...existing,
                 vehicle: vName,
+                fleetId: v.fleetId,
                 seat: v.seatNumber ? String(v.seatNumber) : "—",
               };
               if (nameKey) next[nameKey] = entry;
@@ -4882,6 +4883,7 @@ useEffect(() => {
           const entry = {
             ...existing,
             vehicle: targetVehicle!.name,
+            fleetId: targetVehicle!.id,
             seat: seatNum,
           };
           newAllocs[p.id] = entry;
