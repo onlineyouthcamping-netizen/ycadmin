@@ -1,4 +1,4 @@
-﻿import React, { useEffect, Suspense, lazy } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -29,11 +29,9 @@ const LoadingUI = () => (
 );
 
 // ── Core Pages ──
-const Index = lazy(() => import("./pages/Index.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const LoginPage = lazy(() => import("./pages/admin/LoginPage.tsx"));
 const DashboardPage = lazy(() => import("./pages/admin/DashboardPage.tsx"));
-const ProfilePage = lazy(() => import("./pages/admin/ProfilePage.tsx"));
 const UnauthorizedPage = lazy(
   () => import("./pages/admin/UnauthorizedPage.tsx"),
 );
@@ -217,7 +215,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter
-            future={{ v7_relativeSplatPath: true }}
+            future={{
+              v7_relativeSplatPath: true,
+              v7_startTransition: true,
+            }}
           >
             <AuthInitializer>
               <Routes>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +38,8 @@ export default function SeoCenterPage() {
 
   const loadPages = async () => {
     try {
-      const trips = await tripsService.getAll();
+      const tripsRes = await tripsService.getAll();
+      const trips = Array.isArray(tripsRes) ? tripsRes : [];
       const list = [
         { label: "Home Page", value: "home" },
         { label: "About Us", value: "about" },
@@ -57,7 +58,11 @@ export default function SeoCenterPage() {
     setLoading(true);
     try {
       const data = await seoService.get(currentPage);
-      setSeoData(data || { metaTitle: "", metaDescription: "", ogImage: "" });
+      setSeoData({
+        metaTitle: data?.metaTitle || "",
+        metaDescription: data?.metaDescription || "",
+        ogImage: data?.ogImage || "",
+      });
     } catch (err) {
       setSeoData({ metaTitle: "", metaDescription: "", ogImage: "" });
     } finally {
@@ -140,7 +145,7 @@ export default function SeoCenterPage() {
                 <Globe className="w-3 h-3" /> Meta Title
               </Label>
               <Input
-                value={seoData.metaTitle}
+                value={seoData?.metaTitle || ""}
                 onChange={(e) =>
                   setSeoData({ ...seoData, metaTitle: e.target.value })
                 }
@@ -154,7 +159,7 @@ export default function SeoCenterPage() {
                 <Search className="w-3 h-3" /> Meta Description
               </Label>
               <Textarea
-                value={seoData.metaDescription}
+                value={seoData?.metaDescription || ""}
                 onChange={(e) =>
                   setSeoData({ ...seoData, metaDescription: e.target.value })
                 }
@@ -164,9 +169,9 @@ export default function SeoCenterPage() {
               />
               <div className="flex justify-between px-2">
                 <span
-                  className={`text-[10px] font-semibold uppercase tracking-wider ${seoData.metaDescription.length > 150 ? "text-red-600" : "text-[#FF4D00]"}`}
+                  className={`text-[10px] font-semibold uppercase tracking-wider ${(seoData?.metaDescription || "").length > 150 ? "text-red-600" : "text-[#FF4D00]"}`}
                 >
-                  {seoData.metaDescription.length} / 150-160 Recommended
+                  {(seoData?.metaDescription || "").length} / 150-160 Recommended
                 </span>
               </div>
             </div>
@@ -178,17 +183,18 @@ export default function SeoCenterPage() {
               </Label>
               <div className="flex gap-4">
                 <Input
-                  value={seoData.ogImage}
+                  value={seoData?.ogImage || ""}
                   onChange={(e) =>
                     setSeoData({ ...seoData, ogImage: e.target.value })
                   }
                   placeholder="https://example.com/banner.jpg"
                   className="h-8 rounded-md border border-slate-200 text-sm font-medium px-3 flex-1"
                 />
-                {seoData.ogImage && (
+                {seoData?.ogImage && (
                   <div className="h-9 w-20 rounded-md overflow-hidden border border-slate-200 bg-slate-50 shadow-sm">
                     <img
                       src={seoData.ogImage}
+                      alt="Social Preview"
                       className="w-full h-full object-cover"
                     />
                   </div>

@@ -4491,8 +4491,7 @@ useEffect(() => {
               f.name === alloc.vehicle ||
               f.id === alloc.vehicle ||
               f.vehicleType === alloc.vehicle ||
-              (f.name && alloc.vehicle && f.name.toLowerCase().trim() === alloc.vehicle.toLowerCase().trim()) ||
-              (f.name && alloc.vehicle && f.name.toLowerCase().includes(alloc.vehicle.toLowerCase())),
+              (f.name && alloc.vehicle && f.name.toLowerCase().trim() === alloc.vehicle.toLowerCase().trim()),
           ) || allocFleet[0];
         const isFemale = normalizeGenderCode(pObj.gender, pObj.name) === "F";
         list.push({
