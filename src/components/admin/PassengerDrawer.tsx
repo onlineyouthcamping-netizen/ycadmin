@@ -124,42 +124,49 @@ export function PassengerDrawer({
 
   // Handle Document Upload via /api/upload/single
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
     setUploadingDoc(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("image", file);
+      const newDocs: any[] = [];
+      for (const file of files) {
+        const uploadData = new FormData();
+        uploadData.append("image", file);
 
-      const res = await fetch(`${ENV.API_BASE_URL}/api/upload/single`, {
-        method: "POST",
-        body: uploadData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        const newDoc = {
-          id: `doc-${Date.now()}`,
-          title: file.name,
-          url: data.url,
-          fileUrl: data.url,
-          uploadedAt: new Date().toISOString(),
-        };
-        const updatedDocs = [...(formData.documents || []), newDoc];
+        const res = await fetch(`${ENV.API_BASE_URL}/api/upload/single`, {
+          method: "POST",
+          body: uploadData,
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          newDocs.push({
+            id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            title: file.name,
+            url: data.url,
+            fileUrl: data.url,
+            uploadedAt: new Date().toISOString(),
+          });
+        } else {
+          console.warn("Failed upload for file:", file.name, data.message);
+        }
+      }
+
+      if (newDocs.length > 0) {
+        const updatedDocs = [...(formData.documents || []), ...newDocs];
         setFormData((prev) => ({
           ...prev,
           documents: updatedDocs,
-          aadhaarUrl: data.url,
-          idProofUrl: data.url,
+          aadhaarUrl: newDocs[newDocs.length - 1].url,
+          idProofUrl: newDocs[newDocs.length - 1].url,
         }));
-      } else {
-        alert("Upload failed: " + (data.message || "Unknown error"));
       }
     } catch (err: any) {
       console.error("Document upload error:", err);
-      alert("Failed to upload file. Please try again.");
+      alert("Failed to upload files. Please try again.");
     } finally {
       setUploadingDoc(false);
+      e.target.value = "";
     }
   };
 
@@ -714,7 +721,7 @@ export function PassengerDrawer({
                   <Plus className="w-3 h-3" />
                 )}
                 Upload document
-                <input type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileUpload} />
+                <input type="file" accept="image/*,.pdf" className="hidden" multiple onChange={handleFileUpload} />
               </label>
             </div>
 

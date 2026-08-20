@@ -2178,36 +2178,53 @@ export default function BookingDetailsView({
     e: React.ChangeEvent<HTMLInputElement>,
     passengerId: string,
   ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    // File validation: Size limit under 1 MB
-    if (file.size > 1024 * 1024) {
-      toast.error("File size must be under 1 MB.");
-      e.target.value = ""; // Reset
-      return;
+    // Allowed mime types & extensions
+    const allowed = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+    const validFiles: File[] = [];
+
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`File ${file.name} is too large (max 10MB).`);
+        continue;
+      }
+      const isAllowed =
+        allowed.includes(file.type) ||
+        file.name.toLowerCase().endsWith(".pdf") ||
+        file.name.toLowerCase().endsWith(".png") ||
+        file.name.toLowerCase().endsWith(".jpg") ||
+        file.name.toLowerCase().endsWith(".jpeg");
+
+      if (!isAllowed) {
+        toast.error(
+          `File ${file.name} is not a supported format (JPG, PNG, PDF only).`,
+        );
+        continue;
+      }
+      validFiles.push(file);
     }
 
-    // Mimetype check (PDF, JPG, PNG)
-    const allowed = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
-    if (
-      !allowed.includes(file.type) &&
-      !file.name.toLowerCase().endsWith(".pdf") &&
-      !file.name.toLowerCase().endsWith(".png") &&
-      !file.name.toLowerCase().endsWith(".jpg") &&
-      !file.name.toLowerCase().endsWith(".jpeg")
-    ) {
-      toast.error("Invalid file type. Only JPG, PNG, and PDF are allowed.");
+    if (!validFiles.length) {
       e.target.value = "";
       return;
     }
 
     try {
-      toast.loading("Uploading document...", { id: `upload-${passengerId}` });
-      await bookingsService.uploadDocument(booking.id, passengerId, file);
-      toast.success("Document uploaded successfully!", {
-        id: `upload-${passengerId}`,
-      });
+      toast.loading(
+        `Uploading ${validFiles.length} ID document${validFiles.length > 1 ? "s" : ""}...`,
+        { id: `upload-${passengerId}` },
+      );
+      for (const file of validFiles) {
+        await bookingsService.uploadDocument(booking.id, passengerId, file);
+      }
+      toast.success(
+        `${validFiles.length} document${validFiles.length > 1 ? "s" : ""} uploaded successfully!`,
+        {
+          id: `upload-${passengerId}`,
+        },
+      );
       onRefresh(); // Refresh details to load new documents metadata
     } catch (err: any) {
       console.error(err);
@@ -4115,6 +4132,7 @@ export default function BookingDetailsView({
                             id={row.docInputId}
                             className="hidden"
                             accept=".jpg,.jpeg,.png,.pdf"
+                            multiple
                             onChange={(e) => handleFileChange(e, row.raw.id)}
                           />
                         ))}
