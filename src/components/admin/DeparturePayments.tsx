@@ -501,7 +501,7 @@ export default function DeparturePayments({
           .getAccounts({ activeOnly: true })
           .catch(() => ({ data: [], summary: { totalCollected: 0, totalSubmitted: 0, totalPending: 0 } })),
         api.get(`/ops/activities/${tripId}`, { params: { departureDate: departureDateStr } }).catch(() => ({ data: { data: [] } })),
-        opsService.getHotels(tripId, departureDateStr).catch(() => []),
+        opsService.getHotelBookings(tripId, departureDateStr).catch(() => []),
       ]);
 
       if (accountsRes.data && accountsRes.data.length > 0) {

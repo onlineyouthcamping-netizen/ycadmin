@@ -880,6 +880,10 @@ export const opsService = {
     return res.data?.data || [];
   },
 
+  async getHotels(tripId: string, departureDate?: string): Promise<any[]> {
+    return this.getHotelBookings(tripId, departureDate);
+  },
+
   async saveHotelBookings(
     tripId: string,
     departureDate: string,
