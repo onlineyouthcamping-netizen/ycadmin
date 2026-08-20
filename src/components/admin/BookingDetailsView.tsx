@@ -49,6 +49,8 @@ import {
   UserCheck,
   Ban,
   ExternalLink,
+  Eye,
+  Upload,
   MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -4985,27 +4987,120 @@ export default function BookingDetailsView({
                                         colSpan={3}
                                         className="px-6 py-4 border-t border-b border-[#E8EEF4]"
                                       >
-                                        <div className="max-w-xl space-y-2 text-xs text-slate-750">
-                                          {p.collectionAccount && (
-                                            <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
-                                              <span className="text-blue-700 font-semibold">
-                                                Collection Account
-                                              </span>
-                                              <span className="col-span-2 font-semibold text-blue-900">
-                                                {p.collectionAccount.accountName} ({p.collectionAccount.accountType})
-                                              </span>
-                                            </div>
-                                          )}
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
-                                            <span className="text-red-600 font-semibold">
-                                              Processor
+                                        <div className="max-w-xl space-y-2.5 text-xs text-slate-750">
+                                          {/* Collection Account */}
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1.5 border-b border-[#E8EEF4]/60">
+                                            <span className="text-slate-500 font-semibold">
+                                              Collection Account
                                             </span>
-                                            <span className="col-span-2 font-mono text-slate-600">
-                                              {processor}
+                                            <span className="col-span-2 font-semibold text-blue-900 flex items-center gap-1.5">
+                                              {p.collectionAccount?.accountName || "Default Treasury"}
+                                              {p.collectionAccount?.accountType && (
+                                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 uppercase font-mono">
+                                                  {p.collectionAccount.accountType}
+                                                </span>
+                                              )}
+                                              {p.collectionAccount?.upiId && (
+                                                <span className="text-[10px] font-mono text-slate-500 font-normal">
+                                                  ({p.collectionAccount.upiId})
+                                                </span>
+                                              )}
                                             </span>
                                           </div>
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
-                                            <span className="text-red-600 font-semibold">
+
+                                          {/* UTR / Transaction Reference */}
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1.5 border-b border-[#E8EEF4]/60">
+                                            <span className="text-slate-500 font-semibold">
+                                              UTR / Transaction Ref
+                                            </span>
+                                            <span className="col-span-2">
+                                              <span className="font-mono font-semibold text-[#0B1528] bg-slate-100 px-2 py-0.5 rounded text-[11px] inline-block border border-slate-200">
+                                                {p.transactionId || booking.upi_reference || `${booking.bookingId}-${p.id.slice(-6)}`}
+                                              </span>
+                                            </span>
+                                          </div>
+
+                                          {/* Payment Proof Documents */}
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1.5 border-b border-[#E8EEF4]/60">
+                                            <span className="text-slate-500 font-semibold">
+                                              Payment Proof
+                                            </span>
+                                            <div className="col-span-2">
+                                              {(() => {
+                                                const proofDocs = ((booking as any)?.documents || []).filter((d: any) =>
+                                                  (d.documentType || "").toLowerCase().includes("proof") ||
+                                                  (d.documentType || "").toLowerCase().includes("payment") ||
+                                                  (d.originalFileName || "").toLowerCase().includes("proof") ||
+                                                  (d.originalFileName || "").toLowerCase().includes("payment")
+                                                );
+                                                if (proofDocs.length > 0) {
+                                                  return (
+                                                    <div className="flex flex-wrap gap-2">
+                                                      {proofDocs.map((doc: any, dIdx: number) => (
+                                                        <button
+                                                          key={doc.id || dIdx}
+                                                          type="button"
+                                                          onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleViewDoc(doc.passengerId || "PAYMENT_PROOF", doc.originalFileName || "Payment_Proof.png", doc.id);
+                                                          }}
+                                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 rounded-md font-semibold text-[11px] transition-colors cursor-pointer"
+                                                        >
+                                                          <Eye className="w-3.5 h-3.5" />
+                                                          <span>View Proof ({doc.originalFileName || "Receipt"})</span>
+                                                          <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+                                                        </button>
+                                                      ))}
+                                                    </div>
+                                                  );
+                                                }
+                                                return (
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-slate-400 italic text-[11px]">No proof file attached</span>
+                                                    <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 bg-[#FF4D00]/10 text-[#FF4D00] hover:bg-[#FF4D00]/20 rounded text-[10px] font-semibold transition-colors">
+                                                      <Upload className="w-3 h-3" />
+                                                      + Attach Proof
+                                                      <input
+                                                        type="file"
+                                                        accept="image/*,.pdf"
+                                                        className="hidden"
+                                                        onChange={async (e) => {
+                                                          const file = e.target.files?.[0];
+                                                          if (file) {
+                                                            try {
+                                                              toast.loading("Uploading payment proof...", { id: "upload-proof" });
+                                                              await bookingsService.uploadDocument(booking.id, "PAYMENT_PROOF", file);
+                                                              toast.success("Payment proof uploaded successfully!", { id: "upload-proof" });
+                                                              onRefresh();
+                                                            } catch (uErr) {
+                                                              toast.error("Failed to upload payment proof", { id: "upload-proof" });
+                                                            }
+                                                          }
+                                                        }}
+                                                      />
+                                                    </label>
+                                                  </div>
+                                                );
+                                              })()}
+                                            </div>
+                                          </div>
+
+                                          {/* Payment Mode */}
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1.5 border-b border-[#E8EEF4]/60">
+                                            <span className="text-slate-500 font-semibold">
+                                              Payment mode
+                                            </span>
+                                            <span className="col-span-2 font-semibold text-[#0B1528] flex items-center gap-2">
+                                              <span>{p.paymentMode || "UPI"}</span>
+                                              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase bg-green-50 text-green-700 border border-green-200">
+                                                {p.status || "Verified"}
+                                              </span>
+                                            </span>
+                                          </div>
+
+                                          {/* Recorded At */}
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1.5 border-b border-[#E8EEF4]/60">
+                                            <span className="text-slate-500 font-semibold">
                                               Successful at
                                             </span>
                                             <span className="col-span-2 text-slate-600">
@@ -5015,25 +5110,10 @@ export default function BookingDetailsView({
                                               </span>
                                             </span>
                                           </div>
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
-                                            <span className="text-red-600 font-semibold">
-                                              Payment mode
-                                            </span>
-                                            <span className="col-span-2 font-semibold text-[#0B1528]">
-                                              {p.paymentMode || "Unknown"}
-                                            </span>
-                                          </div>
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
-                                            <span className="text-red-600 font-semibold">
-                                              Merchant Ref#
-                                            </span>
-                                            <span className="col-span-2 font-mono text-slate-600">
-                                              {p.transactionId ||
-                                                `${booking.bookingId}-${p.id.slice(-6)}`}
-                                            </span>
-                                          </div>
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
-                                            <span className="text-red-600 font-semibold">
+
+                                          {/* Comments */}
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1.5 border-b border-[#E8EEF4]/60">
+                                            <span className="text-slate-500 font-semibold">
                                               Comments
                                             </span>
                                             <span className="col-span-2 text-slate-600">
