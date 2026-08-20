@@ -24,6 +24,11 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 import {
+  isFounderByEmail,
+  isFounderForDisplay,
+  isFounderIdentity,
+} from "@/config/permissions.config";
+import {
   LayoutDashboard,
   Compass,
   MapPin,
@@ -314,13 +319,7 @@ function AdminSidebar() {
                 urlPath === "/admin/users" ||
                 urlPath === "/admin/access-control"
               ) {
-                const email = (admin.email || "").toLowerCase().trim();
-                const name = (admin.name || "").toLowerCase().trim();
-                const isFounder =
-                  email.includes("hemal") ||
-                  name.includes("hemal") ||
-                  email === "hemal.patel@youthcamping.online";
-                if (!isFounder) return false;
+                if (!isFounderIdentity(admin)) return false;
               }
 
               const isSuperAdmin = role === "superadmin" || role === "founder";
@@ -655,12 +654,7 @@ function resolveAdminDisplayRole(admin: {
   email?: string;
   role?: string;
 } | null) {
-  const email = (admin?.email || "").toLowerCase().trim();
-  const isFounder =
-    email.includes("hemal") ||
-    email === "hemal.patel@youthcamping.online" ||
-    admin?.role === "superadmin";
-  if (isFounder) return "Founder";
+  if (isFounderForDisplay(admin)) return "Founder";
   const raw = (admin?.role || "staff").replace(/_/g, " ");
   return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
 }
@@ -957,8 +951,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     Change Password
                   </DropdownMenuItem>
 
-                  {((admin?.email || "").toLowerCase().includes("hemal") ||
-                    admin?.email === "hemal.patel@youthcamping.online") && (
+                  {isFounderByEmail(admin) && (
                     <>
                       <DropdownMenuSeparator className="my-1 border-slate-100" />
                       <DropdownMenuItem

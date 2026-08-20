@@ -37,6 +37,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn, safeFormatDate } from "@/lib/utils";
+import { isSuperuserFounder as checkIsSuperuserFounder } from "@/config/permissions.config";
 import { financeControllerService } from "@/services/financeController.service";
 import { financeApprovalsService } from "@/services/financeApprovals.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -61,11 +62,7 @@ export default function IncomingPaymentsApprovalPage({
   const { admin: currentUser } = useAuthStore();
   const { staffUsers } = useStaffUsers();
 
-  const userRole = (currentUser?.role || "").toLowerCase();
-  const isSuperuserFounder =
-    ["superadmin", "founder", "admin"].includes(userRole) ||
-    (currentUser as any)?.isSuperuser ||
-    (currentUser?.email && currentUser.email.toLowerCase().includes("hemal"));
+  const isSuperuserFounder = checkIsSuperuserFounder(currentUser);
 
   const [incomingPayments, setIncomingPayments] = useState<IncomingPaymentItem[]>([]);
   const [cashSubmissions, setCashSubmissions] = useState<CashSubmissionItem[]>([]);

@@ -76,7 +76,7 @@ import {
   Save,
   Edit2,
 } from "lucide-react";
-import { allocateWholeRupees, cn } from "@/lib/utils";
+import { allocateWholeRupees, cn, formatINR } from "@/lib/utils";
 import { dashLink } from "@/modules/dashboard.chrome";
 import api from "@/services/api";
 import { opsService } from "@/services/ops.service";
@@ -5959,7 +5959,7 @@ useEffect(() => {
                       Outstanding
                     </p>
                     <p className="text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight text-[#FF4D00]">
-                      ₹ {Number(stats?.customerOutstanding || 0).toLocaleString("en-IN")}
+                      {formatINR(stats?.customerOutstanding || 0)}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">
                       From {stats?.outstandingParticipantsCount || 0} participants
@@ -5970,7 +5970,7 @@ useEffect(() => {
                       Payables
                     </p>
                     <p className="text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight text-[#0B1528]">
-                      ₹ {Number(stats?.totalVendorPayables || 0).toLocaleString("en-IN")}
+                      {formatINR(stats?.totalVendorPayables || 0)}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">
                       Total pending
@@ -5986,7 +5986,7 @@ useEffect(() => {
                         (stats?.estProfit || 0) >= 0 ? "text-[#0B1528]" : "text-[#FF4D00]",
                       )}
                     >
-                      ₹ {Number(stats?.estProfit || 0).toLocaleString("en-IN")}
+                      {formatINR(stats?.estProfit || 0)}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">
                       {stats?.profitPercent || 0}% of revenue
@@ -6163,7 +6163,7 @@ useEffect(() => {
                       id: "Partial Payment",
                       label: "Partial",
                       value: passengerStats.partial,
-                      hint: `₹${Number(passengerStats?.outstandingPartial || 0).toLocaleString("en-IN")} due`,
+                      hint: `${formatINR(passengerStats?.outstandingPartial || 0)} due`,
                       tone: "text-[#0B1528]",
                       clickable: true,
                     },
@@ -6171,7 +6171,7 @@ useEffect(() => {
                       id: "Payment Pending",
                       label: "Due",
                       value: passengerStats.withDue || 0,
-                      hint: `₹${Number(passengerStats?.totalDue || 0).toLocaleString("en-IN")}`,
+                      hint: formatINR(passengerStats?.totalDue || 0),
                       tone:
                         (passengerStats.withDue || 0) > 0
                           ? "text-[#FF4D00]"
@@ -6661,12 +6661,11 @@ useEffect(() => {
                                     <div>
                                       Total{" "}
                                       <span className="font-medium text-[#0B1528] tabular-nums">
-                                        ₹
-                                        {Number(bg?.totalAmount || 0).toLocaleString("en-IN")}
+                                        {formatINR(bg?.totalAmount || 0)}
                                       </span>
                                       {" · "}Paid{" "}
                                       <span className="font-medium text-[#0B1528] tabular-nums">
-                                        ₹{Number(bg?.paidAmount || 0).toLocaleString("en-IN")}
+                                        {formatINR(bg?.paidAmount || 0)}
                                       </span>
                                     </div>
                                     <div>
@@ -6679,7 +6678,7 @@ useEffect(() => {
                                             : "text-[#0B1528]",
                                         )}
                                       >
-                                        ₹{Number(bg?.balance || 0).toLocaleString("en-IN")}
+                                        {formatINR(bg?.balance || 0)}
                                       </span>
                                     </div>
                                   </div>
@@ -6839,8 +6838,7 @@ useEffect(() => {
                                         : "Unpaid"}
                                   </span>
                                   <div className="text-[11px] text-slate-400 mt-0.5 tabular-nums">
-                                    Paid ₹
-                                    {Number(p?.paidAmount || 0).toLocaleString("en-IN")} / pax
+                                    Paid {formatINR(p?.paidAmount || 0)} / pax
                                   </div>
                                 </td>
                                 <td
@@ -6852,14 +6850,13 @@ useEffect(() => {
                                   )}
                                 >
                                   <div>
-                                    ₹{Number(p?.balance || 0).toLocaleString("en-IN")}{" "}
+                                    {formatINR(p?.balance || 0)}{" "}
                                     <span className="text-[10px] font-normal text-slate-400">
                                       / pax
                                     </span>
                                   </div>
                                   <div className="text-[11px] text-slate-400 font-normal mt-0.5">
-                                    Group due ₹
-                                    {Number(bg?.balance || 0).toLocaleString("en-IN")}
+                                    Group due {formatINR(bg?.balance || 0)}
                                   </div>
                                 </td>
 
@@ -7807,17 +7804,23 @@ useEffect(() => {
                     sub: "Assigned to departure",
                   },
                   {
-                    v: `₹${actualGuides.reduce((s, g) => s + (g.agreedAmount || 0), 0).toLocaleString("en-IN")}`,
+                    v: formatINR(
+                      actualGuides.reduce((s, g) => s + (g.agreedAmount || 0), 0),
+                    ),
                     l: "Total Agreed",
                     sub: "All guides combined",
                   },
                   {
-                    v: `₹${actualGuides.reduce((s, g) => s + (g.advancePaid || 0), 0).toLocaleString("en-IN")}`,
+                    v: formatINR(
+                      actualGuides.reduce((s, g) => s + (g.advancePaid || 0), 0),
+                    ),
                     l: "Total Advance",
                     sub: "Paid so far",
                   },
                   {
-                    v: `₹${actualGuides.reduce((s, g) => s + (g.balanceAmount || 0), 0).toLocaleString("en-IN")}`,
+                    v: formatINR(
+                      actualGuides.reduce((s, g) => s + (g.balanceAmount || 0), 0),
+                    ),
                     l: "Balance Due",
                     sub: "Remaining payment",
                   },
@@ -8439,14 +8442,14 @@ useEffect(() => {
                               ) : null}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-800">
-                              ₹{Number(exp.agreedAmount || 0).toLocaleString("en-IN")}
+                              {formatINR(exp.agreedAmount || 0)}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right font-semibold text-green-700">
-                              ₹{Number(exp.advancePaid || 0).toLocaleString("en-IN")}
+                              {formatINR(exp.advancePaid || 0)}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right">
                               <span className={cn("font-bold", Number(exp.balanceAmount || 0) > 0 ? "text-[#FF4D00]" : "text-slate-800")}>
-                                ₹{Number(exp.balanceAmount || 0).toLocaleString("en-IN")}
+                                {formatINR(exp.balanceAmount || 0)}
                               </span>
                             </td>
                             <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">

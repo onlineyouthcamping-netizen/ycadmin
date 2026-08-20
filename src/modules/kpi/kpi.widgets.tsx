@@ -9,6 +9,7 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
+import { formatINR } from "@/lib/utils";
 import { PERMISSIONS } from "@/lib/permissions";
 import type {
   DashboardWidget,
@@ -78,7 +79,7 @@ export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({
     label="Total revenue"
     icon={IndianRupee}
     loading={loading}
-    value={`₹ ${(stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
+    value={formatINR(stats?.totalRevenue || 0)}
     trend
     caption="Gross all-time"
     onClick={() => navigate("/admin/finance")}
@@ -94,7 +95,11 @@ export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({
     label="Monthly revenue"
     icon={BarChart2}
     loading={loading}
-    value={`₹ ${(stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue || stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
+    value={formatINR(
+      stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue ||
+        stats?.totalRevenue ||
+        0,
+    )}
     trend
     caption="Active this month"
     onClick={() => navigate("/admin/finance")}
@@ -110,7 +115,7 @@ export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({
     label="Pending customers"
     icon={Users}
     loading={loading}
-    value={`₹ ${(stats?.pendingPayments || 0).toLocaleString("en-IN")}`}
+    value={formatINR(stats?.pendingPayments || 0)}
     caption={`${loading ? "…" : stats?.totalBookings || 0} bookings`}
     onClick={() => navigate("/admin/finance?tab=payments")}
   />
@@ -125,7 +130,7 @@ export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({
     label="Pending vendors"
     icon={Building2}
     loading={loading}
-    value={`₹ ${(stats?.pendingVendorsCost || 0).toLocaleString("en-IN")}`}
+    value={formatINR(stats?.pendingVendorsCost || 0)}
     caption={`${loading ? "…" : stats?.pendingVendorsCount || 0} vendors`}
     onClick={() => navigate("/admin/finance?tab=expenses")}
   />

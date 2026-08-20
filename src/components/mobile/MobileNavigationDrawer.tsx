@@ -14,6 +14,7 @@ import {
   isAdminNavActive,
 } from "@/config/adminNavigation";
 import { resolveAdminRoute } from "@/lib/adminRouteAliases";
+import { isMobileNavFounder } from "@/config/permissions.config";
 
 interface MobileNavigationDrawerProps {
   open: boolean;
@@ -28,10 +29,7 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
   const location = useLocation();
   const { admin, logout } = useAuthStore();
 
-  const isFounder =
-    (admin?.email || "").toLowerCase().includes("hemal") ||
-    admin?.role === "superadmin" ||
-    admin?.role === "admin";
+  const isFounder = isMobileNavFounder(admin);
 
   const visibleModules = MOBILE_DRAWER_NAV.filter((mod) => {
     if (mod.founderOnly && !isFounder) return false;

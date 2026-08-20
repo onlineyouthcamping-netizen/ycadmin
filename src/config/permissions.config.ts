@@ -104,13 +104,62 @@ export type PermissionKey =
   | "settings.view"
   | "settings.edit";
 
-export function isFounder(
-  user: { role?: string; email?: string | null; name?: string | null } | null,
-): boolean {
+type FounderUser = {
+  role?: string;
+  email?: string | null;
+  name?: string | null;
+  isSuperuser?: boolean;
+} | null;
+
+/** Route-guard: founder-only pages (App.tsx `founderOnly` routes). */
+export function isFounder(user: FounderUser): boolean {
   if (!user) return false;
   const email = (user.email || "").toLowerCase().trim();
   return (
     user.role === "superadmin" &&
     (email === "hemal.patel@youthcamping.online" || email.includes("hemal"))
+  );
+}
+
+/** Email-based founder identity (Hemal Patel). */
+export function isFounderByEmail(user: FounderUser): boolean {
+  if (!user) return false;
+  const email = (user.email || "").toLowerCase().trim();
+  return (
+    email.includes("hemal") || email === "hemal.patel@youthcamping.online"
+  );
+}
+
+/** Nav access for staff/users/access-control (email or name match). */
+export function isFounderIdentity(user: FounderUser): boolean {
+  if (!user) return false;
+  const name = (user.name || "").toLowerCase().trim();
+  return isFounderByEmail(user) || name.includes("hemal");
+}
+
+/** Display label: founder by email or superadmin role. */
+export function isFounderForDisplay(user: FounderUser): boolean {
+  if (!user) return false;
+  return isFounderByEmail(user) || user.role === "superadmin";
+}
+
+/** Mobile nav: founder email or elevated roles. */
+export function isMobileNavFounder(user: FounderUser): boolean {
+  if (!user) return false;
+  return (
+    isFounderByEmail(user) ||
+    user.role === "superadmin" ||
+    user.role === "admin"
+  );
+}
+
+/** Finance approvals: superuser / founder / admin / hemal email. */
+export function isSuperuserFounder(user: FounderUser): boolean {
+  if (!user) return false;
+  const userRole = (user.role || "").toLowerCase();
+  return (
+    ["superadmin", "founder", "admin"].includes(userRole) ||
+    !!user.isSuperuser ||
+    isFounderByEmail(user)
   );
 }

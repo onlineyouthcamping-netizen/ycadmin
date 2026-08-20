@@ -14,7 +14,8 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import type { DashboardStats } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, formatINR } from "@/lib/utils";
+import { isFounderForDisplay } from "@/config/permissions.config";
 import { resolveAdminRoute } from "@/lib/adminRouteAliases";
 
 interface MobileDashboardViewProps {
@@ -41,8 +42,6 @@ const PERIOD_PREFIX: Record<string, string> = {
   year: "This year's",
   all: "Total",
 };
-
-const formatInr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
 /**
  * Renders a metric value, distinguishing "still loading" from "no data returned"
@@ -116,11 +115,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   const navigate = useNavigate();
   const { admin } = useAuthStore();
 
-  const adminEmail = (admin?.email || "").toLowerCase();
-  const isFounder =
-    adminEmail === "hemal.patel@youthcamping.online" ||
-    adminEmail.includes("hemal") ||
-    admin?.role === "superadmin";
+  const isFounder = isFounderForDisplay(admin);
 
   const canViewAccounting = hasPermission(
     userPerms,
@@ -236,7 +231,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
             onClick={() => navigate("/admin/finance")}
             loading={loading}
             value={stats?.totalRevenue}
-            format={formatInr}
+            format={(value) => formatINR(value)}
             caption={
               stats?.collectionRate !== undefined
                 ? `${stats.collectionRate}% collected`
