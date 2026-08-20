@@ -201,22 +201,45 @@ export default function DepartureTransport({
   }, [vendorDirectoryFleet, fleetVehicles]);
 
   const effectiveFleet = useMemo(() => {
-    if (allocFleet && allocFleet.length > 0) return allocFleet;
-    if (fleetVehicles && fleetVehicles.length > 0) {
-      return fleetVehicles.map((t: any, idx: number) => ({
+    const rawFleet =
+      allocFleet && allocFleet.length > 0
+        ? allocFleet
+        : fleetVehicles && fleetVehicles.length > 0
+          ? fleetVehicles
+          : [];
+
+    return rawFleet.map((t: any, idx: number, arr: any[]) => {
+      const baseName =
+        t.name ||
+        t.driverName ||
+        (t.vendor?.name
+          ? `${t.vendor.name} (${t.vehicleType || "Tempo"})`
+          : `Tempo ${idx + 1}`);
+      const sameCount = arr.filter(
+        (x: any) =>
+          (x.name || x.driverName || x.vendor?.name) ===
+          (t.name || t.driverName || t.vendor?.name),
+      ).length;
+      const occurIdx = arr
+        .slice(0, idx + 1)
+        .filter(
+          (x: any) =>
+            (x.name || x.driverName || x.vendor?.name) ===
+            (t.name || t.driverName || t.vendor?.name),
+        ).length;
+      const displayName =
+        sameCount > 1 && !baseName.includes("#")
+          ? `${baseName} #${occurIdx}`
+          : baseName;
+      return {
         id: t.id || `tempo-${idx + 1}`,
-        name:
-          t.driverName ||
-          (t.vendor?.name
-            ? `${t.vendor.name} (${t.vehicleType || "Tempo"})`
-            : `Tempo ${idx + 1}`),
+        name: displayName,
         vehicleType: t.vehicleType || "14 Seater Tempo Traveller",
         capacity: Number(t.capacity) || 14,
-        cost: Number(t.totalAmount) || 0,
+        cost: Number(t.totalAmount ?? t.cost ?? 0),
         vendor: t.vendor?.name || t.notes || "Self-driven",
-      }));
-    }
-    return [];
+      };
+    });
   }, [allocFleet, fleetVehicles]);
 
   return (
@@ -767,9 +790,18 @@ export default function DepartureTransport({
                     return true;
                   }
 
-                  // 1. Direct fleetId match
-                  if (allocFleetId && (allocFleetId === fleetId || allocFleetId === fleetItem.id)) {
-                    return true;
+                  // 1. Direct fleetId match (highest accuracy)
+                  if (allocFleetId) {
+                    if (allocFleetId === fleetId || allocFleetId === fleetItem.id) {
+                      return true;
+                    }
+                    // If alloc has a specific fleetId that points to another fleet item, do not bleed
+                    const otherFleetMatch = effectiveFleet.some(
+                      (ef) => ef.id !== fleetId && (ef.id === allocFleetId || (allocFleetId.startsWith("tempo-") && ef.id === allocFleetId))
+                    );
+                    if (otherFleetMatch) {
+                      return false;
+                    }
                   }
 
                   const vNorm = String(allocVehicle).trim().toLowerCase();
@@ -781,15 +813,7 @@ export default function DepartureTransport({
                     return true;
                   }
 
-                  // 3. Generic tempo index match (e.g. "tempo 1", "tempo-1", "tempo #1", "tempo1")
-                  const tempoIdxPattern = /^(?:tempo|vehicle)[-\s#]*(\d+)$/i;
-                  const vTempoMatch = String(allocVehicle).trim().match(tempoIdxPattern);
-                  if (vTempoMatch) {
-                    const targetIdx = parseInt(vTempoMatch[1], 10);
-                    return targetIdx === fleetIdx + 1;
-                  }
-
-                  // 4. Instance hash match (e.g. "... #1" vs "... #2")
+                  // 3. Instance hash match (e.g. "... #1" vs "... #2")
                   const vNumMatch = String(allocVehicle).match(/#(\d+)/);
                   const fNumMatch = String(fleetName).match(/#(\d+)/);
                   if (vNumMatch && fNumMatch) {
@@ -797,6 +821,14 @@ export default function DepartureTransport({
                   }
                   if (vNumMatch && !fNumMatch) {
                     return parseInt(vNumMatch[1], 10) === fleetIdx + 1;
+                  }
+
+                  // 4. Generic tempo index match (e.g. "tempo 1", "tempo-1", "tempo #1", "tempo1")
+                  const tempoIdxPattern = /^(?:tempo|vehicle)[-\s#]*(\d+)$/i;
+                  const vTempoMatch = String(allocVehicle).trim().match(tempoIdxPattern);
+                  if (vTempoMatch) {
+                    const targetIdx = parseInt(vTempoMatch[1], 10);
+                    return targetIdx === fleetIdx + 1;
                   }
 
                   return false;
