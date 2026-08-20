@@ -487,7 +487,7 @@ export default function DeparturePayments({
   // Fetch API data and merge cleanly with defaults if API is empty
   const fetchData = async () => {
     try {
-      const [clientRes, vendorRes, vendorsDirRes, expensesRes, trainSummaryRes, accountsRes, depActivitiesRes] = await Promise.all([
+      const [clientRes, vendorRes, vendorsDirRes, expensesRes, trainSummaryRes, accountsRes, depActivitiesRes, hotelsRes] = await Promise.all([
         opsService
           .getClientPayments(tripId, departureDateStr)
           .catch(() => ({ bookings: [], receipts: [] })),
@@ -501,6 +501,7 @@ export default function DeparturePayments({
           .getAccounts({ activeOnly: true })
           .catch(() => ({ data: [], summary: { totalCollected: 0, totalSubmitted: 0, totalPending: 0 } })),
         api.get(`/ops/activities/${tripId}`, { params: { departureDate: departureDateStr } }).catch(() => ({ data: { data: [] } })),
+        opsService.getHotels(tripId, departureDateStr).catch(() => []),
       ]);
 
       if (accountsRes.data && accountsRes.data.length > 0) {
@@ -662,6 +663,67 @@ export default function DeparturePayments({
                       txnId: "AUTO-SYNC",
                       type: "ADVANCE",
                       status: statusLabel,
+                    },
+                  ]
+                : [],
+          });
+        }
+      });
+
+      // Merge direct Hotel Bookings from OpsHotelBooking into mergedVendors
+      const rawHotels = Array.isArray(hotelsRes) ? hotelsRes : (hotelsRes?.data || []);
+      (rawHotels || []).forEach((h: any) => {
+        const hName = String(h.hotelName || h.name || "").trim();
+        if (!hName || hName === "NO_STAY" || hName === "NO STAY" || hName === "—" || hName.toLowerCase().includes("night journey")) {
+          return;
+        }
+        const agreed = Number(h.totalAmount || 0);
+        const paid = Number(h.advancePaid || 0);
+        const balance = Math.max(0, agreed - paid);
+        const status = paid >= agreed && agreed > 0 ? "Paid" : paid > 0 ? "Advance Paid" : "Pending";
+
+        const existingIdx = mergedVendors.findIndex((v) => {
+          if (h.id && v.id && h.id === v.id) return true;
+          return v.category === "Hotels" && v.vendorName?.toLowerCase().trim() === hName.toLowerCase().trim();
+        });
+
+        if (existingIdx >= 0) {
+          // If existing had 0 cost or smaller cost, update with direct OpsHotelBooking cost
+          mergedVendors[existingIdx].agreedAmount = Math.max(mergedVendors[existingIdx].agreedAmount || 0, agreed);
+          mergedVendors[existingIdx].advancePaid = Math.max(mergedVendors[existingIdx].advancePaid || 0, paid);
+          mergedVendors[existingIdx].balanceAmount = Math.max(0, (mergedVendors[existingIdx].agreedAmount || 0) - (mergedVendors[existingIdx].advancePaid || 0));
+          mergedVendors[existingIdx].status =
+            mergedVendors[existingIdx].advancePaid >= mergedVendors[existingIdx].agreedAmount && mergedVendors[existingIdx].agreedAmount > 0
+              ? "Paid"
+              : mergedVendors[existingIdx].advancePaid > 0
+                ? "Advance Paid"
+                : "Pending";
+          if (!mergedVendors[existingIdx].serviceDescription || mergedVendors[existingIdx].serviceDescription === "hotel services") {
+            mergedVendors[existingIdx].serviceDescription = `${h.location ? h.location + " • " : ""}${h.numberOfRooms || 1} Rooms (${h.roomType || "Standard"})`;
+          }
+        } else {
+          mergedVendors.push({
+            id: h.id || `hotel-${hName}`,
+            vendorName: hName,
+            category: "Hotels",
+            serviceDescription: `${h.location ? h.location + " • " : ""}${h.numberOfRooms || 1} Rooms (${h.roomType || "Standard"})`,
+            agreedAmount: agreed,
+            advancePaid: paid,
+            balanceAmount: balance,
+            status: status,
+            paymentDate: h.checkIn ? String(h.checkIn).substring(0, 10) : new Date().toISOString().substring(0, 10),
+            paymentMode: "BANK_TRANSFER",
+            rawAssignment: h,
+            history:
+              paid > 0
+                ? [
+                    {
+                      date: h.checkIn ? String(h.checkIn).substring(0, 10) : new Date().toISOString().substring(0, 10),
+                      amount: paid,
+                      method: "Bank Transfer",
+                      txnId: "HOTEL-ADVANCE",
+                      type: "ADVANCE",
+                      status: status,
                     },
                   ]
                 : [],
