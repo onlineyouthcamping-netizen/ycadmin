@@ -262,10 +262,13 @@ export default function DepartureTransport({
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5 items-end min-w-0"
         >
           <div className="md:col-span-1 min-w-0">
-            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+            <label htmlFor="transport-vehicle-type-select" className="block text-[11px] font-medium text-slate-700 mb-1">
               Vehicle type
             </label>
             <select
+              id="transport-vehicle-type-select"
+              name="vehicleType"
+              aria-label="Vehicle type"
               value={selectedVehicleId}
               onChange={(e) => {
                 const val = e.target.value;
@@ -309,10 +312,13 @@ export default function DepartureTransport({
           </div>
 
           <div className="md:col-span-1 min-w-0">
-            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+            <label htmlFor="transport-vehicle-capacity-select" className="block text-[11px] font-medium text-slate-700 mb-1">
               Capacity
             </label>
             <select
+              id="transport-vehicle-capacity-select"
+              name="vehicleCapacity"
+              aria-label="Vehicle capacity"
               value={newVehicleCapacity}
               onChange={(e) => setNewVehicleCapacity(e.target.value)}
               className={nativeSelect}
@@ -330,11 +336,14 @@ export default function DepartureTransport({
           </div>
 
           <div className="md:col-span-1 min-w-0">
-            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+            <label htmlFor="transport-vehicle-name-input" className="block text-[11px] font-medium text-slate-700 mb-1">
               Name
             </label>
             <input
               ref={nameInputRef}
+              id="transport-vehicle-name-input"
+              name="vehicleName"
+              aria-label="Vehicle name"
               type="text"
               placeholder="Tempo 1"
               value={newVehicleName}
@@ -344,10 +353,13 @@ export default function DepartureTransport({
           </div>
 
           <div className="md:col-span-1 min-w-0">
-            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+            <label htmlFor="transport-vehicle-cost-input" className="block text-[11px] font-medium text-slate-700 mb-1">
               Cost (₹)
             </label>
             <input
+              id="transport-vehicle-cost-input"
+              name="vehicleCost"
+              aria-label="Vehicle cost in rupees"
               type="number"
               placeholder="45000"
               value={newVehicleCost}
@@ -357,10 +369,13 @@ export default function DepartureTransport({
           </div>
 
           <div className="md:col-span-1 min-w-0">
-            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+            <label htmlFor="transport-vehicle-vendor-input" className="block text-[11px] font-medium text-slate-700 mb-1">
               Vendor
             </label>
             <input
+              id="transport-vehicle-vendor-input"
+              name="vehicleVendor"
+              aria-label="Vehicle vendor name"
               type="text"
               placeholder="ABC Travels"
               value={newVehicleVendor}
@@ -427,10 +442,13 @@ export default function DepartureTransport({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+            <label htmlFor="transport-room-sharing-select" className="block text-[11px] font-medium text-slate-700 mb-1">
               Room sharing size
             </label>
             <select
+              id="transport-room-sharing-select"
+              name="roomSharingSize"
+              aria-label="Room sharing size"
               value={sharingPref}
               onChange={(e) => setSharingPref(e.target.value)}
               className={nativeSelect}
