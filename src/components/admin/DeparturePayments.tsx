@@ -1841,16 +1841,18 @@ export default function DeparturePayments({
         amountPaid: newAdj.status === "APPROVED" || newAdj.status === "COMPLETED" ? amountNum : 0,
         remarks: `Reconciliation | Reason: ${newAdj.reason} | Status: ${newAdj.status}`,
       });
+      setAdjustments((prev) => [newAdj, ...prev]);
+      toast.success(
+        `Logged ${newAdj.type} adjustment of ₹${amountNum.toLocaleString()}`,
+      );
+      setAddAdjustmentOpen(false);
       await fetchData();
-    } catch (err) {
-      console.warn("upsertTripExpense warning:", err);
+    } catch (err: any) {
+      console.error("upsertTripExpense error:", err);
+      toast.error(
+        err?.response?.data?.message || "Failed to save adjustment expense",
+      );
     }
-
-    setAdjustments((prev) => [newAdj, ...prev]);
-    toast.success(
-      `Logged ${newAdj.type} adjustment of ₹${amountNum.toLocaleString()}`,
-    );
-    setAddAdjustmentOpen(false);
   };
 
   const handleRunReconciliation = () => {
