@@ -932,7 +932,33 @@ export default function DeparturePayments({
           paymentDate: v.paymentDate ? v.paymentDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
           paymentMethod: v.paymentMode || "CASH",
         }));
-      const allMisc = [...misc, ...vpMisc];
+      // Deduplicate miscellaneous expenses so identical records between trip expenses and vendor payments never create multiple rows
+      const seenMiscMap = new Map<string, any>();
+      for (const mItem of [...misc, ...vpMisc]) {
+        const normDesc = (mItem.description || "").trim().toLowerCase();
+        const normAmt = Number(mItem.amount || 0);
+        const matchKey = mItem.id || `${normDesc}_${normAmt}`;
+
+        let matchedKey = matchKey;
+        for (const [k, v] of seenMiscMap.entries()) {
+          const vDesc = (v.description || "").trim().toLowerCase();
+          const vAmt = Number(v.amount || 0);
+          if (vDesc === normDesc && vAmt === normAmt) {
+            matchedKey = k;
+            break;
+          }
+        }
+
+        if (seenMiscMap.has(matchedKey)) {
+          const existing = seenMiscMap.get(matchedKey);
+          if (mItem.status === "APPROVED" && existing.status !== "APPROVED") {
+            seenMiscMap.set(matchedKey, { ...existing, ...mItem, status: "APPROVED" });
+          }
+        } else {
+          seenMiscMap.set(matchKey, mItem);
+        }
+      }
+      const allMisc = Array.from(seenMiscMap.values());
 
       // Merge all approved Miscellaneous expenses into vendor payments list so they appear under All Vendor Expenses (Vendor Payables)
       allMisc.forEach((mItem: any) => {
@@ -941,7 +967,7 @@ export default function DeparturePayments({
           const exists = mergedVendors.some(
             (v: any) =>
               v.id === mItem.id ||
-              (v.serviceDescription === mItem.description && Number(v.agreedAmount) === Number(mItem.amount)),
+              ((v.serviceDescription || "").trim().toLowerCase() === (mItem.description || "").trim().toLowerCase() && Number(v.agreedAmount) === Number(mItem.amount)),
           );
           if (!exists) {
             mergedVendors.push({
