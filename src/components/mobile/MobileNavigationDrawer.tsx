@@ -13,6 +13,7 @@ import {
   MOBILE_DRAWER_NAV,
   isAdminNavActive,
 } from "@/config/adminNavigation";
+import { resolveAdminRoute } from "@/lib/adminRouteAliases";
 
 interface MobileNavigationDrawerProps {
   open: boolean;
@@ -39,7 +40,7 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
 
   const handleNavigate = (url: string) => {
     onOpenChange(false);
-    navigate(url);
+    navigate(resolveAdminRoute(url));
   };
 
   return (

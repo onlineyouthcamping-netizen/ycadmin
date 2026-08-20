@@ -11,6 +11,9 @@ export function resolveAdminRoute(path: string): string {
   const exact: Record<string, string> = {
     "/admin/dashboard": "/admin",
     "/admin/staff-directory": "/admin/staff-profiles",
+    "/admin/users": "/admin/staff-profiles",
+    "/admin/people/staff": "/admin/staff-profiles",
+    "/admin/roles-permissions": "/admin/roles",
     "/admin/approval-center/incoming": "/admin/approvals-hub?tab=payment-approvals",
     "/admin/travel-desk/train-tickets": "/admin/travel-desk",
     "/admin/finance-control-center": "/admin/finance",

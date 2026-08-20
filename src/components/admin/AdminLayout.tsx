@@ -310,6 +310,7 @@ function AdminSidebar() {
 
               // Check founder-only administrative sub-items
               if (
+                urlPath === "/admin/staff-profiles" ||
                 urlPath === "/admin/users" ||
                 urlPath === "/admin/access-control"
               ) {
@@ -374,6 +375,7 @@ function AdminSidebar() {
                 "/admin/seo": ["seo.view", "settings.view"],
                 "/admin/pages": ["settings.view"],
                 "/admin/footer-management": ["settings.view"],
+                "/admin/staff-profiles": ["users.view", "users.manage", "staff_profiles.view"],
                 "/admin/users": ["users.view", "users.manage"],
                 "/admin/roles": ["users.permissions", "roles.manage"],
                 "/admin/permission-matrix": [

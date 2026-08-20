@@ -6,6 +6,7 @@ import {
   MOBILE_BOTTOM_NAV,
   isAdminNavActive,
 } from "@/config/adminNavigation";
+import { resolveAdminRoute } from "@/lib/adminRouteAliases";
 
 interface MobileBottomNavProps {
   onOpenDrawer: () => void;
@@ -34,7 +35,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <button
               key={item.url}
               type="button"
-              onClick={() => navigate(item.url)}
+              onClick={() => navigate(resolveAdminRoute(item.url))}
               className={cn(
                 "flex min-h-[44px] min-w-[56px] flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 transition-all active:scale-95",
                 isActive
