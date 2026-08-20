@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Trash2,
@@ -139,13 +139,13 @@ export default function TripSopEditorTab({
     setLoading(true);
     try {
       const template = await sopsService.getSopByTrip(tripId);
-      const activeVersion = template?.versions?.find(
-        (v) => v.id === template?.activeVersionId,
-      );
-      if (template && activeVersion && activeVersion.taskTemplates) {
-        setTasks(activeVersion.taskTemplates as OpsSopTaskTemplateData[]);
-        if (onUpdateTasks)
-          onUpdateTasks(activeVersion.taskTemplates as OpsSopTaskTemplateData[]);
+      const activeVersion =
+        template?.versions?.find((v) => v.id === template?.activeVersionId) ||
+        template?.versions?.[0];
+      const fetchedTasks = (activeVersion?.taskTemplates || []) as OpsSopTaskTemplateData[];
+      if (fetchedTasks.length > 0) {
+        setTasks(fetchedTasks);
+        if (onUpdateTasks) onUpdateTasks(fetchedTasks);
       }
     } catch (err) {
       console.error("Fetch Trip SOP error:", err);
@@ -168,25 +168,59 @@ export default function TripSopEditorTab({
       const newTask = {
         ...form,
         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        sortOrder: tasks.length + 1,
       };
       updatedList = [...tasks, newTask];
-      toast.success(`Added task "${form.taskName}" to Trip SOP`);
+      toast.success(`Added SOP task "${form.taskName}"`);
     }
 
     setTasks(updatedList);
     if (onUpdateTasks) onUpdateTasks(updatedList);
     setIsTaskModalOpen(false);
+    setEditingTask(null);
+    setForm({
+      taskName: "",
+      instructions: "",
+      category: "Accommodation",
+      taskType: "VERIFICATION",
+      stage: "PRE_TRIP_30D",
+      relativeOffset: -30,
+      defaultAssignee: "Hemal Patel",
+      priority: "HIGH",
+      isRequired: true,
+    });
   };
 
-  const handleDeleteTask = (taskId?: string, taskName?: string) => {
-    const updated = tasks.filter((t) => t.id !== taskId);
+  const handleDeleteTask = (id?: string) => {
+    if (!id) return;
+    const updated = tasks.filter((t) => t.id !== id);
     setTasks(updated);
     if (onUpdateTasks) onUpdateTasks(updated);
-    toast.success(`Deleted task "${taskName || "SOP Task"}"`);
+    toast.success("Removed SOP task");
   };
 
-  const loadPresetSop = (tripType: "spiti" | "manali" | "kerala" | "kashmir") => {
+  const handleOpenEdit = (task: OpsSopTaskTemplateData) => {
+    setEditingTask(task);
+    setForm({ ...task });
+    setIsTaskModalOpen(true);
+  };
+
+  const handleOpenNew = () => {
+    setEditingTask(null);
+    setForm({
+      taskName: "",
+      instructions: "",
+      category: "Accommodation",
+      taskType: "VERIFICATION",
+      stage: "PRE_TRIP_30D",
+      relativeOffset: -30,
+      defaultAssignee: "Hemal Patel",
+      priority: "HIGH",
+      isRequired: true,
+    });
+    setIsTaskModalOpen(true);
+  };
+
+  const handleLoadPreset = (tripType: string) => {
     let preset: OpsSopTaskTemplateData[] = [];
     if (tripType === "spiti") {
       preset = [
@@ -335,11 +369,43 @@ export default function TripSopEditorTab({
 
   const getStageTasks = (stagePrefix: string) => {
     return tasks.filter((t) => {
-      const st = t.stage || "";
-      if (stagePrefix === "PRE_TRIP") return st.startsWith("PRE_TRIP") || (t.relativeOffset !== undefined && t.relativeOffset < 0);
-      if (stagePrefix === "DEPARTURE_DAY") return st === "DEPARTURE_DAY" || t.relativeOffset === 0;
-      if (stagePrefix === "DURING_TRIP") return st.startsWith("ON_TRIP") || st.startsWith("DURING_TRIP") || (t.relativeOffset !== undefined && t.relativeOffset > 0 && t.relativeOffset < 9);
-      if (stagePrefix === "POST_TRIP") return st === "POST_TRIP" || t.relativeOffset === 9;
+      const st = (t.stage || "").toUpperCase();
+      const offset = Number(t.relativeOffset);
+
+      if (stagePrefix === "PRE_TRIP") {
+        return (
+          st.includes("PRE_TRIP") ||
+          st.includes("BEFORE") ||
+          (!isNaN(offset) && offset < 0)
+        );
+      }
+      if (stagePrefix === "DEPARTURE_DAY") {
+        return (
+          st === "DEPARTURE_DAY" ||
+          st.includes("DEPARTURE") ||
+          st.includes("DAY_0") ||
+          st.includes("DAY 0") ||
+          offset === 0
+        );
+      }
+      if (stagePrefix === "DURING_TRIP") {
+        return (
+          st.includes("ON_TRIP") ||
+          st.includes("DURING_TRIP") ||
+          st.includes("DAY_") ||
+          st.includes("DAY ") ||
+          st.includes("ON_TOUR") ||
+          (!isNaN(offset) && offset > 0 && offset < 9)
+        );
+      }
+      if (stagePrefix === "POST_TRIP") {
+        return (
+          st.includes("POST_TRIP") ||
+          st.includes("SETTLEMENT") ||
+          st.includes("FEEDBACK") ||
+          (!isNaN(offset) && offset >= 9)
+        );
+      }
       return false;
     });
   };
