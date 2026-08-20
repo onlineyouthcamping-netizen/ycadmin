@@ -167,15 +167,15 @@ export default function DepartureTripControl({
   const leadTransport = useMemo(() => {
     // Departure-specific fleet allocations take precedence
     if (allocFleet && allocFleet.length > 0) {
-      // Create a combined string if they provided vendorName and vehicleType
-      const fleet = allocFleet[0];
-      const name = fleet.vendorName ? `${fleet.vendorName} ${fleet.vehicleType}` : fleet.vehicleType || "Tempo Traveller";
-      return { name, phone: fleet.driverPhone || "" };
+      const summary = allocFleet
+        .map((f: any, idx: number) => f.name || f.driverName || `${f.capacity || 14} Seater ${f.vehicleType || "Tempo"} #${idx + 1}`)
+        .join(" + ");
+      return { name: summary, phone: allocFleet[0].driverPhone || "" };
     }
     // Fallback to trip-level vendors
     const tr = tripVendors?.find((v) => v.vendorType === "transport");
-    if (tr) return { name: tr.name || tr.vendorName || "17 Seater Tempo", phone: tr.phone || "" };
-    return { name: "17 Seater Tempo", phone: "" };
+    if (tr) return { name: tr.name || tr.vendorName || "14 Seater Tempo", phone: tr.phone || "" };
+    return { name: "14 Seater Tempo", phone: "" };
   }, [tripVendors, allocFleet]);
 
   // Build unified live table rows per itinerary day
@@ -375,87 +375,122 @@ export default function DepartureTripControl({
   const getPaymentRowsForExport = () => {
     const rows: { date: string; service: string; paymentDate: string; total: number; paid: number; due: number; status: string; remark: string }[] = [];
 
-    const hotelCosts = tripVendors.filter((v: any) => v.vendorType === "hotel");
-    const transportCosts = tripVendors.filter((v: any) => v.vendorType === "transport");
-    const guideCosts = tripVendors.filter((v: any) => v.vendorType === "guide");
+    // 1. Hotel accommodations (filter out NO_STAY and 0 total)
+    const hotelCosts = (opsHotels && opsHotels.length > 0 ? opsHotels : (tripVendors || []).filter((v: any) => v.vendorType === "hotel")).filter((h: any) => {
+      const name = String(h?.hotelName || h?.name || h?.vendorName || "").trim().toUpperCase();
+      return name && name !== "NO_STAY" && name !== "NO STAY" && name !== "—";
+    });
 
     if (hotelCosts.length > 0) {
       hotelCosts.forEach((h: any) => {
-        const total = h.agreedCost || 48000;
-        const paid = h.paidAmount || total;
-        const due = total - paid;
-        const status = due === 0 ? "Paid" : due < 0 ? "Credit" : "Due";
+        const total = Number(h.totalAmount ?? h.agreedCost ?? 0);
+        if (total <= 0) return;
+        const paid = Number(h.advancePaid ?? h.paidAmount ?? 0);
+        const due = Math.max(0, total - paid);
+        const status = due === 0 ? "Paid" : paid > 0 ? "Partial" : "Due";
+        const hName = h.hotelName || h.name || h.location || "Hotel";
         rows.push({
           date: departureDateStr,
-          service: `${h.location || "Stay"} (${h.name || "Hotel"})`,
-          paymentDate: departureDateStr,
+          service: `Stay (${hName})`,
+          paymentDate: paid > 0 ? departureDateStr : "—",
           total,
           paid,
           due,
           status,
-          remark: h.notes || `Hotel stay accommodation costing for ${h.location || "destination"}`,
+          remark: h.notes || `Hotel stay accommodation costing for ${h.location || hName}`,
         });
       });
     }
 
-    if (transportCosts.length > 0) {
-      transportCosts.forEach((t: any) => {
-        const total = t.agreedCost || 63000;
-        const paid = t.paidAmount || total;
-        const due = total - paid;
-        const status = due === 0 ? "Paid" : due < 0 ? "Credit" : "Due";
+    // 2. Transport Fleet
+    const effectiveFleetItems = allocFleet && allocFleet.length > 0 ? allocFleet : (tripVendors || []).filter((v: any) => v.vendorType === "transport");
+    if (effectiveFleetItems.length > 0) {
+      effectiveFleetItems.forEach((t: any, idx: number) => {
+        const total = Number(t.cost ?? t.agreedCost ?? t.totalAmount ?? 0);
+        if (total <= 0) return;
+        const paid = Number(t.paidAmount ?? t.advancePaid ?? 0);
+        const due = Math.max(0, total - paid);
+        const status = due === 0 ? "Paid" : paid > 0 ? "Partial" : "Due";
+        const cap = t.capacity || 14;
+        const vType = t.vehicleType || "Tempo Traveller";
+        const vTitle = t.name || t.driverName || `Tempo #${idx + 1}`;
         rows.push({
           date: departureDateStr,
-          service: `Tempo (${t.name || "Fleet"})`,
-          paymentDate: departureDateStr,
+          service: `Tempo (${vTitle})`,
+          paymentDate: paid > 0 ? departureDateStr : "—",
           total,
           paid,
           due,
           status,
-          remark: t.notes || `17 Seater Tempo fleet rental`,
+          remark: t.notes || `${cap} Seater ${vType} fleet rental`,
         });
-      });
-    } else {
-      rows.push({
-        date: "15th till 23rd July 2026",
-        service: "Tempo (17 Seater Tempo)",
-        paymentDate: "26-07-2026",
-        total: 63000,
-        paid: 63000,
-        due: 0,
-        status: "Paid",
-        remark: "17 Seater Tempo = 63000 paid online.",
       });
     }
 
-    if (guideCosts.length > 0) {
-      guideCosts.forEach((g: any) => {
-        const total = g.agreedCost || 8300;
-        const paid = g.paidAmount || 0;
-        const due = total - paid;
-        const status = due === 0 ? "Paid" : due < 0 ? "Credit" : "Due";
+    // 3. Guides & Trek Leaders
+    const activeDbGuides = (dbGuides || []).filter((g: any) => g.assignmentStatus !== "CANCELLED" && g.status !== "CANCELLED");
+
+    if (activeDbGuides.length > 0) {
+      activeDbGuides.forEach((g: any) => {
+        const total = Number(g.agreedAmount ?? g.agreedCost ?? 0);
+        if (total <= 0) return;
+        const paid = Number(g.advancePaid ?? g.paidAmount ?? 0);
+        const due = Math.max(0, total - paid);
+        const status = due === 0 ? "Paid" : paid > 0 ? "Partial" : "Due";
+
+        let label = `Guide (${g.guideName || g.name || "Lead Guide"})`;
+        if (g.assignmentType === "EXPENSE_FOOD") {
+          label = `Guide (Meal Allowance)`;
+        } else if (g.assignmentType === "EXPENSE_TRANSPORTATION") {
+          label = `Guide (Transit / Travel Expense)`;
+        }
+
+        const days = Number(g.daysWorked) || 0;
+        let remark = g.notes || "";
+        if (!remark) {
+          if (days > 0 && total > 0) {
+            remark = `(${days} days × ₹${Math.round(total / days)}/day = ₹${total})`;
+          } else if (g.assignmentType === "TRIP_LEADER") {
+            remark = `Trip Leader departure stipend`;
+          } else if (g.assignmentType === "ASSISTANT_GUIDE") {
+            remark = `Assistant Guide departure stipend`;
+          } else {
+            remark = `Guide services for departure`;
+          }
+        }
+
         rows.push({
           date: departureDateStr,
-          service: `Guide (${g.name || "Lead Guide"})`,
-          paymentDate: departureDateStr,
+          service: label,
+          paymentDate: paid > 0 ? departureDateStr : "—",
           total,
           paid,
           due,
           status,
-          remark: g.notes || `(7 days x 1000 = 7000) + (Food = 1000) + (Auto Cost = 300) = 8300`,
+          remark,
         });
       });
     } else {
-      rows.push({
-        date: "15th till 21st July 2026",
-        service: `Guide (${leadGuide.name})`,
-        paymentDate: "—",
-        total: 8300,
-        paid: 0,
-        due: 8300,
-        status: "Due",
-        remark: "(7 days x 1000 = 7000) + (Food = 1000) + (Auto Cost = 300) = 8300",
-      });
+      const guideCosts = (tripVendors || []).filter((v: any) => v.vendorType === "guide");
+      if (guideCosts.length > 0) {
+        guideCosts.forEach((g: any) => {
+          const total = Number(g.agreedCost ?? g.agreedAmount ?? 0);
+          if (total <= 0) return;
+          const paid = Number(g.paidAmount ?? g.advancePaid ?? 0);
+          const due = Math.max(0, total - paid);
+          const status = due === 0 ? "Paid" : paid > 0 ? "Partial" : "Due";
+          rows.push({
+            date: departureDateStr,
+            service: `Guide (${g.name || "Lead Guide"})`,
+            paymentDate: paid > 0 ? departureDateStr : "—",
+            total,
+            paid,
+            due,
+            status,
+            remark: g.notes || `Guide charges for departure`,
+          });
+        });
+      }
     }
 
     return rows;
