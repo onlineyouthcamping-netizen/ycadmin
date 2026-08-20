@@ -1781,18 +1781,32 @@ export default function DeparturePayments({
         category: "Miscellaneous",
         serviceDescription: `${miscPaymentForm.category}: ${miscPaymentForm.description}`,
         agreedAmount: amountNum,
-        advancePaid: amountNum,
-        remainingPayable: 0,
+        advancePaid: 0,
+        remainingPayable: amountNum,
         paymentDate: miscPaymentForm.paymentDate,
         paymentMode: miscPaymentForm.paymentMethod,
         collectionAccountId: miscPaymentForm.collectionAccountId || null,
         transactionId: miscPaymentForm.transactionId || `MISC-${Date.now()}`,
         invoiceProof: "",
-        status: "Paid",
+        status: "Pending",
+        paymentStatus: "Pending",
+        approvalStatus: "PENDING",
         paidBy: staffName,
         remarks: `Category: ${miscPaymentForm.category} | ${miscPaymentForm.remarks || ""}`.trim(),
       });
-      toast.success(`Logged miscellaneous expense: ${miscPaymentForm.description} (Paid from ${accountNameTag})`);
+      toast.success(`Submitted miscellaneous expense for approval: ${miscPaymentForm.description}`);
+      setMiscPaymentForm({
+        description: "",
+        category: "Emergency",
+        amount: "",
+        payeeName: "",
+        paymentDate: new Date().toISOString().substring(0, 10),
+        paymentMethod: "CASH",
+        transactionId: "",
+        collectionAccountId: "",
+        status: "PENDING",
+        remarks: "",
+      });
       await fetchData();
     } catch (err: any) {
       console.error("Error recording misc expense:", err);
