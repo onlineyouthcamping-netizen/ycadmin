@@ -3642,19 +3642,17 @@ export default function DeparturePayments({
                               size="sm"
                               onClick={async () => {
                                 const staff = admin?.name || admin?.email || "Finance Admin";
-                                setMiscPayments((prev) =>
-                                  prev.map((item) =>
-                                    item.id === m.id
-                                      ? { ...item, status: "APPROVED", approvedBy: staff }
-                                      : item,
-                                  ),
-                                );
+                                const isVendorPaymentRow =
+                                  !!m.id && !String(m.id).startsWith("MISC-");
                                 try {
-                                  let saved = false;
-                                  // Misc rows from createVendorPayment are OpsVendorPayment records
-                                  if (m.id && !String(m.id).startsWith("MISC-")) {
-                                    try {
-                                      await opsService.updateVendorPayment(tripId, m.id, {
+                                  // OpsVendorPayment misc must update that record — do not
+                                  // treat a trip-expense upsert as success (that caused
+                                  // "approved" toast while the row stayed PENDING).
+                                  if (isVendorPaymentRow) {
+                                    const updated = await opsService.updateVendorPayment(
+                                      tripId,
+                                      m.id,
+                                      {
                                         paymentStatus: "Paid",
                                         status: "Paid",
                                         approvalStatus: "APPROVED",
@@ -3662,24 +3660,34 @@ export default function DeparturePayments({
                                         remainingPayable: 0,
                                         paidBy: staff,
                                         remarks: `${m.payeeName || "Ad-Hoc Expense"} | Status: APPROVED | ApprovedBy: ${staff}`,
-                                      });
-                                      saved = true;
-                                    } catch {
-                                      // fall through to trip-expense path
+                                      },
+                                    );
+                                    const savedApproval = String(
+                                      updated?.approvalStatus || "",
+                                    ).toUpperCase();
+                                    if (
+                                      savedApproval !== "APPROVED" &&
+                                      !savedApproval.startsWith("APPROVED")
+                                    ) {
+                                      throw new Error(
+                                        "Server did not persist misc approvalStatus",
+                                      );
                                     }
-                                  }
-                                  if (!saved) {
+                                  } else {
                                     await opsService.upsertTripExpense(tripId, {
                                       id: m.id,
                                       departureDate: departureDateStr,
                                       activity: m.description,
                                       totalAmount: m.amount,
                                       amountPaid: m.amount,
-                                      paymentDate: m.paymentDate || new Date().toISOString(),
+                                      paymentDate:
+                                        m.paymentDate || new Date().toISOString(),
                                       remarks: `${m.payeeName || "Ad-Hoc Expense"} | Method: ${m.paymentMethod || "Cash"} | Status: APPROVED | ApprovedBy: ${staff}`,
                                     });
                                   }
-                                  toast.success("Expense approved & added to Vendor Payables!");
+                                  toast.success(
+                                    "Expense approved & added to Vendor Payables!",
+                                  );
                                   await fetchData();
                                 } catch (err) {
                                   console.error("Expense approve error:", err);
@@ -3696,18 +3704,14 @@ export default function DeparturePayments({
                               variant="outline"
                               onClick={async () => {
                                 const staff = admin?.name || admin?.email || "Finance Admin";
-                                setMiscPayments((prev) =>
-                                  prev.map((item) =>
-                                    item.id === m.id
-                                      ? { ...item, status: "REJECTED", approvedBy: "—" }
-                                      : item,
-                                  ),
-                                );
+                                const isVendorPaymentRow =
+                                  !!m.id && !String(m.id).startsWith("MISC-");
                                 try {
-                                  let saved = false;
-                                  if (m.id && !String(m.id).startsWith("MISC-")) {
-                                    try {
-                                      await opsService.updateVendorPayment(tripId, m.id, {
+                                  if (isVendorPaymentRow) {
+                                    const updated = await opsService.updateVendorPayment(
+                                      tripId,
+                                      m.id,
+                                      {
                                         paymentStatus: "Pending",
                                         status: "Rejected",
                                         approvalStatus: "REJECTED",
@@ -3715,20 +3719,25 @@ export default function DeparturePayments({
                                         remainingPayable: m.amount,
                                         paidBy: null,
                                         remarks: `${m.payeeName || "Ad-Hoc Expense"} | Status: REJECTED | RejectedBy: ${staff}`,
-                                      });
-                                      saved = true;
-                                    } catch {
-                                      // fall through to trip-expense path
+                                      },
+                                    );
+                                    if (
+                                      String(updated?.approvalStatus || "").toUpperCase() !==
+                                      "REJECTED"
+                                    ) {
+                                      throw new Error(
+                                        "Server did not persist misc rejection",
+                                      );
                                     }
-                                  }
-                                  if (!saved) {
+                                  } else {
                                     await opsService.upsertTripExpense(tripId, {
                                       id: m.id,
                                       departureDate: departureDateStr,
                                       activity: m.description,
                                       totalAmount: m.amount,
                                       amountPaid: 0,
-                                      paymentDate: m.paymentDate || new Date().toISOString(),
+                                      paymentDate:
+                                        m.paymentDate || new Date().toISOString(),
                                       remarks: `${m.payeeName || "Ad-Hoc Expense"} | Method: ${m.paymentMethod || "Cash"} | Status: REJECTED | RejectedBy: ${staff}`,
                                     });
                                   }
