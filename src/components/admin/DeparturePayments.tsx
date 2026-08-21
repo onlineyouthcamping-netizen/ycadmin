@@ -38,6 +38,44 @@ import {
   collectionAccountsService,
   CollectionAccount,
 } from "@/services/collectionAccounts.service";
+
+/** Misc vendor-payment rows live in the Misc tab until explicitly approved. */
+function isMiscellaneousVendorCategory(category?: string | null) {
+  const c = (category || "").toUpperCase();
+  return c === "MISCELLANEOUS" || c === "MISC";
+}
+
+/** Approval for misc must come from approvalStatus / remarks — never from payment status alone. */
+function isMiscExpenseApproved(row: {
+  approvalStatus?: string | null;
+  remarks?: string | null;
+  status?: string | null;
+}) {
+  const a = (row.approvalStatus || "").toUpperCase();
+  const rem = (row.remarks || "").toUpperCase();
+  if (a === "REJECTED" || rem.includes("STATUS: REJECTED")) return false;
+  if (
+    a === "APPROVED" ||
+    a === "APPROVED_FOUNDER" ||
+    a.startsWith("APPROVED") ||
+    rem.includes("STATUS: APPROVED")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function deriveMiscApprovalUiStatus(row: {
+  approvalStatus?: string | null;
+  remarks?: string | null;
+  status?: string | null;
+}): "APPROVED" | "REJECTED" | "PENDING" {
+  const a = (row.approvalStatus || "").toUpperCase();
+  const rem = (row.remarks || "").toUpperCase();
+  if (a === "REJECTED" || rem.includes("STATUS: REJECTED")) return "REJECTED";
+  if (isMiscExpenseApproved(row)) return "APPROVED";
+  return "PENDING";
+}
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { useAuthStore } from "@/store/auth.store";
 import api from "@/services/api";
@@ -845,15 +883,18 @@ export default function DeparturePayments({
         })
         .map((e: any) => {
           const rem = e.remarks || "";
-          const isApproved =
-            e.paymentStatus === "Paid" ||
-            rem.includes("Status: APPROVED") ||
-            rem.includes("APPROVED") ||
-            e.status === "APPROVED";
+          // Never treat paymentStatus===Paid alone as approved — that caused
+          // unapproved misc to mirror as PAID under Vendor Payables.
+          const approved = isMiscExpenseApproved({
+            approvalStatus: e.approvalStatus,
+            remarks: rem,
+          });
           const isRejected =
-            rem.includes("Status: REJECTED") || rem.includes("REJECTED") || e.status === "REJECTED";
+            rem.includes("Status: REJECTED") ||
+            rem.includes("STATUS: REJECTED") ||
+            e.status === "REJECTED";
           
-          let parsedApprover = isApproved ? "Finance Admin" : "Operations";
+          let parsedApprover = approved ? "Finance Admin" : "Operations";
           if (rem.includes("ApprovedBy:")) {
             parsedApprover = rem.split("ApprovedBy:")[1]?.split("|")[0]?.trim() || parsedApprover;
           }
@@ -865,7 +906,7 @@ export default function DeparturePayments({
             amount: Number(e.totalAmount || 0),
             payeeName: rem.split("|")[0]?.trim() || "Vendor / Staff",
             approvedBy: parsedApprover,
-            status: isApproved ? "APPROVED" : isRejected ? "REJECTED" : "PENDING",
+            status: approved ? "APPROVED" : isRejected ? "REJECTED" : "PENDING",
             paymentDate: e.paymentDate
               ? e.paymentDate.substring(0, 10)
               : new Date().toISOString().substring(0, 10),
@@ -920,18 +961,32 @@ export default function DeparturePayments({
 
       // Include vendor-payment-based misc entries (stored via createVendorPayment with category "Miscellaneous")
       const vpMisc = (mergedVendors || [])
-        .filter((v: any) => (v.category || "").toUpperCase() === "MISCELLANEOUS")
-        .map((v: any) => ({
-          id: v.id,
-          description: v.serviceDescription || v.vendorName,
-          category: "misc",
-          amount: Number(v.agreedAmount || 0),
-          payeeName: v.vendorName,
-          approvedBy: v.paidBy || "Operations",
-          status: v.paymentStatus === "Paid" ? "APPROVED" : v.paymentStatus === "Advance Paid" ? "APPROVED" : "PENDING",
-          paymentDate: v.paymentDate ? v.paymentDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
-          paymentMethod: v.paymentMode || "CASH",
-        }));
+        .filter((v: any) => isMiscellaneousVendorCategory(v.category))
+        .map((v: any) => {
+          const uiStatus = deriveMiscApprovalUiStatus(v);
+          const rem = v.remarks || "";
+          let parsedApprover =
+            uiStatus === "APPROVED"
+              ? v.paidBy || "Finance Admin"
+              : "Operations";
+          if (rem.includes("ApprovedBy:")) {
+            parsedApprover =
+              rem.split("ApprovedBy:")[1]?.split("|")[0]?.trim() || parsedApprover;
+          }
+          return {
+            id: v.id,
+            description: v.serviceDescription || v.vendorName,
+            category: "misc",
+            amount: Number(v.agreedAmount || 0),
+            payeeName: v.vendorName,
+            approvedBy: parsedApprover,
+            status: uiStatus,
+            paymentDate: v.paymentDate
+              ? String(v.paymentDate).substring(0, 10)
+              : new Date().toISOString().substring(0, 10),
+            paymentMethod: v.paymentMode || "CASH",
+          };
+        });
       // Deduplicate miscellaneous expenses so identical records between trip expenses and vendor payments never create multiple rows
       const seenMiscMap = new Map<string, any>();
       for (const mItem of [...misc, ...vpMisc]) {
@@ -979,18 +1034,26 @@ export default function DeparturePayments({
               advancePaid: mItem.amount,
               balanceAmount: 0,
               status: "Paid",
+              approvalStatus: "APPROVED",
               paymentDate: mItem.paymentDate,
               paymentMode: mItem.paymentMethod || "CASH",
               paidBy: mItem.approvedBy || "Finance Admin",
-              remarks: `Miscellaneous Expense | ${mItem.description}`,
+              remarks: `Miscellaneous Expense | Status: APPROVED | ${mItem.description}`,
             });
           }
         }
       });
 
+      // Pending-approval misc must not appear as PAID (or at all) under Vendor Payables —
+      // they stay on the Miscellaneous Expenses tab until Approve.
+      const vendorPayables = mergedVendors.filter((v: any) => {
+        if (!isMiscellaneousVendorCategory(v.category)) return true;
+        return isMiscExpenseApproved(v);
+      });
+
       setBookings(mergedBookings);
       setReceipts(clientRes.receipts || []);
-      setVendorPayments(mergedVendors);
+      setVendorPayments(vendorPayables);
       setDbVendors(vendorsDirRes.data?.data || []);
       setTrainTickets(trainSummaryRes?.tickets || []);
       setActivityPayments(combinedActivities);
@@ -2964,6 +3027,7 @@ export default function DeparturePayments({
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex gap-1.5 justify-center">
+                                {balance > 0 && (
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -2994,6 +3058,7 @@ export default function DeparturePayments({
                                 >
                                   Record Payment
                                 </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -3583,6 +3648,7 @@ export default function DeparturePayments({
                                       await opsService.updateVendorPayment(tripId, m.id, {
                                         paymentStatus: "Paid",
                                         status: "Paid",
+                                        approvalStatus: "APPROVED",
                                         advancePaid: m.amount,
                                         remainingPayable: 0,
                                         paidBy: staff,
