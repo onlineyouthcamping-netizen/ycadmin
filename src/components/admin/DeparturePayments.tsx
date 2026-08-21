@@ -76,6 +76,24 @@ function deriveMiscApprovalUiStatus(row: {
   if (isMiscExpenseApproved(row)) return "APPROVED";
   return "PENDING";
 }
+
+/** Approver name only after real approval — never the creator / paidBy recorder. */
+function resolveMiscApproverDisplay(row: {
+  approvalStatus?: string | null;
+  remarks?: string | null;
+  status?: string | null;
+  paidBy?: string | null;
+  approvedBy?: string | null;
+}): string {
+  if (deriveMiscApprovalUiStatus(row) !== "APPROVED") return "—";
+  const rem = row.remarks || "";
+  if (rem.includes("ApprovedBy:")) {
+    const fromRemarks = rem.split("ApprovedBy:")[1]?.split("|")[0]?.trim();
+    if (fromRemarks) return fromRemarks;
+  }
+  // paidBy is overwritten to the approver on Approve; safe only when already APPROVED
+  return row.approvedBy || row.paidBy || "Finance Admin";
+}
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { useAuthStore } from "@/store/auth.store";
 import api from "@/services/api";
@@ -893,11 +911,11 @@ export default function DeparturePayments({
             rem.includes("Status: REJECTED") ||
             rem.includes("STATUS: REJECTED") ||
             e.status === "REJECTED";
-          
-          let parsedApprover = approved ? "Finance Admin" : "Operations";
-          if (rem.includes("ApprovedBy:")) {
-            parsedApprover = rem.split("ApprovedBy:")[1]?.split("|")[0]?.trim() || parsedApprover;
-          }
+          const uiStatus = approved
+            ? "APPROVED"
+            : isRejected
+              ? "REJECTED"
+              : "PENDING";
 
           return {
             id: e.id,
@@ -905,8 +923,12 @@ export default function DeparturePayments({
             category: "misc",
             amount: Number(e.totalAmount || 0),
             payeeName: rem.split("|")[0]?.trim() || "Vendor / Staff",
-            approvedBy: parsedApprover,
-            status: approved ? "APPROVED" : isRejected ? "REJECTED" : "PENDING",
+            approvedBy: resolveMiscApproverDisplay({
+              approvalStatus: e.approvalStatus,
+              remarks: rem,
+              status: uiStatus,
+            }),
+            status: uiStatus,
             paymentDate: e.paymentDate
               ? e.paymentDate.substring(0, 10)
               : new Date().toISOString().substring(0, 10),
@@ -964,22 +986,16 @@ export default function DeparturePayments({
         .filter((v: any) => isMiscellaneousVendorCategory(v.category))
         .map((v: any) => {
           const uiStatus = deriveMiscApprovalUiStatus(v);
-          const rem = v.remarks || "";
-          let parsedApprover =
-            uiStatus === "APPROVED"
-              ? v.paidBy || "Finance Admin"
-              : "Operations";
-          if (rem.includes("ApprovedBy:")) {
-            parsedApprover =
-              rem.split("ApprovedBy:")[1]?.split("|")[0]?.trim() || parsedApprover;
-          }
           return {
             id: v.id,
             description: v.serviceDescription || v.vendorName,
             category: "misc",
             amount: Number(v.agreedAmount || 0),
             payeeName: v.vendorName,
-            approvedBy: parsedApprover,
+            approvedBy: resolveMiscApproverDisplay({
+              ...v,
+              status: uiStatus,
+            }),
             status: uiStatus,
             paymentDate: v.paymentDate
               ? String(v.paymentDate).substring(0, 10)
@@ -1220,8 +1236,9 @@ export default function DeparturePayments({
       .reduce((s, m) => s + (m.amount || 0), 0);
     const miscPendingApproval = totalMiscExpenses - miscApproved;
 
+    // Pending misc is not yet a committed cost — only approved amounts roll into totals.
     const totalCosts =
-      totalVendorPayable + totalActivityCost + totalTrainCost + totalMiscExpenses;
+      totalVendorPayable + totalActivityCost + totalTrainCost + miscApproved;
     const estimatedProfit = totalClientRevenue - totalCosts;
     const profitMargin =
       totalClientRevenue > 0
@@ -1238,7 +1255,7 @@ export default function DeparturePayments({
     const guidesCostPerPax = Math.round(totalGuidesCost / totalPax);
     const trainCostPerPax = Math.round(totalTrainCost / totalPax);
     const activitiesCostPerPax = Math.round(totalActivityCost / totalPax);
-    const miscCostPerPax = Math.round(totalMiscExpenses / totalPax);
+    const miscCostPerPax = Math.round(miscApproved / totalPax);
     const totalCostsPerPax = Math.round(totalCosts / totalPax);
     const profitPerPax = Math.round(estimatedProfit / totalPax);
 
@@ -1829,13 +1846,6 @@ export default function DeparturePayments({
       toast.error("Please provide a description and amount");
       return;
     }
-    const staffName = admin?.name || admin?.email || "Operations Staff";
-    const selectedAcc = collectionAccounts.find(
-      (acc) => acc.id === miscPaymentForm.collectionAccountId,
-    );
-    const accountNameTag = selectedAcc
-      ? `${selectedAcc.accountName}${selectedAcc.bankName ? ` (${selectedAcc.bankName})` : selectedAcc.accountType === "CASH" ? " (Cash Desk)" : ""}`
-      : miscPaymentForm.paymentMethod === "CASH" ? "Cash Desk" : "YouthCamping Company Account";
 
     try {
       await opsService.createVendorPayment(tripId, {
@@ -1854,7 +1864,8 @@ export default function DeparturePayments({
         status: "Pending",
         paymentStatus: "Pending",
         approvalStatus: "PENDING",
-        paidBy: staffName,
+        // Do not stamp creator as paidBy — that field is reserved for the approver after Approve.
+        paidBy: null,
         remarks: `Category: ${miscPaymentForm.category} | ${miscPaymentForm.remarks || ""}`.trim(),
       });
       toast.success(`Submitted miscellaneous expense for approval: ${miscPaymentForm.description}`);
@@ -1949,9 +1960,12 @@ export default function DeparturePayments({
               {
                 key: "misc",
                 label: "Miscellaneous Expenses",
-                badge: calculatedStats.totalMiscExpenses > 0
-                  ? `₹${calculatedStats.totalMiscExpenses.toLocaleString()}`
-                  : "0",
+                badge:
+                  calculatedStats.miscPendingApproval > 0
+                    ? `₹${calculatedStats.miscPendingApproval.toLocaleString()} pending`
+                    : calculatedStats.miscApproved > 0
+                      ? `₹${calculatedStats.miscApproved.toLocaleString()}`
+                      : "0",
               },
             ].map((tab) => (
               <button
@@ -3632,19 +3646,10 @@ export default function DeparturePayments({
                                   ),
                                 );
                                 try {
-                                  // Update trip expense
-                                  await opsService.upsertTripExpense(tripId, {
-                                    id: m.id,
-                                    departureDate: departureDateStr,
-                                    activity: m.description,
-                                    totalAmount: m.amount,
-                                    amountPaid: m.amount,
-                                    paymentDate: m.paymentDate || new Date().toISOString(),
-                                    remarks: `${m.payeeName || "Ad-Hoc Expense"} | Method: ${m.paymentMethod || "Cash"} | Status: APPROVED | ApprovedBy: ${staff}`,
-                                  });
-                                  // Try updating vendor payment if it exists
-                                  try {
-                                    if (m.id && !m.id.startsWith("MISC-")) {
+                                  let saved = false;
+                                  // Misc rows from createVendorPayment are OpsVendorPayment records
+                                  if (m.id && !String(m.id).startsWith("MISC-")) {
+                                    try {
                                       await opsService.updateVendorPayment(tripId, m.id, {
                                         paymentStatus: "Paid",
                                         status: "Paid",
@@ -3654,15 +3659,28 @@ export default function DeparturePayments({
                                         paidBy: staff,
                                         remarks: `${m.payeeName || "Ad-Hoc Expense"} | Status: APPROVED | ApprovedBy: ${staff}`,
                                       });
+                                      saved = true;
+                                    } catch {
+                                      // fall through to trip-expense path
                                     }
-                                  } catch (vpErr) {
-                                    // ignore if not a vendor payment record
+                                  }
+                                  if (!saved) {
+                                    await opsService.upsertTripExpense(tripId, {
+                                      id: m.id,
+                                      departureDate: departureDateStr,
+                                      activity: m.description,
+                                      totalAmount: m.amount,
+                                      amountPaid: m.amount,
+                                      paymentDate: m.paymentDate || new Date().toISOString(),
+                                      remarks: `${m.payeeName || "Ad-Hoc Expense"} | Method: ${m.paymentMethod || "Cash"} | Status: APPROVED | ApprovedBy: ${staff}`,
+                                    });
                                   }
                                   toast.success("Expense approved & added to Vendor Payables!");
                                   await fetchData();
                                 } catch (err) {
                                   console.error("Expense approve error:", err);
                                   toast.error("Failed to save approval");
+                                  await fetchData();
                                 }
                               }}
                               className="h-7 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
@@ -3676,24 +3694,46 @@ export default function DeparturePayments({
                                 const staff = admin?.name || admin?.email || "Finance Admin";
                                 setMiscPayments((prev) =>
                                   prev.map((item) =>
-                                    item.id === m.id ? { ...item, status: "REJECTED" } : item,
+                                    item.id === m.id
+                                      ? { ...item, status: "REJECTED", approvedBy: "—" }
+                                      : item,
                                   ),
                                 );
                                 try {
-                                  await opsService.upsertTripExpense(tripId, {
-                                    id: m.id,
-                                    departureDate: departureDateStr,
-                                    activity: m.description,
-                                    totalAmount: m.amount,
-                                    amountPaid: 0,
-                                    paymentDate: m.paymentDate || new Date().toISOString(),
-                                    remarks: `${m.payeeName || "Ad-Hoc Expense"} | Method: ${m.paymentMethod || "Cash"} | Status: REJECTED | RejectedBy: ${staff}`,
-                                  });
+                                  let saved = false;
+                                  if (m.id && !String(m.id).startsWith("MISC-")) {
+                                    try {
+                                      await opsService.updateVendorPayment(tripId, m.id, {
+                                        paymentStatus: "Pending",
+                                        status: "Rejected",
+                                        approvalStatus: "REJECTED",
+                                        advancePaid: 0,
+                                        remainingPayable: m.amount,
+                                        paidBy: null,
+                                        remarks: `${m.payeeName || "Ad-Hoc Expense"} | Status: REJECTED | RejectedBy: ${staff}`,
+                                      });
+                                      saved = true;
+                                    } catch {
+                                      // fall through to trip-expense path
+                                    }
+                                  }
+                                  if (!saved) {
+                                    await opsService.upsertTripExpense(tripId, {
+                                      id: m.id,
+                                      departureDate: departureDateStr,
+                                      activity: m.description,
+                                      totalAmount: m.amount,
+                                      amountPaid: 0,
+                                      paymentDate: m.paymentDate || new Date().toISOString(),
+                                      remarks: `${m.payeeName || "Ad-Hoc Expense"} | Method: ${m.paymentMethod || "Cash"} | Status: REJECTED | RejectedBy: ${staff}`,
+                                    });
+                                  }
                                   toast.success("Expense rejected");
                                   await fetchData();
                                 } catch (err) {
                                   console.error("Expense reject error:", err);
                                   toast.error("Failed to reject expense");
+                                  await fetchData();
                                 }
                               }}
                               className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50 cursor-pointer"
