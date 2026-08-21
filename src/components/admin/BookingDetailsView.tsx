@@ -5092,8 +5092,14 @@ export default function BookingDetailsView({
                                             </span>
                                             <span className="col-span-2 font-semibold text-[#0B1528] flex items-center gap-2">
                                               <span>{p.paymentMode || "UPI"}</span>
-                                              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase bg-green-50 text-green-700 border border-green-200">
-                                                {p.status || "Verified"}
+                                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase border ${
+                                                p.status === "Verified"
+                                                  ? "bg-green-50 text-green-700 border-green-200"
+                                                  : p.status === "Rejected"
+                                                    ? "bg-red-50 text-red-700 border-red-200"
+                                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                              }`}>
+                                                {p.status || "Pending Verification"}
                                               </span>
                                             </span>
                                           </div>

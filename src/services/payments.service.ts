@@ -49,7 +49,7 @@ export const paymentsService = {
         collectedByAdminId: data.collectedByAdminId,
         transactionId: data.reference || `TXN-${Date.now()}`,
         paymentDate: data.paymentDate || new Date().toISOString(),
-        status: data.status || "Verified",
+        status: data.status || "Pending Verification",
         remarks: data.notes || data.remarks || "Collected Payment",
       });
       return res.data?.data || res.data;

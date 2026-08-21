@@ -648,9 +648,10 @@ export default function AccountingPage() {
     }
   };
 
-  // Approval Status Badges
+  // Approval badges use finance approvalStatus only — receipt status (Verified/Paid)
+  // is operational and must not be shown as "Approved & Verified".
   const getApprovalBadge = (approvalStatus?: string, status?: string, requiresFounder?: boolean) => {
-    if (approvalStatus === "APPROVED_FOUNDER" || status === "Verified" || status === "Paid") {
+    if (approvalStatus === "APPROVED_FOUNDER") {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">
           <CheckCircle2 className="w-3 h-3 text-green-600" /> Approved & Verified
