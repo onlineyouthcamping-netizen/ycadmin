@@ -96,6 +96,7 @@ function resolveMiscApproverDisplay(row: {
 }
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { useAuthStore } from "@/store/auth.store";
+import { canViewProfit } from "@/config/permissions.config";
 import api from "@/services/api";
 
 interface DeparturePaymentsProps {
@@ -142,6 +143,7 @@ export default function DeparturePayments({
   // Auth and Approver Authority
   const { admin } = useAuthStore();
   const roleStr = String(admin?.role || "").toUpperCase();
+  const canSeeProfit = canViewProfit(admin);
   const isApprover = Boolean(
     admin != null &&
     (
@@ -2004,7 +2006,12 @@ export default function DeparturePayments({
       {subTab === "dashboard" && (
         <div className="space-y-6">
           {/* 5 ENTERPRISE SUMMARY CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div
+            className={cn(
+              "grid grid-cols-1 sm:grid-cols-2 gap-4",
+              canSeeProfit ? "lg:grid-cols-5" : "lg:grid-cols-4",
+            )}
+          >
             {/* 1. Client Receivables (Blue) */}
             <div className="bg-white border border-blue-200 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
@@ -2179,7 +2186,8 @@ export default function DeparturePayments({
               </button>
             </div>
 
-            {/* 5. Trip Profitability (Green) */}
+            {/* 5. Trip Profitability (Green) — Founder/Superadmin only */}
+            {canSeeProfit && (
             <div className="bg-white border border-green-300 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-green-600" />
               <div className="flex items-center justify-between">
@@ -2237,6 +2245,7 @@ export default function DeparturePayments({
                 Full P&L / Reconcile <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
+            )}
           </div>
 
           {/* DEPARTURE UNIT ECONOMICS & PER-PERSON ACCOUNTING MATRIX */}
@@ -2533,7 +2542,8 @@ export default function DeparturePayments({
                     </td>
                   </tr>
 
-                  {/* 7. NET MARGIN / PROFIT */}
+                  {/* 7. NET MARGIN / PROFIT — Founder/Superadmin only */}
+                  {canSeeProfit && (
                   <tr className="bg-slate-50 font-black text-xs border-t-2 border-slate-200">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
@@ -2592,6 +2602,7 @@ export default function DeparturePayments({
                       </span>
                     </td>
                   </tr>
+                  )}
                 </tbody>
               </table>
             </div>

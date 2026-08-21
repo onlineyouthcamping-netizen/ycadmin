@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
+import { canViewProfit } from "@/config/permissions.config";
 
 const TYPE_ICONS: Record<string, any> = {
   hotel: Building2,
@@ -67,6 +69,8 @@ export default function TripVendorsPanel({
   open,
   onOpenChange,
 }: TripVendorsPanelProps) {
+  const { admin } = useAuthStore();
+  const canSeeProfit = canViewProfit(admin);
   const [assignments, setAssignments] = useState<TripVendor[]>([]);
   const [summary, setSummary] = useState<TripVendorSummary | null>(null);
   const [allVendors, setAllVendors] = useState<Vendor[]>([]);
@@ -192,8 +196,13 @@ export default function TripVendorsPanel({
         </div>
 
         <div className="px-8 pb-8 space-y-6">
-          {/* ─── Profit Summary ─── */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* ─── Cost Summary (profit card Founder/Superadmin only) ─── */}
+          <div
+            className={cn(
+              "grid gap-4",
+              canSeeProfit ? "grid-cols-3" : "grid-cols-2",
+            )}
+          >
             <div className="text-center p-4 bg-green-50 rounded-2xl border border-green-100">
               <p className="text-[9px] font-black uppercase tracking-wider text-green-600">
                 Per Person Price
@@ -210,6 +219,7 @@ export default function TripVendorsPanel({
                 ₹{totalCost.toLocaleString()}
               </p>
             </div>
+            {canSeeProfit && (
             <div
               className={cn(
                 "text-center p-4 rounded-2xl border",
@@ -235,6 +245,7 @@ export default function TripVendorsPanel({
                 ₹{estimatedProfit.toLocaleString()}
               </p>
             </div>
+            )}
           </div>
 
           {/* ─── Assign Vendor ─── */}

@@ -8,6 +8,8 @@ import {
   CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
+import { canViewProfit } from "@/config/permissions.config";
 
 interface ActivityKPIProps {
   stats?: {
@@ -21,6 +23,9 @@ interface ActivityKPIProps {
 }
 
 export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
+  const { admin } = useAuthStore();
+  const canSeeProfit = canViewProfit(admin);
+
   const data = stats || {
     todayActivities: 0,
     pendingVendorConfirmations: 0,
@@ -47,19 +52,25 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
     {
       label: "Revenue",
       value: `₹${data.totalRevenue.toLocaleString("en-IN")}`,
-      subtext: `Cost ₹${data.totalVendorCost.toLocaleString("en-IN")}`,
+      subtext: canSeeProfit
+        ? `Cost ₹${data.totalVendorCost.toLocaleString("en-IN")}`
+        : "Activity booking revenue",
       icon: DollarSign,
       color: "text-blue-600 bg-blue-50 border-blue-200",
       iconColor: "text-blue-600",
     },
-    {
-      label: "Profit",
-      value: `₹${data.grossProfit.toLocaleString("en-IN")}`,
-      subtext: `${margin}% net margin`,
-      icon: TrendingUp,
-      color: "text-green-600 bg-green-50 border-green-200",
-      iconColor: "text-green-600",
-    },
+    ...(canSeeProfit
+      ? [
+          {
+            label: "Profit",
+            value: `₹${data.grossProfit.toLocaleString("en-IN")}`,
+            subtext: `${margin}% net margin`,
+            icon: TrendingUp,
+            color: "text-green-600 bg-green-50 border-green-200",
+            iconColor: "text-green-600",
+          },
+        ]
+      : []),
     {
       label: "Pending",
       value: data.pendingVendorConfirmations.toString(),
@@ -87,7 +98,12 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+    <div
+      className={cn(
+        "grid grid-cols-2 md:grid-cols-3 gap-3 mb-4",
+        canSeeProfit ? "lg:grid-cols-6" : "lg:grid-cols-5",
+      )}
+    >
       {kpis.map((kpi, idx) => {
         const Icon = kpi.icon;
         return (
@@ -115,4 +131,3 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
     </div>
   );
 }
-

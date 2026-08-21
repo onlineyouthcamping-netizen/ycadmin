@@ -1,6 +1,6 @@
 import { ADMIN_ROUTES } from "../config/routes.config";
 import { COMPONENT_REGISTRY } from "../config/componentRegistry";
-import { isFounder } from "../config/permissions.config";
+import { isFounder, canViewProfit } from "../config/permissions.config";
 
 describe("Frontend Navigation & Central Route Configuration Suite", () => {
   test("Every route in ADMIN_ROUTES has a matching component in COMPONENT_REGISTRY", () => {
@@ -38,6 +38,24 @@ describe("Frontend Navigation & Central Route Configuration Suite", () => {
     expect(isFounder(founderUser)).toBe(true);
     expect(isFounder(managerUser)).toBe(false);
     expect(isFounder(salesUser)).toBe(false);
+  });
+
+  test("canViewProfit allows Founder/Superadmin roles and denies others", () => {
+    expect(canViewProfit({ role: "superadmin" })).toBe(true);
+    expect(canViewProfit({ role: "founder" })).toBe(true);
+    expect(canViewProfit({ role: "owner" })).toBe(true);
+    expect(canViewProfit({ role: "admin" })).toBe(false);
+    expect(canViewProfit({ role: "sales" })).toBe(false);
+    expect(canViewProfit({ role: "finance" })).toBe(false);
+    expect(canViewProfit({ role: "operations" })).toBe(false);
+    expect(canViewProfit({ role: "guide" })).toBe(false);
+    expect(canViewProfit({ role: "viewer" })).toBe(false);
+    // Email alone must not grant profit visibility
+    expect(
+      canViewProfit({
+        role: "admin",
+      }),
+    ).toBe(false);
   });
 
   test("Founder-only routes are correctly flagged in metadata", () => {

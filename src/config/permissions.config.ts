@@ -114,3 +114,26 @@ export function isFounder(
     (email === "hemal.patel@youthcamping.online" || email.includes("hemal"))
   );
 }
+
+/**
+ * Profit / margin / P&L visibility — Founder & Superadmin roles only.
+ * Role-based (matches backend canViewProfit); no email hardcoding.
+ * Distinct from isFounder() which gates Hemal-only Staff Profiles routes.
+ */
+export function canViewProfit(
+  user: { role?: string; isSuperuser?: boolean } | null | undefined,
+): boolean {
+  if (!user) return false;
+  const role = String(user.role || "")
+    .toLowerCase()
+    .trim();
+  if (
+    role === "superadmin" ||
+    role === "super_admin" ||
+    role === "founder" ||
+    role === "owner"
+  ) {
+    return true;
+  }
+  return user.isSuperuser === true;
+}

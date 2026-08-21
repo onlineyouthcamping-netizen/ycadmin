@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
+import { canViewProfit } from "@/config/permissions.config";
 import {
   collectionAccountsService,
   type CollectionAccount,
@@ -82,6 +83,7 @@ export default function AccountingPage() {
   const isFounder =
     ["founder", "superadmin"].includes(userRole) ||
     Boolean((user as any)?.isSuperuser);
+  const canSeeProfit = canViewProfit(user);
 
   const navigate = useNavigate();
   const APPROVAL_TAB_ALIASES = new Set([
@@ -118,12 +120,23 @@ export default function AccountingPage() {
   };
 
   const rawTabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<TabId>(() => normalizeTab(rawTabParam));
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    const initial = normalizeTab(rawTabParam);
+    if (initial === "profitability" && !canViewProfit(user)) return "overview";
+    return initial;
+  });
 
   useEffect(() => {
     const nextTab = normalizeTab(searchParams.get("tab"));
+    if (nextTab === "profitability" && !canSeeProfit) {
+      setActiveTab("overview");
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("tab", "overview");
+      setSearchParams(nextParams, { replace: true });
+      return;
+    }
     setActiveTab((prev) => (prev !== nextTab ? nextTab : prev));
-  }, [searchParams]);
+  }, [searchParams, canSeeProfit, setSearchParams]);
 
 
   useEffect(() => {
@@ -1081,7 +1094,9 @@ export default function AccountingPage() {
     { id: "payments", label: "Collections in", meta: String(allClientReceipts.length) },
     { id: "expenses", label: "Payouts out", meta: String(vendorPayments.length) },
     { id: "accounts", label: "Treasury", meta: String(collectionAccounts.length) },
-    { id: "profitability", label: "Trip P&L" },
+    ...(canSeeProfit
+      ? [{ id: "profitability" as TabId, label: "Trip P&L" }]
+      : []),
   ];
 
   return (
@@ -1099,7 +1114,9 @@ export default function AccountingPage() {
               </span>
             </div>
             <p className="mt-0.5 text-[12px] text-slate-500">
-              Money ledger, treasury accounts, and trip margins. Pending approvals live under Finance → Incoming / Vendor / Refunds.
+              {canSeeProfit
+                ? "Money ledger, treasury accounts, and trip margins. Pending approvals live under Finance → Incoming / Vendor / Refunds."
+                : "Money ledger and treasury accounts. Pending approvals live under Finance → Incoming / Vendor / Refunds."}
             </p>
           </div>
 
@@ -1309,7 +1326,8 @@ export default function AccountingPage() {
               </div>
             </div>
 
-            {/* Top Trips P&L Snippet */}
+            {/* Top Trips P&L Snippet — Founder/Superadmin only */}
+            {canSeeProfit && (
             <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
               <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
                 <h3 className="truncate text-[12px] font-semibold text-[#0B1528]">
@@ -1381,6 +1399,7 @@ export default function AccountingPage() {
                 </table>
               </div>
             </div>
+            )}
           </div>
         )}
 
@@ -2205,7 +2224,7 @@ export default function AccountingPage() {
         )}
 
         {/* ──────────────────────── TAB 7: TRIP & DEPARTURE P&L ──────────────────────── */}
-        {activeTab === "profitability" && (
+        {activeTab === "profitability" && canSeeProfit && (
           <div className="space-y-3">
             <div className="min-w-0">
               <h2 className="text-[15px] font-semibold tracking-tight text-[#0B1528]">
