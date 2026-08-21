@@ -1848,9 +1848,13 @@ export default function DeparturePayments({
     }
 
     try {
+      const payeeLabel =
+        (miscPaymentForm.payeeName || "").trim() ||
+        `Ad-Hoc · ${miscPaymentForm.category}: ${miscPaymentForm.description}`.slice(0, 120);
       await opsService.createVendorPayment(tripId, {
         departureDate: departureDateStr,
-        vendorName: miscPaymentForm.payeeName || "Ad-Hoc Expense",
+        // Prefer a distinct payee so shared defaults never collide with older upsert paths.
+        vendorName: payeeLabel,
         category: "Miscellaneous",
         serviceDescription: `${miscPaymentForm.category}: ${miscPaymentForm.description}`,
         agreedAmount: amountNum,
