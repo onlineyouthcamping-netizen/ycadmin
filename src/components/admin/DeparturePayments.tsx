@@ -1470,6 +1470,10 @@ export default function DeparturePayments({
       : vendorPaymentForm.collectionAccountId || null;
 
     if (editingVendorPayment) {
+      if (inputAmount > 0 && !vendorPaymentForm.invoiceProof) {
+        toast.error("Upload payment proof (screenshot or PDF) before recording this payout");
+        return;
+      }
       const prevPaid = Number(editingVendorPayment.advancePaid) || 0;
       // If user entered a new payment amount, add it to existing advancePaid; else keep as is
       const isInstallment = prevPaid > 0 && inputAmount !== prevPaid;
@@ -1556,6 +1560,10 @@ export default function DeparturePayments({
         ),
       );
     } else {
+      if (inputAmount > 0 && !vendorPaymentForm.invoiceProof) {
+        toast.error("Upload payment proof (screenshot or PDF) before recording this payout");
+        return;
+      }
       const remaining = Math.max(0, agreedNum - inputAmount);
       const status =
         inputAmount >= agreedNum && agreedNum > 0
@@ -1757,6 +1765,11 @@ export default function DeparturePayments({
     const status =
       newTotalPaid >= total && total > 0 ? "PAID" : newTotalPaid > 0 ? "PARTIAL" : "PENDING";
     const staffName = admin?.name || admin?.email || "Operations Staff";
+
+    if (inputPaid > 0 && !activityPaymentForm.invoiceProof) {
+      toast.error("Upload payment proof (screenshot or PDF) before recording this activity payout");
+      return;
+    }
 
     const isCustomPayer =
       activityPaymentForm.collectionAccountId === "__someone_else__" ||
@@ -4641,7 +4654,7 @@ export default function DeparturePayments({
             {/* Payment Proof / Receipt Screenshot Upload */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Payment Proof / Receipt Screenshot
+                Payment Proof / Receipt Screenshot <span className="text-red-600">*</span>
               </label>
               <ImageUpload
                 label="Upload Payment Proof Screenshot"
@@ -4650,6 +4663,7 @@ export default function DeparturePayments({
                   setVendorPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
                 }
                 compact
+                accept="image/*,.pdf,application/pdf"
               />
             </div>
 
@@ -5092,11 +5106,18 @@ export default function DeparturePayments({
             {/* Payment Proof / Receipt Screenshot Upload */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Payment Proof / Receipt Screenshot
+                Payment Proof / Receipt Screenshot <span className="text-red-600">*</span>
               </label>
               <ImageUpload
                 label="Upload Payment Proof Screenshot"
                 value={activityPaymentForm.invoiceProof}
+                onUpload={(url) =>
+                  setActivityPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
+                }
+                compact
+                accept="image/*,.pdf,application/pdf"
+              />
+            </div>
                 onUpload={(url) =>
                   setActivityPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
                 }

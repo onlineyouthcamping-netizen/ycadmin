@@ -731,10 +731,17 @@ export default function AccountingPage() {
     }
     setSubmittingAction(true);
     try {
-      await financeApprovalsService.uploadCollectionProof(proofModalState.paymentId, {
-        proofFileUrl: proofUrlInput.trim(),
-        proofFileName: "payment_receipt.jpg",
-      });
+      if (proofModalState.type === "vendor") {
+        await financeApprovalsService.uploadVendorPaymentProof(proofModalState.paymentId, {
+          proofFileUrl: proofUrlInput.trim(),
+          proofFileName: "vendor_payout_proof",
+        });
+      } else {
+        await financeApprovalsService.uploadCollectionProof(proofModalState.paymentId, {
+          proofFileUrl: proofUrlInput.trim(),
+          proofFileName: "payment_receipt.jpg",
+        });
+      }
       toast.success("Receipt proof uploaded successfully!");
       setProofModalState(null);
       setProofUrlInput("");
@@ -1746,7 +1753,7 @@ export default function AccountingPage() {
                               {getApprovalBadge(v.approvalStatus, v.status, requiresFounder)}
                             </td>
                             <td className="py-2.5 px-4 text-right">
-                              {v.invoiceProof ? (
+                              {v.invoiceProof || v.invoiceFileUrl || v.proofUrl ? (
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -1755,7 +1762,7 @@ export default function AccountingPage() {
                                       open: true,
                                       title: `Vendor Invoice - ${v.vendorName}`,
                                       subtitle: `Trip: ${v.trip?.title}`,
-                                      imageUrl: v.invoiceProof,
+                                      imageUrl: v.invoiceProof || v.invoiceFileUrl || v.proofUrl,
                                       amount: v.advancePaid,
                                       date: safeFormatDate(v.paymentDate || v.createdAt),
                                     })
@@ -1766,7 +1773,21 @@ export default function AccountingPage() {
                                   View
                                 </Button>
                               ) : (
-                                <span className="text-[10px] text-slate-400">—</span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    setProofModalState({
+                                      open: true,
+                                      paymentId: v.id,
+                                      title: `Upload payout proof - ${v.vendorName}`,
+                                      type: "vendor",
+                                    })
+                                  }
+                                  className="h-6 gap-1 rounded px-2 text-[10px] font-medium border-amber-300 bg-amber-50/50 text-amber-700 hover:bg-amber-100 cursor-pointer"
+                                >
+                                  <Plus className="w-3 h-3" /> Upload
+                                </Button>
                               )}
                             </td>
                             <td className="py-2.5 px-4 text-right">
@@ -2668,16 +2689,16 @@ export default function AccountingPage() {
 
             <div>
               <label className="font-medium text-slate-600 block mb-1">
-                Invoice / Proof Screenshot URL {newExpenseForm.paymentMode !== "CASH" && "*"}
+                Invoice / Proof Screenshot {newExpenseForm.paymentMode !== "CASH" && "*"}
               </label>
-              <Input
-                required={newExpenseForm.paymentMode !== "CASH"}
-                placeholder="https://... (Mandatory for online disbursements)"
+              <ImageUpload
+                label="Upload payout proof"
                 value={newExpenseForm.proofUrl}
-                onChange={(e) =>
-                  setNewExpenseForm((prev) => ({ ...prev, proofUrl: e.target.value }))
+                onUpload={(url) =>
+                  setNewExpenseForm((prev) => ({ ...prev, proofUrl: url }))
                 }
-                className="h-9 text-xs font-medium"
+                compact
+                accept="image/*,.pdf,application/pdf"
               />
             </div>
 

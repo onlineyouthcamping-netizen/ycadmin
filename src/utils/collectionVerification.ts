@@ -76,3 +76,16 @@ export function canApproveStationCash(user: CollectionVerifier): boolean {
 export function isEligibleCollectionAssignee(user: CollectionVerifier): boolean {
   return canVerifyCollection(user);
 }
+
+/** Vendor payouts stay two-step: Finance Controller reviews, Founder verifies. */
+export function canReviewVendorPayout(user: CollectionVerifier): boolean {
+  return canVerifyCollection(user);
+}
+
+export function canApproveVendorPayoutFounder(user: CollectionVerifier): boolean {
+  if (!user) return false;
+  const role = String(user.role || "").toLowerCase().trim();
+  if (FOUNDER_ROLES.has(role)) return true;
+  if (isProtectedFounderEmail(user.email)) return true;
+  return false;
+}

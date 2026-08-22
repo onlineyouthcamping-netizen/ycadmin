@@ -7,6 +7,8 @@ import {
   Search,
   RotateCw,
   ExternalLink,
+  Eye,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +27,8 @@ import { Link } from "react-router-dom";
 import { financeControllerService } from "@/services/financeController.service";
 import { financeApprovalsService } from "@/services/financeApprovals.service";
 import { useAuthStore } from "@/store/auth.store";
-import { canVerifyCollection } from "@/utils/collectionVerification";
+import { canReviewVendorPayout, canApproveVendorPayoutFounder } from "@/utils/collectionVerification";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import {
   extractBillReference,
   formatVendorService,
@@ -66,10 +69,8 @@ export default function OutgoingPaymentsApprovalPage({
   hideHeader = false,
 }: OutgoingPaymentsApprovalPageProps) {
   const { admin: currentUser } = useAuthStore();
-  const canAct = canVerifyCollection(currentUser);
-  const role = String(currentUser?.role || "").toLowerCase();
-  const isFounder = ["founder", "superadmin", "super_admin"].includes(role) || canVerifyCollection(currentUser) && role !== "finance_controller";
-  const isFinanceController = role === "finance_controller";
+  const canReview = canReviewVendorPayout(currentUser);
+  const canFounderVerify = canApproveVendorPayoutFounder(currentUser);
 
   const [vendorItems, setVendorItems] = useState<VendorPaymentRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,8 +78,9 @@ export default function OutgoingPaymentsApprovalPage({
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [activeCategory, setActiveCategory] = useState<OutgoingCategory>("all");
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [actionType, setActionType] = useState<"review" | "approve" | null>(null);
+  const [actionType, setActionType] = useState<"review" | "approve" | "upload" | "view-proof" | null>(null);
   const [payoutNotes, setPayoutNotes] = useState("");
+  const [proofUrlInput, setProofUrlInput] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -128,6 +130,13 @@ export default function OutgoingPaymentsApprovalPage({
         approvalStatus: (v as any).approvalStatus || "PENDING",
         status: v.paymentStatus || (v as any).status || "PENDING",
         requiresFounderApproval: Boolean((v as any).requiresFounderApproval),
+        proofUrl:
+          (v as any).proofUrl ||
+          (v as any).invoiceFileUrl ||
+          (v as any).invoiceProof ||
+          (v as any).advanceProofUrl ||
+          (v as any).settlementProofUrl ||
+          null,
         raw: v,
       };
     })
@@ -162,32 +171,68 @@ export default function OutgoingPaymentsApprovalPage({
   );
   const totalPaid = aggregatedItems.reduce((sum, i) => sum + Number(i.paidAmount || 0), 0);
 
+  const closeAction = () => {
+    setActionType(null);
+    setSelectedItem(null);
+    setPayoutNotes("");
+    setProofUrlInput("");
+  };
+
+  const persistProofIfNeeded = async (item: any) => {
+    const next = (proofUrlInput || item.proofUrl || "").trim();
+    if (!next) return null;
+    if (next !== item.proofUrl) {
+      await financeApprovalsService.uploadVendorPaymentProof(item.id, {
+        proofFileUrl: next,
+        proofFileName: "vendor_payout_proof",
+      });
+    }
+    return next;
+  };
+
   const handleVendorAction = async () => {
     if (!selectedItem || !actionType) return;
     setActionLoading(true);
     try {
+      if (actionType === "upload") {
+        if (!proofUrlInput.trim()) {
+          toast.error("Upload a receipt, screenshot, or PDF first");
+          return;
+        }
+        await financeApprovalsService.uploadVendorPaymentProof(selectedItem.id, {
+          proofFileUrl: proofUrlInput.trim(),
+          proofFileName: "vendor_payout_proof",
+        });
+        toast.success("Payment proof attached to this payout");
+        closeAction();
+        loadData();
+        return;
+      }
+
+      const proof = await persistProofIfNeeded(selectedItem);
+      if (!proof) {
+        toast.error("Payment proof is required before review or verify. Upload it first.");
+        setActionType("upload");
+        return;
+      }
+
       if (actionType === "review") {
         await financeApprovalsService.reviewVendorPaymentFC(selectedItem.id, {
           reason: payoutNotes.trim() || undefined,
-          directClear: !selectedItem.requiresFounderApproval && isFinanceController,
+          invoiceFileUrl: proof,
         });
-        toast.success(
-          selectedItem.requiresFounderApproval
-            ? "Reviewed. Founder approval still required."
-            : "Vendor bill reviewed",
-        );
-      } else {
+        toast.success("Finance Controller review recorded. Founder verification is still required.");
+      } else if (actionType === "approve") {
         await financeApprovalsService.approveVendorPaymentFounder(selectedItem.id, {
           reason: payoutNotes.trim() || undefined,
+          invoiceFileUrl: proof,
         });
-        toast.success("Vendor payout approved");
+        toast.success("Founder verified this vendor payout");
       }
-      setActionType(null);
-      setSelectedItem(null);
-      setPayoutNotes("");
+      closeAction();
       loadData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Vendor approval failed");
+      toast.error(err?.response?.data?.message || err?.message || "Vendor approval failed");
     } finally {
       setActionLoading(false);
     }
@@ -334,7 +379,7 @@ export default function OutgoingPaymentsApprovalPage({
                 <col className="w-[104px]" />
                 <col className="w-[120px]" />
                 <col className="w-[88px]" />
-                <col className="w-[148px]" />
+                <col className="w-[220px]" />
               </colgroup>
               <thead>
                 <tr className="border-b border-[#E3EAF2] bg-[#F8FAFC] text-[10px] font-semibold uppercase tracking-wide text-slate-500">
@@ -353,9 +398,10 @@ export default function OutgoingPaymentsApprovalPage({
                 {aggregatedItems.map((item) => {
                   const label = vendorStatusLabel(item);
                   const service = formatVendorService(item);
-                  const showReview = canAct && (isFinanceController || isFounder) && label === "Pending";
-                  const showApprove = canAct && isFounder && (label === "Reviewed" || (label === "Pending" && !item.requiresFounderApproval));
+                  const showFcApprove = canReview && label === "Pending";
+                  const showFounderVerify = canFounderVerify && label === "Reviewed";
                   const settled = label === "Settled";
+                  const proofUrl = item.proofUrl;
                   return (
                     <tr key={item.id} className="border-b border-[#EEF2F6] last:border-b-0 hover:bg-[#F8FAFC]">
                       <td className="px-2.5 py-1.5 align-middle">
@@ -445,39 +491,75 @@ export default function OutgoingPaymentsApprovalPage({
                         </Badge>
                       </td>
                       <td className="px-2.5 py-1.5 align-middle">
-                        {settled ? (
-                          <span className="text-[10px] italic text-slate-400">Settled</span>
-                        ) : !canAct ? (
-                          <span className="text-[10px] italic text-slate-400">Awaiting review</span>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            {showReview && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedItem(item);
-                                  setActionType("review");
-                                }}
-                                className="h-7 px-2 text-[10px] font-semibold"
-                              >
-                                Review
-                              </Button>
-                            )}
-                            {showApprove && (
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedItem(item);
-                                  setActionType("approve");
-                                }}
-                                className="h-7 px-2 text-[10px] font-semibold bg-[#0B1528] text-white"
-                              >
-                                Approve
-                              </Button>
-                            )}
-                          </div>
-                        )}
+                        <div className="flex flex-wrap items-center gap-1">
+                          {proofUrl ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedItem(item);
+                                setActionType("view-proof");
+                                setProofUrlInput(proofUrl);
+                              }}
+                              className="h-7 px-2 text-[10px] font-semibold"
+                            >
+                              <Eye className="mr-1 h-3 w-3" />
+                              View proof
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedItem(item);
+                                setActionType("upload");
+                                setProofUrlInput("");
+                              }}
+                              className="h-7 px-2 text-[10px] font-semibold border-amber-300 bg-amber-50 text-amber-800"
+                            >
+                              <Upload className="mr-1 h-3 w-3" />
+                              Upload proof
+                            </Button>
+                          )}
+                          {settled ? (
+                            <span className="text-[10px] italic text-slate-400">Settled</span>
+                          ) : (
+                            <>
+                              {showFcApprove && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedItem(item);
+                                    setActionType("review");
+                                    setProofUrlInput(proofUrl || "");
+                                  }}
+                                  className="h-7 px-2 text-[10px] font-semibold"
+                                >
+                                  FC Approve
+                                </Button>
+                              )}
+                              {showFounderVerify && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedItem(item);
+                                    setActionType("approve");
+                                    setProofUrlInput(proofUrl || "");
+                                  }}
+                                  className="h-7 px-2 text-[10px] font-semibold bg-[#0B1528] text-white"
+                                >
+                                  Founder Verify
+                                </Button>
+                              )}
+                              {!showFcApprove && !showFounderVerify && (
+                                <span className="text-[10px] italic text-slate-400">
+                                  {label === "Reviewed" ? "Awaiting Founder" : "Awaiting review"}
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -488,18 +570,25 @@ export default function OutgoingPaymentsApprovalPage({
         </div>
       </div>
 
-      <Dialog open={Boolean(actionType)} onOpenChange={() => setActionType(null)}>
+      <Dialog open={Boolean(actionType)} onOpenChange={(open) => { if (!open) closeAction(); }}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
-              {actionType === "review" ? "Review vendor bill" : "Approve vendor payout"}
+              {actionType === "review"
+                ? "FC approve vendor payout"
+                : actionType === "approve"
+                  ? "Founder verify vendor payout"
+                  : actionType === "view-proof"
+                    ? "Payment proof"
+                    : "Upload payment proof"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Two-step vendor approval. Finance Controller reviews first; Founder approves when the balance requires it.
+              Two-step vendor approval: Finance Controller reviews, then Founder verifies. Proof stays on this payout even if Departure Hub is unlinked.
             </DialogDescription>
           </DialogHeader>
           {selectedItem && (() => {
             const service = formatVendorService(selectedItem);
+            const previewUrl = proofUrlInput || selectedItem.proofUrl;
             return (
             <div className="space-y-3 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
@@ -513,6 +602,9 @@ export default function OutgoingPaymentsApprovalPage({
                   <span className="text-slate-500">Departure / Trip</span>
                   <span className="truncate text-right" title={selectedItem.tripName}>{selectedItem.tripName}</span>
                 </div>
+                {!selectedItem.operationalLinked && (
+                  <p className="text-[10px] text-slate-400">Operational record unavailable — proof is stored on this payout.</p>
+                )}
                 <div className="flex justify-between gap-3">
                   <span className="shrink-0 text-slate-500">Service</span>
                   <span className="max-w-[240px] truncate text-right" title={service.tooltip}>
@@ -526,29 +618,54 @@ export default function OutgoingPaymentsApprovalPage({
                     {formatINR(selectedItem.totalCost)} / {formatINR(selectedItem.paidAmount)}
                   </span>
                 </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-slate-500">{selectedItem.isOverpaid ? "Overpaid" : "Outstanding"}</span>
-                  <span className="font-mono font-semibold">
-                    {formatINR(selectedItem.isOverpaid ? selectedItem.overpaidAmount : Math.max(0, selectedItem.outstandingAmount))}
-                  </span>
-                </div>
               </div>
-              <Input
-                placeholder="Notes (optional)"
-                value={payoutNotes}
-                onChange={(e) => setPayoutNotes(e.target.value)}
-                className="h-8 text-xs"
-              />
+              {previewUrl && (actionType === "view-proof" || actionType === "review" || actionType === "approve") && (
+                <div className="space-y-2">
+                  {/\.pdf($|\?)/i.test(previewUrl) ? (
+                    <a href={previewUrl} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-blue-700 underline">
+                      Open PDF proof
+                    </a>
+                  ) : (
+                    <img src={previewUrl} alt="Vendor payout proof" className="max-h-56 w-full rounded border object-contain bg-white" />
+                  )}
+                </div>
+              )}
+              {actionType !== "view-proof" && (
+                <div className="space-y-2">
+                  <label className="font-semibold text-slate-700">Payment proof (image or PDF)</label>
+                  <ImageUpload
+                    label="Upload receipt / screenshot"
+                    value={proofUrlInput}
+                    onUpload={(url) => setProofUrlInput(url)}
+                    compact
+                    accept="image/*,.pdf,application/pdf"
+                  />
+                </div>
+              )}
+              {(actionType === "review" || actionType === "approve") && (
+                <Input
+                  placeholder="Notes (optional)"
+                  value={payoutNotes}
+                  onChange={(e) => setPayoutNotes(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              )}
             </div>
             );
           })()}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setActionType(null)}>
-              Cancel
+            <Button variant="outline" size="sm" onClick={closeAction}>
+              Close
             </Button>
-            <Button size="sm" disabled={actionLoading} onClick={handleVendorAction} className="bg-[#0B1528] text-white">
-              {actionType === "review" ? "Confirm review" : "Confirm approval"}
-            </Button>
+            {actionType !== "view-proof" && (
+              <Button size="sm" disabled={actionLoading} onClick={handleVendorAction} className="bg-[#0B1528] text-white">
+                {actionType === "upload"
+                  ? "Save proof"
+                  : actionType === "review"
+                    ? "Confirm FC approve"
+                    : "Confirm Founder verify"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

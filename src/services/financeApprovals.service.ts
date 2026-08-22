@@ -139,7 +139,7 @@ export const financeApprovalsService = {
   // Outgoing Vendor Payments Approval
   reviewVendorPaymentFC: async (
     paymentId: string,
-    payload?: { reason?: string; directClear?: boolean }
+    payload?: { reason?: string; directClear?: boolean; invoiceFileUrl?: string; proofFileUrl?: string }
   ) => {
     const res = await api.patch(`/finance/vendor-payments/${paymentId}/review-fc`, payload || {});
     return res.data;
@@ -147,9 +147,20 @@ export const financeApprovalsService = {
 
   approveVendorPaymentFounder: async (
     paymentId: string,
-    payload?: { reason?: string; invoiceFileUrl?: string }
+    payload?: { reason?: string; invoiceFileUrl?: string; proofFileUrl?: string }
   ) => {
     const res = await api.patch(`/finance/vendor-payments/${paymentId}/approve-founder`, payload || {});
+    return res.data;
+  },
+
+  uploadVendorPaymentProof: async (
+    paymentId: string,
+    payload: { proofFileUrl: string; proofFileName?: string; proofFileType?: string }
+  ) => {
+    const res = await api.post(`/finance/vendor-payments/${paymentId}/upload-proof`, payload);
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || "Failed to upload vendor payout proof");
+    }
     return res.data;
   },
 

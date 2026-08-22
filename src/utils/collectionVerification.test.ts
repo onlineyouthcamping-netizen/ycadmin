@@ -6,6 +6,8 @@ import {
   isCollectionVerified,
   isEligibleCollectionAssignee,
   canApproveStationCash,
+  canReviewVendorPayout,
+  canApproveVendorPayoutFounder,
 } from "./collectionVerification";
 
 describe("canonicalCollectionStatus", () => {
@@ -89,5 +91,19 @@ describe("canApproveStationCash", () => {
     expect(canApproveStationCash({ role: "admin", email: "hemal.patel@youthcamping.online" })).toBe(true);
     expect(canApproveStationCash({ role: "finance_controller" })).toBe(false);
     expect(canApproveStationCash({ role: "admin", email: "hemal.assistant@youthcamping.online" })).toBe(false);
+  });
+});
+
+describe("vendor payout two-step identity", () => {
+  it("lets Finance Controller review but not founder-verify", () => {
+    expect(canReviewVendorPayout({ role: "finance_controller" })).toBe(true);
+    expect(canApproveVendorPayoutFounder({ role: "finance_controller" })).toBe(false);
+  });
+
+  it("lets Founder review and verify; operations cannot", () => {
+    expect(canReviewVendorPayout({ role: "founder" })).toBe(true);
+    expect(canApproveVendorPayoutFounder({ role: "founder" })).toBe(true);
+    expect(canReviewVendorPayout({ role: "operations" })).toBe(false);
+    expect(canApproveVendorPayoutFounder({ role: "operations" })).toBe(false);
   });
 });

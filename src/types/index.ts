@@ -820,6 +820,9 @@ export interface VendorPaymentRequestItem {
   isOverpaid?: boolean;
   requiresFounderApproval?: boolean;
   billReference?: string;
+  proofUrl?: string | null;
+  invoiceProof?: string | null;
+  invoiceFileUrl?: string | null;
 }
 
 export interface TicketFinanceAuditItem {
