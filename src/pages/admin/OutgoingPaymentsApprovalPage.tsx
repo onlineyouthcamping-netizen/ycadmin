@@ -6,6 +6,7 @@ import {
   User,
   Search,
   RotateCw,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,10 @@ function formatINR(value: number) {
   return `₹${Number(value || 0).toLocaleString("en-IN")}`;
 }
 
+function collapseText(value: unknown) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
 function vendorStatusLabel(item: {
   approvalStatus?: string;
   status?: string;
@@ -50,6 +55,43 @@ function vendorStatusLabel(item: {
   if (item.isOverpaid) return "Overpaid";
   return "Pending";
 }
+
+function serviceDisplay(item: {
+  vendorName: string;
+  serviceDescription: string;
+  billReference: string;
+  category: string;
+}) {
+  const vendor = collapseText(item.vendorName).toLowerCase();
+  const description = collapseText(item.serviceDescription);
+  const reference = collapseText(item.billReference);
+  const looksLikeCalc = /[=×]|(\d+\s*[xX×]\s*\d+)/.test(description);
+  const descriptionRepeatsVendor = Boolean(description) && description.toLowerCase() === vendor;
+
+  let primary = description;
+  if (!description || descriptionRepeatsVendor || looksLikeCalc) {
+    primary =
+      reference && reference.toLowerCase() !== vendor
+        ? reference
+        : item.category || "Service";
+  }
+
+  const secondary =
+    description && description !== primary && !descriptionRepeatsVendor
+      ? description
+      : reference && reference !== primary && reference.toLowerCase() !== vendor
+        ? reference
+        : "";
+
+  const tooltip = [description, reference].filter((part, index, all) => part && all.indexOf(part) === index).join(" · ");
+
+  return { primary, secondary, tooltip: tooltip || primary };
+}
+
+const PILL =
+  "inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[11px] font-semibold whitespace-nowrap transition-colors";
+const PILL_ACTIVE = "bg-[#0B1528] text-white";
+const PILL_IDLE = "border border-[#E8EEF4] bg-white text-slate-600 hover:bg-[#F4F7FB]";
 
 export default function OutgoingPaymentsApprovalPage({
   hideHeader = false,
@@ -189,7 +231,7 @@ export default function OutgoingPaymentsApprovalPage({
   };
 
   return (
-    <div className="space-y-3 font-sans antialiased text-[#162B45]">
+    <div className="min-w-0 space-y-2 font-sans antialiased text-[#162B45]">
       {!hideHeader && (
         <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
           <div className="space-y-0.5">
@@ -209,30 +251,36 @@ export default function OutgoingPaymentsApprovalPage({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <div className="bg-white border border-[#E3EAF2] rounded-lg p-3.5">
-          <p className="text-[11px] font-semibold text-[#74839A] uppercase tracking-wide">Pending Bills</p>
-          <h3 className="mt-1 text-[22px] font-bold text-[#162B45] tabular-nums">
+      <dl className="grid grid-cols-3 divide-x divide-[#E3EAF2] overflow-hidden rounded-lg border border-[#E3EAF2] bg-white">
+        <div className="flex min-w-0 flex-col gap-1 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#74839A]">
+            Pending Bills
+          </dt>
+          <dd className="text-[18px] font-bold tabular-nums leading-none text-[#162B45]">
             {loading ? "—" : pendingBills.length}
-          </h3>
+          </dd>
         </div>
-        <div className="bg-white border border-[#E3EAF2] rounded-lg p-3.5">
-          <p className="text-[11px] font-semibold text-[#74839A] uppercase tracking-wide">Outstanding</p>
-          <h3 className="mt-1 text-[22px] font-bold text-[#162B45] tabular-nums">
+        <div className="flex min-w-0 flex-col gap-1 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#74839A]">
+            Outstanding
+          </dt>
+          <dd className="whitespace-nowrap text-[18px] font-bold tabular-nums leading-none text-[#B91C1C]">
             {loading ? "—" : formatINR(totalOutstanding)}
-          </h3>
+          </dd>
         </div>
-        <div className="bg-white border border-[#E3EAF2] rounded-lg p-3.5">
-          <p className="text-[11px] font-semibold text-[#74839A] uppercase tracking-wide">Paid</p>
-          <h3 className="mt-1 text-[22px] font-bold text-[#162B45] tabular-nums">
+        <div className="flex min-w-0 flex-col gap-1 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#74839A]">
+            Paid
+          </dt>
+          <dd className="whitespace-nowrap text-[18px] font-bold tabular-nums leading-none text-[#15803D]">
             {loading ? "—" : formatINR(totalPaid)}
-          </h3>
+          </dd>
         </div>
-      </div>
+      </dl>
 
-      <div className="bg-white border border-[#E3EAF2] rounded-lg overflow-hidden">
-        <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-1 overflow-x-auto">
+      <div className="min-w-0 overflow-hidden rounded-lg border border-[#E3EAF2] bg-white">
+        <div className="flex min-w-0 flex-col gap-2 border-b border-[#E3EAF2] px-2.5 py-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
             {([
               { key: "all", label: "All" },
               { key: "Hotels", label: "Hotels" },
@@ -243,19 +291,14 @@ export default function OutgoingPaymentsApprovalPage({
               <button
                 key={cat.key}
                 onClick={() => setActiveCategory(cat.key)}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap",
-                  activeCategory === cat.key
-                    ? "bg-[#0B1528] text-white"
-                    : "bg-white border border-[#E3EAF2] text-slate-600",
-                )}
+                className={cn(PILL, activeCategory === cat.key ? PILL_ACTIVE : PILL_IDLE)}
               >
                 {cat.label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
               {[
                 { key: "ALL", label: "All" },
                 { key: "PENDING", label: "Pending" },
@@ -265,28 +308,35 @@ export default function OutgoingPaymentsApprovalPage({
                 <button
                   key={tab.key}
                   onClick={() => setStatusFilter(tab.key)}
-                  className={cn(
-                    "px-2.5 py-1 rounded text-[10px] font-bold uppercase",
-                    statusFilter === tab.key ? "bg-slate-900 text-white" : "text-slate-500",
-                  )}
+                  className={cn(PILL, statusFilter === tab.key ? PILL_ACTIVE : PILL_IDLE)}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
+            <div className="relative min-w-0 flex-1 lg:w-52 lg:flex-none">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#74839A]" />
               <Input
                 placeholder="Search vendor, departure, service..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8 w-52 pl-8 text-[11px]"
+                className="h-7 w-full pl-8 text-[11px]"
               />
             </div>
+            {hideHeader && (
+              <Button
+                onClick={loadData}
+                variant="outline"
+                className="h-7 shrink-0 px-2.5 text-[10px] font-semibold"
+              >
+                <RotateCw className={cn("mr-1 h-3.5 w-3.5", loading && "animate-spin")} />
+                Refresh
+              </Button>
+            )}
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="min-w-0 overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-[#C2410C] border-t-transparent rounded-full animate-spin" />
@@ -298,90 +348,133 @@ export default function OutgoingPaymentsApprovalPage({
               <p className="text-[11px] text-[#74839A] mt-1">Departure Hub has no open liabilities for this filter.</p>
             </div>
           ) : (
-            <table className="w-full min-w-[860px] text-left border-collapse">
+            <table className="w-max min-w-[1100px] table-fixed border-collapse text-left">
+              <colgroup>
+                <col className="w-[88px]" />
+                <col className="w-[168px]" />
+                <col className="w-[200px]" />
+                <col className="w-[176px]" />
+                <col className="w-[104px]" />
+                <col className="w-[104px]" />
+                <col className="w-[120px]" />
+                <col className="w-[88px]" />
+                <col className="w-[148px]" />
+              </colgroup>
               <thead>
-                <tr className="bg-[#F8FAFC] border-b border-[#E3EAF2] text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-2.5">Category</th>
-                  <th className="px-4 py-2.5">Vendor</th>
-                  <th className="px-4 py-2.5">Departure / Trip</th>
-                  <th className="px-4 py-2.5">Service</th>
-                  <th className="px-4 py-2.5 text-right">Total</th>
-                  <th className="px-4 py-2.5 text-right">Paid</th>
-                  <th className="px-4 py-2.5 text-right">Outstanding</th>
-                  <th className="px-4 py-2.5">Status</th>
-                  <th className="px-4 py-2.5 text-right pr-4">Action</th>
+                <tr className="border-b border-[#E3EAF2] bg-[#F8FAFC] text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-2.5 py-2">Category</th>
+                  <th className="px-2.5 py-2">Vendor</th>
+                  <th className="px-2.5 py-2">Departure / Trip</th>
+                  <th className="px-2.5 py-2">Service</th>
+                  <th className="px-2.5 py-2 text-right">Total</th>
+                  <th className="px-2.5 py-2 text-right">Paid</th>
+                  <th className="px-2.5 py-2 text-right">Outstanding</th>
+                  <th className="px-2.5 py-2">Status</th>
+                  <th className="px-2.5 py-2">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E3EAF2] text-[12px]">
+              <tbody className="text-[12px]">
                 {aggregatedItems.map((item) => {
                   const label = vendorStatusLabel(item);
+                  const service = serviceDisplay(item);
                   const showReview = canAct && (isFinanceController || isFounder) && label === "Pending";
                   const showApprove = canAct && isFounder && (label === "Reviewed" || (label === "Pending" && !item.requiresFounderApproval));
+                  const settled = label === "Settled";
                   return (
-                    <tr key={item.id} className="hover:bg-[#F8FAFC]">
-                      <td className="px-4 py-2">
-                        <div className="flex items-center gap-1.5">
+                    <tr key={item.id} className="border-b border-[#EEF2F6] last:border-b-0 hover:bg-[#F8FAFC]">
+                      <td className="px-2.5 py-1.5 align-middle">
+                        <div className="flex min-w-0 items-center gap-1.5">
                           {getCategoryIcon(item.category)}
-                          <span className="font-semibold text-[11px]">{item.category}</span>
+                          <span className="truncate text-[11px] font-semibold">{item.category}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-2 font-semibold">{item.vendorName}</td>
-                      <td className="px-4 py-2 text-slate-600">
-                        <div className="flex flex-col gap-0.5">
-                          <span>{item.tripName}</span>
-                          {item.departureDate && (
-                            <span className="text-[10px] text-slate-400">
-                              {safeFormatDate(item.departureDate)}
-                            </span>
-                          )}
+                      <td className="px-2.5 py-1.5 align-middle font-semibold">
+                        <span className="block truncate" title={item.vendorName}>
+                          {item.vendorName}
+                        </span>
+                      </td>
+                      <td className="px-2.5 py-1.5 align-middle text-slate-600">
+                        <div className="min-w-0">
+                          <p className="truncate leading-tight" title={item.tripName}>
+                            <span className="font-medium text-[#162B45]">{item.tripName}</span>
+                            {item.departureDate && (
+                              <span className="text-[11px] font-normal text-slate-400">
+                                {" "}
+                                · {safeFormatDate(item.departureDate)}
+                              </span>
+                            )}
+                          </p>
                           {item.operationalLinked && item.departureHref ? (
                             <Link
                               to={item.departureHref}
-                              className="text-[10px] font-semibold text-[#C2410C] hover:underline w-fit"
+                              className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#C2410C] hover:underline"
                             >
                               View Departure
+                              <ExternalLink className="h-2.5 w-2.5" />
                             </Link>
                           ) : (
-                            <span className="text-[10px] text-slate-400">Operational record unavailable</span>
+                            <span className="mt-0.5 inline-flex rounded bg-slate-100 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                              Unavailable
+                            </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-2 text-slate-600">{item.serviceDescription}</td>
-                      <td className="px-4 py-2 text-right font-mono">{formatINR(item.totalCost)}</td>
-                      <td className="px-4 py-2 text-right font-mono text-green-700">{formatINR(item.paidAmount)}</td>
-                      <td className="px-4 py-2 text-right font-mono font-semibold">
+                      <td className="px-2.5 py-1.5 align-middle text-slate-600">
+                        <div className="min-w-0" title={service.tooltip}>
+                          <p className="truncate leading-tight text-[#162B45]">{service.primary}</p>
+                          {service.secondary && (
+                            <p className="truncate text-[10px] leading-tight text-slate-400">
+                              {service.secondary}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-2.5 py-1.5 align-middle text-right font-mono text-[12px] tabular-nums whitespace-nowrap">
+                        {formatINR(item.totalCost)}
+                      </td>
+                      <td
+                        className={cn(
+                          "px-2.5 py-1.5 align-middle text-right font-mono text-[12px] tabular-nums whitespace-nowrap",
+                          settled ? "font-semibold text-[#15803D]" : "text-slate-600",
+                        )}
+                      >
+                        {formatINR(item.paidAmount)}
+                      </td>
+                      <td className="px-2.5 py-1.5 align-middle text-right font-mono text-[12px] font-semibold tabular-nums whitespace-nowrap">
                         {item.isOverpaid ? (
                           <span className="text-amber-700">Overpaid {formatINR(item.overpaidAmount)}</span>
                         ) : (
-                          <span className={item.outstandingAmount > 0 ? "text-red-700" : "text-slate-500"}>
+                          <span className={item.outstandingAmount > 0 ? "text-[#B91C1C]" : "text-slate-400"}>
                             {formatINR(Math.max(0, item.outstandingAmount))}
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-2.5 py-1.5 align-middle">
                         <Badge
                           variant="outline"
                           className={cn(
                             "text-[9px] font-bold uppercase",
-                            label === "Settled"
+                            settled
                               ? "bg-green-50 text-green-700 border-green-200"
                               : label === "Rejected"
                                 ? "bg-rose-50 text-rose-700 border-rose-200"
                                 : label === "Overpaid"
                                   ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-slate-50 text-slate-700 border-slate-200",
+                                  : label === "Reviewed"
+                                    ? "bg-sky-50 text-sky-700 border-sky-200"
+                                    : "bg-slate-50 text-slate-700 border-slate-200",
                           )}
                         >
                           {label}
                         </Badge>
                       </td>
-                      <td className="px-4 py-2 text-right pr-4">
-                        {label === "Settled" ? (
-                          <span className="text-[10px] text-slate-400 italic">Settled</span>
+                      <td className="px-2.5 py-1.5 align-middle">
+                        {settled ? (
+                          <span className="text-[10px] italic text-slate-400">Settled</span>
                         ) : !canAct ? (
-                          <span className="text-[10px] text-slate-400 italic">Awaiting review</span>
+                          <span className="text-[10px] italic text-slate-400">Awaiting review</span>
                         ) : (
-                          <div className="flex justify-end gap-1">
+                          <div className="flex items-center gap-1">
                             {showReview && (
                               <Button
                                 size="sm"
@@ -390,7 +483,7 @@ export default function OutgoingPaymentsApprovalPage({
                                   setSelectedItem(item);
                                   setActionType("review");
                                 }}
-                                className="h-7 text-[10px] font-semibold"
+                                className="h-7 px-2 text-[10px] font-semibold"
                               >
                                 Review
                               </Button>
@@ -402,7 +495,7 @@ export default function OutgoingPaymentsApprovalPage({
                                   setSelectedItem(item);
                                   setActionType("approve");
                                 }}
-                                className="h-7 text-[10px] font-semibold bg-[#0B1528] text-white"
+                                className="h-7 px-2 text-[10px] font-semibold bg-[#0B1528] text-white"
                               >
                                 Approve
                               </Button>
@@ -432,25 +525,27 @@ export default function OutgoingPaymentsApprovalPage({
           {selectedItem && (
             <div className="space-y-3 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-slate-500">Vendor</span>
-                  <span className="font-semibold">{selectedItem.vendorName}</span>
+                  <span className="font-semibold text-right">{selectedItem.vendorName}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-slate-500">Departure / Trip</span>
-                  <span>{selectedItem.tripName}</span>
+                  <span className="text-right">{selectedItem.tripName}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Service</span>
-                  <span>{selectedItem.serviceDescription}</span>
+                <div className="flex justify-between gap-3">
+                  <span className="shrink-0 text-slate-500">Service</span>
+                  <span className="max-w-[240px] text-right" title={selectedItem.serviceDescription}>
+                    {selectedItem.serviceDescription}
+                  </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-slate-500">Total / Paid</span>
                   <span className="font-mono">
                     {formatINR(selectedItem.totalCost)} / {formatINR(selectedItem.paidAmount)}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-slate-500">{selectedItem.isOverpaid ? "Overpaid" : "Outstanding"}</span>
                   <span className="font-mono font-semibold">
                     {formatINR(selectedItem.isOverpaid ? selectedItem.overpaidAmount : Math.max(0, selectedItem.outstandingAmount))}

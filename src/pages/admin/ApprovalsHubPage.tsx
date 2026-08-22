@@ -115,7 +115,7 @@ export default function ApprovalsHubPage() {
     incomingPendingCount + vendorPendingCount + refundPendingCount;
 
   return (
-    <div className="min-h-0 space-y-3 font-sans text-[#13283F] antialiased">
+    <div className="min-h-0 min-w-0 space-y-3 font-sans text-[#13283F] antialiased">
       <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -192,7 +192,7 @@ export default function ApprovalsHubPage() {
         })}
       </nav>
 
-      <section className="overflow-hidden rounded-2xl border border-[#DCE5ED] bg-white shadow-[0_6px_22px_rgba(15,35,55,0.06)]">
+      <section className="min-w-0 overflow-hidden rounded-2xl border border-[#DCE5ED] bg-white shadow-[0_6px_22px_rgba(15,35,55,0.06)]">
         <header className="flex flex-col gap-2 border-b border-[#E5ECF2] px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-5">
           <div>
             <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#FF5A1F]">
@@ -206,7 +206,7 @@ export default function ApprovalsHubPage() {
             {activeConfig.description}
           </p>
         </header>
-        <div className="p-3 md:p-4">
+        <div className="min-w-0 p-3 md:p-4">
         {activeTab === "payment-approvals" && (
           <IncomingPaymentsApprovalPage hideHeader={true} />
         )}
