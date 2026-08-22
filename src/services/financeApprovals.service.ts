@@ -108,6 +108,9 @@ export const financeApprovalsService = {
     payload: { proofFileUrl: string; proofFileName?: string; proofFileType?: string }
   ) => {
     const res = await api.post(`/finance/collections/${paymentId}/upload-proof`, payload);
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || "Failed to upload proof");
+    }
     return res.data;
   },
 

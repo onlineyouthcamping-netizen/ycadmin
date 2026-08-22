@@ -83,6 +83,11 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { bookingsService } from "@/services/bookings.service";
 import { paymentsService } from "@/services/payments.service";
+import {
+  formatProofDisplayUrl,
+  isProofUploadPersisted,
+  resolvePaymentProofUrl,
+} from "@/utils/paymentProof";
 import { tripsService } from "@/services/trips.service";
 import { settingsService } from "@/services/settings.service";
 import { bookingVerificationService } from "@/services/bookingVerification.service";
@@ -965,6 +970,33 @@ export default function BookingDetailsView({
       console.error("Failed to load payments", e);
     } finally {
       setLoadingPayments(false);
+    }
+  };
+
+  const handleAttachPaymentProof = async (
+    paymentId: string,
+    file: File | undefined,
+  ) => {
+    if (!file) return;
+    try {
+      toast.loading("Uploading payment proof...", { id: "upload-proof" });
+      const result = await paymentsService.uploadProof(paymentId, file);
+      if (!isProofUploadPersisted(result)) {
+        throw new Error("Proof was not persisted on the payment record");
+      }
+      await fetchPayments();
+      if (onRefresh) onRefresh();
+      toast.success("Payment proof uploaded successfully!", {
+        id: "upload-proof",
+      });
+    } catch (uErr: any) {
+      console.error("Payment proof upload failed:", uErr);
+      toast.error(
+        uErr?.response?.data?.message ||
+          uErr?.message ||
+          "Failed to upload payment proof",
+        { id: "upload-proof" },
+      );
     }
   };
 
@@ -5027,30 +5059,45 @@ export default function BookingDetailsView({
                                             </span>
                                             <div className="col-span-2">
                                               {(() => {
-                                                const proofDocs = ((booking as any)?.documents || []).filter((d: any) =>
-                                                  (d.documentType || "").toLowerCase().includes("proof") ||
-                                                  (d.documentType || "").toLowerCase().includes("payment") ||
-                                                  (d.originalFileName || "").toLowerCase().includes("proof") ||
-                                                  (d.originalFileName || "").toLowerCase().includes("payment")
-                                                );
-                                                if (proofDocs.length > 0) {
+                                                const proofUrl = resolvePaymentProofUrl(p);
+                                                const proofName = p.proofFileName || "Receipt";
+                                                if (proofUrl) {
                                                   return (
-                                                    <div className="flex flex-wrap gap-2">
-                                                      {proofDocs.map((doc: any, dIdx: number) => (
-                                                        <button
-                                                          key={doc.id || dIdx}
-                                                          type="button"
-                                                          onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleViewDoc(doc.passengerId || "PAYMENT_PROOF", doc.originalFileName || "Payment_Proof.png", doc.id);
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                      <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          window.open(
+                                                            formatProofDisplayUrl(
+                                                              proofUrl,
+                                                              ENV.API_BASE_URL,
+                                                            ),
+                                                            "_blank",
+                                                            "noopener,noreferrer",
+                                                          );
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 rounded-md font-semibold text-[11px] transition-colors cursor-pointer"
+                                                      >
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                        <span>View Proof ({proofName})</span>
+                                                        <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+                                                      </button>
+                                                      <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 bg-[#FF4D00]/10 text-[#FF4D00] hover:bg-[#FF4D00]/20 rounded text-[10px] font-semibold transition-colors">
+                                                        <Upload className="w-3 h-3" />
+                                                        Replace
+                                                        <input
+                                                          type="file"
+                                                          accept="image/jpeg,image/png,image/jpg,application/pdf"
+                                                          className="hidden"
+                                                          onClick={(e) => e.stopPropagation()}
+                                                          onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            e.target.value = "";
+                                                            await handleAttachPaymentProof(p.id, file);
                                                           }}
-                                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 rounded-md font-semibold text-[11px] transition-colors cursor-pointer"
-                                                        >
-                                                          <Eye className="w-3.5 h-3.5" />
-                                                          <span>View Proof ({doc.originalFileName || "Receipt"})</span>
-                                                          <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
-                                                        </button>
-                                                      ))}
+                                                        />
+                                                      </label>
                                                     </div>
                                                   );
                                                 }
@@ -5062,20 +5109,13 @@ export default function BookingDetailsView({
                                                       + Attach Proof
                                                       <input
                                                         type="file"
-                                                        accept="image/*,.pdf"
+                                                        accept="image/jpeg,image/png,image/jpg,application/pdf"
                                                         className="hidden"
+                                                        onClick={(e) => e.stopPropagation()}
                                                         onChange={async (e) => {
                                                           const file = e.target.files?.[0];
-                                                          if (file) {
-                                                            try {
-                                                              toast.loading("Uploading payment proof...", { id: "upload-proof" });
-                                                              await bookingsService.uploadDocument(booking.id, "PAYMENT_PROOF", file);
-                                                              toast.success("Payment proof uploaded successfully!", { id: "upload-proof" });
-                                                              onRefresh();
-                                                            } catch (uErr) {
-                                                              toast.error("Failed to upload payment proof", { id: "upload-proof" });
-                                                            }
-                                                          }
+                                                          e.target.value = "";
+                                                          await handleAttachPaymentProof(p.id, file);
                                                         }}
                                                       />
                                                     </label>

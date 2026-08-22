@@ -105,4 +105,30 @@ export const paymentsService = {
     const res = await api.post("/payments/sync-treasury-mappings");
     return res.data;
   },
+
+  async uploadProof(paymentId: string, file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append("document", file);
+    formData.append("proofFileName", file.name);
+    formData.append("proofFileType", file.type || "application/octet-stream");
+    const res = await api.post(
+      `/finance/collections/${paymentId}/upload-proof`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+    const payload = res.data || {};
+    if (!payload.success) {
+      throw new Error(payload.message || "Failed to upload payment proof");
+    }
+    const persistedUrl =
+      payload.payment?.proofFileUrl ||
+      payload.payment?.proofUrl ||
+      payload.proof_url;
+    if (!persistedUrl) {
+      throw new Error("Proof was not persisted on the payment record");
+    }
+    return payload;
+  },
 };

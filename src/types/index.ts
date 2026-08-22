@@ -559,6 +559,12 @@ export interface Payment {
   notes?: string;
   recordedBy?: string;
   createdAt: string;
+  transactionId?: string | null;
+  proofUrl?: string | null;
+  proofFileUrl?: string | null;
+  proofFileName?: string | null;
+  proofFileType?: string | null;
+  proofUploadedAt?: string | null;
 }
 
 export interface PaymentSummary {
