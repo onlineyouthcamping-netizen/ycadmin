@@ -24,6 +24,9 @@ describe("canonicalCollectionStatus", () => {
     );
     expect(isCollectionVerified("APPROVED_FOUNDER")).toBe(true);
     expect(isCollectionPending("APPROVED_FOUNDER", "Verified")).toBe(false);
+    expect(canonicalCollectionStatus(null, "Verified")).toBe("PENDING");
+    expect(canonicalCollectionStatus(null, "APPROVED")).toBe("PENDING");
+    expect(isCollectionPending(null, "APPROVED")).toBe(true);
   });
 });
 

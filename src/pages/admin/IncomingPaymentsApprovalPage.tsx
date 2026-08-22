@@ -223,7 +223,7 @@ export default function IncomingPaymentsApprovalPage({
       date: cp.receivedAt || cp.createdAt,
       approvalStatus: cp.approvalStatus || "PENDING",
       status: canonicalCollectionStatus(cp.approvalStatus, cp.status),
-      collectedBy: cp.receivedBy || "Client Collection",
+      collectedBy: cp.collectedBy || cp.receivedBy || "Client Collection",
       assigneeId: cp.actionedById || null,
       assigneeName: cp.actionedBy?.name || null,
       notes: cp.notes || cp.remarks,
@@ -252,7 +252,8 @@ export default function IncomingPaymentsApprovalPage({
       assigneeId: (p as any).actionedById || (p.raw as any)?.actionedById || null,
       assigneeName: (p as any).actionedBy || (p.raw as any)?.actionedBy?.name || null,
       notes: p.notes,
-      proofUrl: (p as any).receiptUrl || (p as any).proofUrl || null,
+      proofUrl: (p as any).proofFileUrl || (p as any).receiptUrl || (p as any).proofUrl || null,
+      opsClientPaymentId: (p as any).opsClientPaymentId || null,
       raw: p,
     })),
     ...cashSubmissions.map((c) => ({
@@ -270,7 +271,12 @@ export default function IncomingPaymentsApprovalPage({
       assigneeId: (c as any).actionedById || (c.raw as any)?.actionedById || null,
       assigneeName: (c as any).actionedBy?.name || (c.raw as any)?.actionedBy?.name || null,
       notes: c.notes,
-      proofUrl: (c as any).receiptUrl || (c as any).proofUrl || null,
+      proofUrl:
+        (c as any).proofFileUrl ||
+        (c as any).proofUrl ||
+        (c as any).receiptUrl ||
+        null,
+      opsClientPaymentId: (c as any).opsClientPaymentId || null,
       raw: c,
     })),
     ...((stationCashData?.allCollections || []).map((sc: any) => ({
@@ -389,16 +395,30 @@ export default function IncomingPaymentsApprovalPage({
         });
         toast.success("Payment verified and approved");
       } else if (selectedPayment.type === "CASH_HANDOVER") {
-        await financeControllerService.performCashAction(selectedPayment.id, {
-          action: "APPROVE",
-          notes: actionNotes.trim() || undefined,
-        });
+        const opsId = selectedPayment.opsClientPaymentId || selectedPayment.raw?.opsClientPaymentId;
+        if (opsId) {
+          await financeApprovalsService.verifyCollection(opsId, {
+            reason: actionNotes.trim() || undefined,
+          });
+        } else {
+          await financeControllerService.performCashAction(selectedPayment.id, {
+            action: "APPROVE",
+            notes: actionNotes.trim() || undefined,
+          });
+        }
         toast.success("Cash approved and cleared");
       } else {
-        await financeControllerService.performIncomingAction(selectedPayment.id, {
-          action: "VERIFY",
-          notes: actionNotes.trim() || undefined,
-        });
+        const opsId = selectedPayment.opsClientPaymentId || selectedPayment.raw?.opsClientPaymentId;
+        if (opsId) {
+          await financeApprovalsService.verifyCollection(opsId, {
+            reason: actionNotes.trim() || undefined,
+          });
+        } else {
+          await financeControllerService.performIncomingAction(selectedPayment.id, {
+            action: "VERIFY",
+            notes: actionNotes.trim() || undefined,
+          });
+        }
         toast.success("Payment verified and approved successfully");
       }
       setActionModalType(null);
@@ -1022,7 +1042,11 @@ export default function IncomingPaymentsApprovalPage({
                               >
                                 View proof
                               </button>
-                            ) : null}
+                            ) : (
+                              <span className="mt-1 block text-[10px] text-slate-400 italic">
+                                No proof on file
+                              </span>
+                            )}
                           </td>
                           <td className={cn(
                             "px-4 py-2 text-right font-mono font-bold text-[12px]",

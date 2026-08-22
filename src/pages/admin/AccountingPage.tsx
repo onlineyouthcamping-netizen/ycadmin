@@ -298,14 +298,25 @@ export default function AccountingPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      const emptyVendor = { data: { data: [] } };
+      const emptyRiya = { data: { data: {} } };
+      // Founder-oriented payout/Riya endpoints require ops.view. Do not call them
+      // for Finance Controller — Incoming Approvals must not surface those 403s.
+      const canLoadVendorPayoutApis = ["founder", "superadmin", "super_admin", "admin"].includes(
+        String(user?.role || "").toLowerCase(),
+      );
       const [bRes, tRes, aRes, vRes, pendingRes, refundPendingRes, rRes] = await Promise.all([
         bookingsService.getAll({ page: 1, limit: 1000 }).catch(() => ({ data: [] })),
         tripsService.getAll().catch(() => []),
         collectionAccountsService.getAccounts({ activeOnly: true }).catch(() => ({ data: [] })),
-        api.get("/payments/vendor-payments").catch(() => ({ data: { data: [] } })),
+        canLoadVendorPayoutApis
+          ? api.get("/payments/vendor-payments").catch(() => emptyVendor)
+          : Promise.resolve(emptyVendor),
         financeApprovalsService.getPendingApprovals().catch(() => null),
         financeControllerService.refunds.list({ status: "PENDING_APPROVAL", limit: 1 }).catch(() => ({ data: [] })),
-        api.get("/payments/riya-summary").catch(() => ({ data: { data: {} } })),
+        canLoadVendorPayoutApis
+          ? api.get("/payments/riya-summary").catch(() => emptyRiya)
+          : Promise.resolve(emptyRiya),
       ]);
 
       const bList = Array.isArray((bRes as any)?.data)
@@ -353,7 +364,7 @@ export default function AccountingPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     loadData();

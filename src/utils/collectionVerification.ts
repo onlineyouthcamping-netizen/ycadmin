@@ -41,15 +41,6 @@ export function canonicalCollectionStatus(
 ): CollectionDisplayStatus {
   if (isCollectionVerified(approvalStatus)) return "VERIFIED";
   if (isCollectionRejected(approvalStatus, status)) return "REJECTED";
-  if (approvalStatus) return "PENDING";
-  const normalized = normalizeStatus(status);
-  if (
-    normalized === "APPROVED" ||
-    normalized === "VERIFIED" ||
-    normalized === "COMPLETED"
-  ) {
-    return "VERIFIED";
-  }
   return "PENDING";
 }
 
