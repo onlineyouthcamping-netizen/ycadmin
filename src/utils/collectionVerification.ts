@@ -69,5 +69,19 @@ export function canVerifyCollection(user: CollectionVerifier): boolean {
   if (!user) return false;
   const role = String(user.role || "").toLowerCase().trim();
   if (FOUNDER_ROLES.has(role) || FINANCE_CONTROLLER_ROLES.has(role)) return true;
+  if (isProtectedFounderEmail(user.email)) return true;
+  return false;
+}
+
+/** Station cash stays Founder / superadmin / isSuperuser. Not Finance Controller. */
+export function canApproveStationCash(user: CollectionVerifier): boolean {
+  if (!user) return false;
+  const role = String(user.role || "").toLowerCase().trim();
+  if (["superadmin", "super_admin", "founder"].includes(role)) return true;
+  if (user.isSuperuser) return true;
   return isProtectedFounderEmail(user.email);
+}
+
+export function isEligibleCollectionAssignee(user: CollectionVerifier): boolean {
+  return canVerifyCollection(user);
 }

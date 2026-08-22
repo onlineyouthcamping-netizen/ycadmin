@@ -4,23 +4,12 @@ import {
   Truck,
   Compass,
   User,
-  Ticket,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
   Search,
   RotateCw,
-  DollarSign,
-  ArrowUpRight,
-  ShieldCheck,
-  FileText,
-  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -31,46 +20,63 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn, safeFormatDate } from "@/lib/utils";
+import { Link } from "react-router-dom";
 import { financeControllerService } from "@/services/financeController.service";
-import type { VendorPaymentRequestItem, DeparturePayoutItem, TicketFinanceAuditItem } from "@/types";
+import { financeApprovalsService } from "@/services/financeApprovals.service";
+import { useAuthStore } from "@/store/auth.store";
+import { canVerifyCollection } from "@/utils/collectionVerification";
+import type { VendorPaymentRequestItem } from "@/types";
 
 interface OutgoingPaymentsApprovalPageProps {
   hideHeader?: boolean;
 }
 
-type OutgoingCategory = "all" | "hotels" | "transport" | "activities" | "guides";
+type OutgoingCategory = "all" | "Hotels" | "Transport" | "Activities" | "Guides";
+
+function formatINR(value: number) {
+  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
+}
+
+function vendorStatusLabel(item: {
+  approvalStatus?: string;
+  status?: string;
+  isOverpaid?: boolean;
+}) {
+  const approval = String(item.approvalStatus || "").toUpperCase();
+  const status = String(item.status || "").toUpperCase();
+  if (approval === "REJECTED" || status === "REJECTED") return "Rejected";
+  if (approval === "APPROVED_FOUNDER" || status === "PAID") return "Settled";
+  if (approval === "REVIEWED_FINANCE_CONTROLLER") return "Reviewed";
+  if (item.isOverpaid) return "Overpaid";
+  return "Pending";
+}
 
 export default function OutgoingPaymentsApprovalPage({
   hideHeader = false,
 }: OutgoingPaymentsApprovalPageProps) {
+  const { admin: currentUser } = useAuthStore();
+  const canAct = canVerifyCollection(currentUser);
+  const role = String(currentUser?.role || "").toLowerCase();
+  const isFounder = ["founder", "superadmin", "super_admin"].includes(role) || canVerifyCollection(currentUser) && role !== "finance_controller";
+  const isFinanceController = role === "finance_controller";
+
   const [vendorItems, setVendorItems] = useState<VendorPaymentRequestItem[]>([]);
-  const [departureItems, setDepartureItems] = useState<DeparturePayoutItem[]>([]);
-  const [ticketingItems, setTicketingItems] = useState<TicketFinanceAuditItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [activeCategory, setActiveCategory] = useState<OutgoingCategory>("all");
-
-  // Payout action
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [showPayDialog, setShowPayDialog] = useState(false);
-  const [paymentMode, setPaymentMode] = useState("BANK_TRANSFER");
-  const [transactionRef, setTransactionRef] = useState("");
+  const [actionType, setActionType] = useState<"review" | "approve" | null>(null);
   const [payoutNotes, setPayoutNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [vRes, dRes] = await Promise.all([
-        financeControllerService.getVendorQueue({ limit: 50 }).catch(() => ({ data: [], pagination: {} })),
-        financeControllerService.getDeparturesQueue().catch(() => []),
-      ]);
+      const vRes = await financeControllerService.getVendorQueue({ limit: 100 }).catch(() => ({ data: [] }));
       setVendorItems(vRes?.data || []);
-      setDepartureItems(dRes || []);
-      setTicketingItems([]);
     } catch (err: any) {
-      toast.error(err?.message || "Failed to load outgoing payment requests");
+      toast.error(err?.message || "Failed to load vendor payments");
     } finally {
       setLoading(false);
     }
@@ -80,486 +86,391 @@ export default function OutgoingPaymentsApprovalPage({
     loadData();
   }, [loadData]);
 
-  // Aggregate all outgoing liabilities
-  const aggregatedItems = [
-    // 1. Vendor Bills (Hotels, Transports, Activities, Guides)
-    ...vendorItems.map((v) => ({
-      id: v.id,
-      category: (v.vendorType || "HOTEL").toLowerCase(),
-      categoryLabel: v.vendorType || "HOTEL",
-      vendorName: v.vendorName || "Operational Vendor",
-      tripName: v.tripName || "Trip Operations",
-      totalCost: v.amountRequested || v.cost || 0,
-      paidAmount: v.paidAmount || 0,
-      dueAmount: (v.amountRequested || v.cost || 0) - (v.paidAmount || 0),
-      dueDate: v.dueDate || v.createdAt,
-      status: v.status || "PENDING_APPROVAL",
-      reference: v.invoiceNumber || `BILL-${v.id?.slice(-6)}`,
-      raw: v,
-      sourceType: "VENDOR_BILL",
-    })),
-    // 2. Departure Vendor Settlements
-    ...departureItems.map((d) => ({
-      id: d.id,
-      category: "hotels",
-      categoryLabel: "DEPARTURE SETTLEMENT",
-      vendorName: d.tripName || "Departure Operations",
-      tripName: `${d.tripCode || "DEP"} · ${d.departureDate || ""}`,
-      totalCost: d.totalPayable || d.totalAmount || 0,
-      paidAmount: d.totalPaid || 0,
-      dueAmount: (d.totalPayable || d.totalAmount || 0) - (d.totalPaid || 0),
-      dueDate: d.departureDate || d.createdAt,
-      status: d.status || "PENDING_APPROVAL",
-      reference: d.id?.slice(-8),
-      raw: d,
-      sourceType: "DEPARTURE_PAYOUT",
-    })),
-  ].filter((item) => {
-    // Category filter
-    if (activeCategory !== "all") {
-      if (activeCategory === "hotels" && !["hotel", "hotels", "accommodation", "departure settlement"].includes(item.category.toLowerCase())) return false;
-      if (activeCategory === "transport" && !["transport", "transportation", "bus", "cab"].includes(item.category.toLowerCase())) return false;
-      if (activeCategory === "activities" && !["activity", "activities", "permit"].includes(item.category.toLowerCase())) return false;
-      if (activeCategory === "guides" && !["guide", "guides", "leader", "trek leader"].includes(item.category.toLowerCase())) return false;
-    }
-    // Status filter
-    if (statusFilter !== "ALL" && item.status !== statusFilter) return false;
-    // Search
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      return (
-        item.vendorName.toLowerCase().includes(q) ||
-        item.tripName.toLowerCase().includes(q) ||
-        item.reference.toLowerCase().includes(q)
+  const aggregatedItems = vendorItems
+    .map((v) => {
+      const totalCost = Number((v as any).totalCost ?? v.agreedTariff ?? 0);
+      const paidAmount = Number(v.paidAmount || 0);
+      const outstandingAmount = Number(
+        (v as any).outstandingAmount ?? totalCost - paidAmount,
       );
-    }
-    return true;
+      const isOverpaid = Boolean((v as any).isOverpaid) || outstandingAmount < 0;
+      return {
+        id: v.id,
+        category: v.category || v.vendorType || "Hotels",
+        vendorName: v.vendorName || "Vendor",
+        tripName: v.tripName || v.tripTitle || "Trip",
+        tripId: v.tripId,
+        departureDate: v.departureDate || null,
+        serviceDescription: v.serviceDescription || v.vendorType || v.category || "Service",
+        operationalLinked: Boolean(v.operationalLinked),
+        departureHref: v.departureHref || null,
+        billReference: v.billReference || (v as any).transactionRef || `BILL-${String(v.id || "").slice(-6)}`,
+        totalCost,
+        paidAmount,
+        outstandingAmount,
+        overpaidAmount: Number((v as any).overpaidAmount || Math.max(0, paidAmount - totalCost)),
+        isOverpaid,
+        approvalStatus: (v as any).approvalStatus || "PENDING",
+        status: v.paymentStatus || (v as any).status || "PENDING",
+        requiresFounderApproval: Boolean((v as any).requiresFounderApproval),
+        raw: v,
+      };
+    })
+    .filter((item) => {
+      if (activeCategory !== "all" && String(item.category) !== activeCategory) return false;
+      const label = vendorStatusLabel(item);
+      if (statusFilter === "PENDING" && label !== "Pending" && label !== "Reviewed") return false;
+      if (statusFilter === "PAID" && label !== "Settled" && label !== "Overpaid") return false;
+      if (statusFilter === "REJECTED" && label !== "Rejected") return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        return (
+          item.vendorName.toLowerCase().includes(q) ||
+          item.tripName.toLowerCase().includes(q) ||
+          item.serviceDescription.toLowerCase().includes(q) ||
+          item.billReference.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+
+  const pendingBills = aggregatedItems.filter((i) => {
+    const label = vendorStatusLabel(i);
+    return label === "Pending" || label === "Reviewed";
   });
-
-  const pendingLiabilities = aggregatedItems.filter(
-    (i) => i.status === "PENDING_APPROVAL" || i.status === "PENDING_PAYOUT" || i.status === "PENDING"
+  const totalOutstanding = aggregatedItems.reduce(
+    (sum, i) => sum + Math.max(0, Number(i.outstandingAmount || 0)),
+    0,
   );
-  const totalPendingDue = pendingLiabilities.reduce((sum, i) => sum + Number(i.dueAmount || 0), 0);
-  const totalPaidOut = aggregatedItems.reduce((sum, i) => sum + Number(i.paidAmount || 0), 0);
+  const totalPaid = aggregatedItems.reduce((sum, i) => sum + Number(i.paidAmount || 0), 0);
 
-  const handleApprovePayment = async () => {
-    if (!selectedItem) return;
+  const handleVendorAction = async () => {
+    if (!selectedItem || !actionType) return;
     setActionLoading(true);
     try {
-      if (selectedItem.sourceType === "TRAIN_TICKET") {
-        await financeControllerService.performTicketingAction(selectedItem.id, {
-          action: "APPROVE",
-          notes: payoutNotes.trim() || undefined,
+      if (actionType === "review") {
+        await financeApprovalsService.reviewVendorPaymentFC(selectedItem.id, {
+          reason: payoutNotes.trim() || undefined,
+          directClear: !selectedItem.requiresFounderApproval && isFinanceController,
         });
+        toast.success(
+          selectedItem.requiresFounderApproval
+            ? "Reviewed. Founder approval still required."
+            : "Vendor bill reviewed",
+        );
       } else {
-        await financeControllerService.performVendorAction(selectedItem.id, {
-          action: "APPROVE_AND_PAY",
-          paidAmount: Number(selectedItem.dueAmount || 0),
-          paymentMode,
-          transactionRef: transactionRef.trim() || undefined,
-          notes: payoutNotes.trim() || undefined,
+        await financeApprovalsService.approveVendorPaymentFounder(selectedItem.id, {
+          reason: payoutNotes.trim() || undefined,
         });
+        toast.success("Vendor payout approved");
       }
-      toast.success("Vendor payout approved successfully");
-      setShowPayDialog(false);
+      setActionType(null);
       setSelectedItem(null);
-      setTransactionRef("");
       setPayoutNotes("");
       loadData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Payout approval failed");
+      toast.error(err?.response?.data?.message || "Vendor approval failed");
     } finally {
       setActionLoading(false);
     }
   };
 
   const getCategoryIcon = (cat: string) => {
-    switch (cat.toLowerCase()) {
-      case "hotels":
-      case "hotel":
-        return <Building2 className="w-3.5 h-3.5 text-blue-500" />;
-      case "transport":
-        return <Truck className="w-3.5 h-3.5 text-amber-500" />;
-      case "activities":
-      case "activity":
-        return <Compass className="w-3.5 h-3.5 text-[#FF4D00]" />;
-      case "guides":
-      case "guide":
-        return <User className="w-3.5 h-3.5 text-green-600" />;
-      case "train_ticketing":
-        return <Ticket className="w-3.5 h-3.5 text-red-600" />;
+    switch (String(cat)) {
+      case "Transport":
+        return <Truck className="w-3.5 h-3.5 text-amber-600" />;
+      case "Activities":
+        return <Compass className="w-3.5 h-3.5 text-[#C2410C]" />;
+      case "Guides":
+        return <User className="w-3.5 h-3.5 text-green-700" />;
       default:
-        return <Building2 className="w-3.5 h-3.5 text-slate-500" />;
+        return <Building2 className="w-3.5 h-3.5 text-slate-600" />;
     }
   };
 
   return (
     <div className="space-y-3 font-sans antialiased text-[#162B45]">
-      {/* 1. HEADER */}
       {!hideHeader && (
         <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
           <div className="space-y-0.5">
-            <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none font-montserrat flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-[#FF4D00]" />
-              Outgoing Vendor Payments & Liabilities
+            <h1 className="text-[22px] font-semibold text-[#162B45] tracking-tight leading-none">
+              Vendor payments
             </h1>
-            <p className="text-[#74839A] text-[12px] font-[500] leading-none">
-              Verify and approve outgoing payouts for hotels, transport, activities, and trek guides.
+            <p className="text-[#74839A] text-[12px] font-medium">
+              Departure Hub liabilities. Finance Controller reviews, Founder approves when required.
             </p>
           </div>
-
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
-              <Input
-                placeholder="Search vendor, trip, reference..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#FF4D00] outline-none"
-              />
-            </div>
-            <Button
-              onClick={loadData}
-              className="h-8.5 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-3 text-[#162B45] text-[11px] font-[600] flex items-center gap-1 shadow-sm transition-all"
-            >
-              <RotateCw className="w-3.5 h-3.5 text-[#74839A]" /> Refresh
-            </Button>
-          </div>
+          <Button
+            onClick={loadData}
+            className="h-8 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-3 text-[#162B45] text-[11px] font-semibold"
+          >
+            <RotateCw className="w-3.5 h-3.5 text-[#74839A] mr-1" /> Refresh
+          </Button>
         </div>
       )}
 
-      {/* 2. KPI METRICS */}
-      <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-xl border border-[#DCE5ED] bg-[#F8FAFC] lg:grid-cols-4 lg:gap-0">
-        {/* KPI 1: Pending Approval Count */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Pending Bills
-            </p>
-            <h3 className="text-[20px] font-extrabold text-[#D97706] leading-none mt-1">
-              {loading ? "..." : pendingLiabilities.length}
-            </h3>
-          </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Awaiting payout approval
-          </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-amber-50 flex items-center justify-center text-[#D97706] border border-amber-100 shrink-0">
-            <Clock className="w-3.5 h-3.5" />
-          </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="bg-white border border-[#E3EAF2] rounded-lg p-3.5">
+          <p className="text-[11px] font-semibold text-[#74839A] uppercase tracking-wide">Pending Bills</p>
+          <h3 className="mt-1 text-[22px] font-bold text-[#162B45] tabular-nums">
+            {loading ? "—" : pendingBills.length}
+          </h3>
         </div>
-
-        {/* KPI 2: Total Pending Outflow */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Outstanding Liabilities
-            </p>
-            <h3 className="text-[20px] font-extrabold text-red-600 leading-none mt-1">
-              {loading ? "..." : `₹${totalPendingDue.toLocaleString("en-IN")}`}
-            </h3>
-          </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Hotels, Fleet, Guides, Rail
-          </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100 shrink-0">
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </div>
+        <div className="bg-white border border-[#E3EAF2] rounded-lg p-3.5">
+          <p className="text-[11px] font-semibold text-[#74839A] uppercase tracking-wide">Outstanding</p>
+          <h3 className="mt-1 text-[22px] font-bold text-[#162B45] tabular-nums">
+            {loading ? "—" : formatINR(totalOutstanding)}
+          </h3>
         </div>
-
-        {/* KPI 3: Paid Out Volume */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Disbursed Payments
-            </p>
-            <h3 className="text-[20px] font-extrabold text-green-600 leading-none mt-1">
-              {loading ? "..." : `₹${totalPaidOut.toLocaleString("en-IN")}`}
-            </h3>
-          </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Paid to vendors & staff
-          </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-green-50 flex items-center justify-center text-green-600 border border-green-100 shrink-0">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-          </div>
-        </div>
-
-        {/* KPI 4: Total Contracted */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Active Vendor Contracts
-            </p>
-            <h3 className="text-[20px] font-extrabold text-slate-900 leading-none mt-1">
-              {loading ? "..." : aggregatedItems.length}
-            </h3>
-          </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Across active departures
-          </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-[#FF4D00]/5 flex items-center justify-center text-[#FF4D00] border border-[#FF4D00]/20 shrink-0">
-            <Building2 className="w-3.5 h-3.5" />
-          </div>
+        <div className="bg-white border border-[#E3EAF2] rounded-lg p-3.5">
+          <p className="text-[11px] font-semibold text-[#74839A] uppercase tracking-wide">Paid</p>
+          <h3 className="mt-1 text-[22px] font-bold text-[#162B45] tabular-nums">
+            {loading ? "—" : formatINR(totalPaid)}
+          </h3>
         </div>
       </div>
 
-      {/* 3. MAIN TABLE WITH 5 OPERATIONAL TABS */}
-      <div className="bg-white border border-[#E3EAF2] rounded-[8px] shadow-[0_1px_2px_rgba(15,23,42,0.02)] overflow-hidden flex flex-col">
-        {/* Category Tabs Header */}
-        <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="inline-flex bg-slate-100 p-1 rounded-lg border border-slate-200/70 overflow-x-auto max-w-full">
-              {[
-                { key: "all", label: "All Liabilities", icon: Building2 },
-                { key: "hotels", label: "🏨 Hotels / Stays", icon: Building2 },
-                { key: "transport", label: "🚌 Transport Fleet", icon: Truck },
-                { key: "activities", label: "🎯 Activities & Permits", icon: Compass },
-                { key: "guides", label: "🧭 Guides & Leaders", icon: User },
-              ].map((cat) => (
-                <button
-                  key={cat.key}
-                  onClick={() => setActiveCategory(cat.key as OutgoingCategory)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-[11px] font-bold transition-all whitespace-nowrap",
-                    activeCategory === cat.key
-                      ? "bg-white text-[#FF4D00] shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
+      <div className="bg-white border border-[#E3EAF2] rounded-lg overflow-hidden">
+        <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {([
+              { key: "all", label: "All" },
+              { key: "Hotels", label: "Hotels" },
+              { key: "Transport", label: "Transport" },
+              { key: "Activities", label: "Activities" },
+              { key: "Guides", label: "Guides" },
+            ] as const).map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setActiveCategory(cat.key)}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap",
+                  activeCategory === cat.key
+                    ? "bg-[#0B1528] text-white"
+                    : "bg-white border border-[#E3EAF2] text-slate-600",
+                )}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
-
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded">
+            <div className="flex items-center gap-1">
               {[
-                { key: "ALL", label: "ALL" },
-                { key: "PENDING_APPROVAL", label: "PENDING" },
-                { key: "PAID", label: "PAID" },
-                { key: "REJECTED", label: "REJECTED" },
+                { key: "ALL", label: "All" },
+                { key: "PENDING", label: "Pending" },
+                { key: "PAID", label: "Settled" },
+                { key: "REJECTED", label: "Rejected" },
               ].map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setStatusFilter(tab.key)}
                   className={cn(
-                    "px-2.5 py-1 rounded text-[9.5px] font-extrabold uppercase tracking-wider transition-all",
-                    statusFilter === tab.key
-                      ? "bg-white text-[#162B45] shadow-xs"
-                      : "text-[#74839A] hover:text-[#162B45]"
+                    "px-2.5 py-1 rounded text-[10px] font-bold uppercase",
+                    statusFilter === tab.key ? "bg-slate-900 text-white" : "text-slate-500",
                   )}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
-
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
               <Input
-                placeholder="Search vendor or trip..."
+                placeholder="Search vendor, departure, service..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-7.5 w-48 pl-8 text-[11px] rounded bg-slate-50 border-[#E3EAF2] focus:border-[#FF4D00] outline-none"
+                className="h-8 w-52 pl-8 text-[11px]"
               />
             </div>
           </div>
         </div>
 
-        {/* Liabilities Table */}
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#FF4D00] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#C2410C] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : aggregatedItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center h-[200px]">
+            <div className="flex flex-col items-center justify-center py-12 text-center">
               <Building2 className="w-8 h-8 text-slate-300 mb-2" />
-              <h4 className="text-[11.5px] font-bold text-[#162B45] uppercase tracking-wider font-montserrat">
-                No Outgoing Liabilities
-              </h4>
-              <p className="text-[10px] text-[#74839A] mt-1">
-                All operational vendor payouts and train ticketing accounts are fully settled.
-              </p>
+              <h4 className="text-[12px] font-semibold text-[#162B45]">No vendor bills</h4>
+              <p className="text-[11px] text-[#74839A] mt-1">Departure Hub has no open liabilities for this filter.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[860px] text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/70 border-b border-[#E3EAF2] text-[9.5px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
+                <tr className="bg-[#F8FAFC] border-b border-[#E3EAF2] text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
                   <th className="px-4 py-2.5">Category</th>
-                  <th className="px-4 py-2.5">Vendor / Payee</th>
-                  <th className="px-4 py-2.5">Trip / Route</th>
-                  <th className="px-4 py-2.5">Bill / Ref</th>
-                  <th className="px-4 py-2.5 text-right">Total Cost</th>
+                  <th className="px-4 py-2.5">Vendor</th>
+                  <th className="px-4 py-2.5">Departure / Trip</th>
+                  <th className="px-4 py-2.5">Service</th>
+                  <th className="px-4 py-2.5 text-right">Total</th>
                   <th className="px-4 py-2.5 text-right">Paid</th>
-                  <th className="px-4 py-2.5 text-right">Due Balance</th>
+                  <th className="px-4 py-2.5 text-right">Outstanding</th>
                   <th className="px-4 py-2.5">Status</th>
-                  <th className="px-4 py-2.5 text-right pr-4">Actions</th>
+                  <th className="px-4 py-2.5 text-right pr-4">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E3EAF2] text-[11px] font-semibold text-[#162B45]">
-                {aggregatedItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors h-[44px]">
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-1.5">
-                        {getCategoryIcon(item.category)}
-                        <span className="font-bold text-[10px] text-slate-700 uppercase tracking-tight">
-                          {item.categoryLabel}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 font-bold text-[#162B45]">
-                      {item.vendorName}
-                    </td>
-                    <td className="px-4 py-2 text-slate-600 font-medium">
-                      {item.tripName}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-[#FF4D00] text-[10.5px]">
-                      {item.reference}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono font-bold text-slate-900">
-                      ₹{Number(item.totalCost || 0).toLocaleString("en-IN")}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono font-medium text-green-600">
-                      ₹{Number(item.paidAmount || 0).toLocaleString("en-IN")}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono font-bold text-red-600 text-[12px]">
-                      ₹{Number(item.dueAmount || 0).toLocaleString("en-IN")}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[9px] font-bold uppercase",
-                          item.status === "PAID" || item.status === "COMPLETED" || item.status === "APPROVED"
-                            ? "bg-green-50 text-green-700 border-green-200"
-                            : item.status === "REJECTED"
-                            ? "bg-red-50 text-red-700 border-red-200"
-                            : "bg-amber-50 text-amber-700 border-amber-200"
+              <tbody className="divide-y divide-[#E3EAF2] text-[12px]">
+                {aggregatedItems.map((item) => {
+                  const label = vendorStatusLabel(item);
+                  const showReview = canAct && (isFinanceController || isFounder) && label === "Pending";
+                  const showApprove = canAct && isFounder && (label === "Reviewed" || (label === "Pending" && !item.requiresFounderApproval));
+                  return (
+                    <tr key={item.id} className="hover:bg-[#F8FAFC]">
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-1.5">
+                          {getCategoryIcon(item.category)}
+                          <span className="font-semibold text-[11px]">{item.category}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 font-semibold">{item.vendorName}</td>
+                      <td className="px-4 py-2 text-slate-600">
+                        <div className="flex flex-col gap-0.5">
+                          <span>{item.tripName}</span>
+                          {item.departureDate && (
+                            <span className="text-[10px] text-slate-400">
+                              {safeFormatDate(item.departureDate)}
+                            </span>
+                          )}
+                          {item.operationalLinked && item.departureHref ? (
+                            <Link
+                              to={item.departureHref}
+                              className="text-[10px] font-semibold text-[#C2410C] hover:underline w-fit"
+                            >
+                              View Departure
+                            </Link>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">Operational record unavailable</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-slate-600">{item.serviceDescription}</td>
+                      <td className="px-4 py-2 text-right font-mono">{formatINR(item.totalCost)}</td>
+                      <td className="px-4 py-2 text-right font-mono text-green-700">{formatINR(item.paidAmount)}</td>
+                      <td className="px-4 py-2 text-right font-mono font-semibold">
+                        {item.isOverpaid ? (
+                          <span className="text-amber-700">Overpaid {formatINR(item.overpaidAmount)}</span>
+                        ) : (
+                          <span className={item.outstandingAmount > 0 ? "text-red-700" : "text-slate-500"}>
+                            {formatINR(Math.max(0, item.outstandingAmount))}
+                          </span>
                         )}
-                      >
-                        {item.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2 text-right pr-4">
-                      {item.status !== "PAID" && Number(item.dueAmount || 0) > 0 ? (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setSelectedItem(item);
-                            setShowPayDialog(true);
-                          }}
-                          className="h-6.5 text-[9.5px] font-bold bg-[#FF4D00] hover:bg-[#EA580C] text-white"
+                      </td>
+                      <td className="px-4 py-2">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[9px] font-bold uppercase",
+                            label === "Settled"
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : label === "Rejected"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : label === "Overpaid"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                                  : "bg-slate-50 text-slate-700 border-slate-200",
+                          )}
                         >
-                          Approve Payout
-                        </Button>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 italic font-medium">
-                          Settled
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          {label}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-2 text-right pr-4">
+                        {label === "Settled" ? (
+                          <span className="text-[10px] text-slate-400 italic">Settled</span>
+                        ) : !canAct ? (
+                          <span className="text-[10px] text-slate-400 italic">Awaiting review</span>
+                        ) : (
+                          <div className="flex justify-end gap-1">
+                            {showReview && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedItem(item);
+                                  setActionType("review");
+                                }}
+                                className="h-7 text-[10px] font-semibold"
+                              >
+                                Review
+                              </Button>
+                            )}
+                            {showApprove && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedItem(item);
+                                  setActionType("approve");
+                                }}
+                                className="h-7 text-[10px] font-semibold bg-[#0B1528] text-white"
+                              >
+                                Approve
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────
-          APPROVE VENDOR PAYOUT MODAL
-         ───────────────────────────────────────────────────────────── */}
-      <Dialog open={showPayDialog} onOpenChange={setShowPayDialog}>
+      <Dialog open={Boolean(actionType)} onOpenChange={() => setActionType(null)}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-[#FF4D00]" />
-              Approve Vendor Payout
+            <DialogTitle className="text-base font-semibold">
+              {actionType === "review" ? "Review vendor bill" : "Approve vendor payout"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Confirm bank disbursement or voucher settlement for this operational expense.
+              Two-step vendor approval. Finance Controller reviews first; Founder approves when the balance requires it.
             </DialogDescription>
           </DialogHeader>
-
           {selectedItem && (
-            <div className="space-y-3 py-2 text-xs">
+            <div className="space-y-3 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Vendor / Payee:</span>
-                  <span className="font-bold text-slate-900">{selectedItem.vendorName}</span>
+                  <span className="text-slate-500">Vendor</span>
+                  <span className="font-semibold">{selectedItem.vendorName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Trip / Route:</span>
-                  <span className="font-medium text-slate-800">{selectedItem.tripName}</span>
+                  <span className="text-slate-500">Departure / Trip</span>
+                  <span>{selectedItem.tripName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Due Balance:</span>
-                  <span className="font-mono font-bold text-red-600 text-sm">
-                    ₹{Number(selectedItem.dueAmount || 0).toLocaleString("en-IN")}
+                  <span className="text-slate-500">Service</span>
+                  <span>{selectedItem.serviceDescription}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Total / Paid</span>
+                  <span className="font-mono">
+                    {formatINR(selectedItem.totalCost)} / {formatINR(selectedItem.paidAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">{selectedItem.isOverpaid ? "Overpaid" : "Outstanding"}</span>
+                  <span className="font-mono font-semibold">
+                    {formatINR(selectedItem.isOverpaid ? selectedItem.overpaidAmount : Math.max(0, selectedItem.outstandingAmount))}
                   </span>
                 </div>
               </div>
-
-              <div>
-                <label className="text-[10px] font-bold uppercase text-slate-500">
-                  Payment Mode
-                </label>
-                <select
-                  value={paymentMode}
-                  onChange={(e) => setPaymentMode(e.target.value)}
-                  className="w-full h-8 text-xs rounded border border-slate-200 bg-white px-2 mt-1"
-                >
-                  <option value="BANK_TRANSFER">Bank NEFT / RTGS</option>
-                  <option value="UPI">Company UPI</option>
-                  <option value="CASH">Trip Cash Handover</option>
-                  <option value="CHEQUE">Cheque</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold uppercase text-slate-500">
-                  Bank Reference / UTR Number
-                </label>
-                <Input
-                  placeholder="e.g. UTR-HDFC-998877"
-                  value={transactionRef}
-                  onChange={(e) => setTransactionRef(e.target.value)}
-                  className="h-8 text-xs font-mono mt-1"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold uppercase text-slate-500">
-                  Approval Notes (Optional)
-                </label>
-                <Input
-                  placeholder="e.g. Cleared 50% advance for Manali hotel rooms"
-                  value={payoutNotes}
-                  onChange={(e) => setPayoutNotes(e.target.value)}
-                  className="h-8 text-xs mt-1"
-                />
-              </div>
+              <Input
+                placeholder="Notes (optional)"
+                value={payoutNotes}
+                onChange={(e) => setPayoutNotes(e.target.value)}
+                className="h-8 text-xs"
+              />
             </div>
           )}
-
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPayDialog(false)}
-              className="h-8 text-xs"
-            >
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setActionType(null)}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              disabled={actionLoading}
-              onClick={handleApprovePayment}
-              className="h-8 text-xs font-bold bg-[#FF4D00] hover:bg-[#EA580C] text-white"
-            >
-              Confirm Payout
+            <Button size="sm" disabled={actionLoading} onClick={handleVendorAction} className="bg-[#0B1528] text-white">
+              {actionType === "review" ? "Confirm review" : "Confirm approval"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -567,4 +478,3 @@ export default function OutgoingPaymentsApprovalPage({
     </div>
   );
 }
-

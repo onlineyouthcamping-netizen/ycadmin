@@ -244,6 +244,13 @@ export const financeControllerService = {
     return res.data;
   },
 
+  listCollectionVerifiers: async (): Promise<
+    { id: string; name: string; email?: string; role?: string }[]
+  > => {
+    const res = await api.get("/finance/control-center/collection-verifiers");
+    return res.data?.data || [];
+  },
+
   performVendorAction: async (
     id: string,
     payload: {

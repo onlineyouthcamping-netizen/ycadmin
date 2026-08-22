@@ -4,6 +4,8 @@ import {
   canonicalCollectionStatus,
   isCollectionPending,
   isCollectionVerified,
+  isEligibleCollectionAssignee,
+  canApproveStationCash,
 } from "./collectionVerification";
 
 describe("canonicalCollectionStatus", () => {
@@ -42,6 +44,14 @@ describe("canVerifyCollection identity", () => {
     ).toBe(true);
   });
 
+  it("only Founder and Finance Controller are eligible approval assignees", () => {
+    expect(isEligibleCollectionAssignee({ role: "founder" })).toBe(true);
+    expect(isEligibleCollectionAssignee({ role: "finance_controller" })).toBe(true);
+    expect(isEligibleCollectionAssignee({ role: "admin" })).toBe(false);
+    expect(isEligibleCollectionAssignee({ role: "sales" })).toBe(false);
+    expect(isEligibleCollectionAssignee({ role: "operations" })).toBe(false);
+  });
+
   it("denies sales, viewer, ops, guide, generic finance, and custom roles", () => {
     expect(canVerifyCollection({ role: "sales" })).toBe(false);
     expect(canVerifyCollection({ role: "viewer" })).toBe(false);
@@ -54,5 +64,27 @@ describe("canVerifyCollection identity", () => {
         permissions: ["finance.incoming.verify", "accounting.approve", "ops.manage"],
       }),
     ).toBe(false);
+  });
+
+  it("does not let isSuperuser bypass Founder / Finance Controller", () => {
+    expect(canVerifyCollection({ role: "admin", isSuperuser: true })).toBe(false);
+    expect(
+      canVerifyCollection({
+        role: "admin",
+        isSuperuser: true,
+        permissions: ["accounting.approve", "finance.incoming.verify", "ops.manage", "bookings.edit", "payments.edit"],
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("canApproveStationCash", () => {
+  it("allows founder/superadmin/isSuperuser and protected founder email, not finance_controller or email substring", () => {
+    expect(canApproveStationCash({ role: "superadmin" })).toBe(true);
+    expect(canApproveStationCash({ role: "founder" })).toBe(true);
+    expect(canApproveStationCash({ role: "admin", isSuperuser: true })).toBe(true);
+    expect(canApproveStationCash({ role: "admin", email: "hemal.patel@youthcamping.online" })).toBe(true);
+    expect(canApproveStationCash({ role: "finance_controller" })).toBe(false);
+    expect(canApproveStationCash({ role: "admin", email: "hemal.assistant@youthcamping.online" })).toBe(false);
   });
 });

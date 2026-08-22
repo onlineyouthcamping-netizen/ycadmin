@@ -40,7 +40,6 @@ import { cn, safeFormatDate } from "@/lib/utils";
 import { financeControllerService } from "@/services/financeController.service";
 import { financeApprovalsService } from "@/services/financeApprovals.service";
 import { useAuthStore } from "@/store/auth.store";
-import { useStaffUsers } from "@/hooks/useStaffUsers";
 import { toast } from "sonner";
 import {
   Select,
@@ -56,6 +55,8 @@ import {
   isCollectionPending,
   isCollectionRejected,
   isCollectionVerified,
+  isEligibleCollectionAssignee,
+  canApproveStationCash,
 } from "@/utils/collectionVerification";
 
 interface IncomingPaymentsApprovalPageProps {
@@ -66,13 +67,9 @@ export default function IncomingPaymentsApprovalPage({
   hideHeader = false,
 }: IncomingPaymentsApprovalPageProps) {
   const { admin: currentUser } = useAuthStore();
-  const { staffUsers } = useStaffUsers();
+  const [verifiers, setVerifiers] = useState<{ id: string; name: string; role?: string }[]>([]);
 
-  const userRole = (currentUser?.role || "").toLowerCase();
-  const isSuperuserFounder =
-    ["superadmin", "founder", "admin"].includes(userRole) ||
-    (currentUser as any)?.isSuperuser ||
-    (currentUser?.email && currentUser.email.toLowerCase().includes("hemal"));
+  const canApproveStation = canApproveStationCash(currentUser);
   const canVerify = canVerifyCollection(currentUser);
 
   const [incomingPayments, setIncomingPayments] = useState<IncomingPaymentItem[]>([]);
@@ -104,7 +101,7 @@ export default function IncomingPaymentsApprovalPage({
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [incRes, cashRes, stationRes, pendingRes] = await Promise.all([
+      const [incRes, cashRes, stationRes, pendingRes, verifierRes] = await Promise.all([
         financeControllerService.getIncomingQueue({
           search: search.trim() || undefined,
           limit: 50,
@@ -118,7 +115,11 @@ export default function IncomingPaymentsApprovalPage({
           search: search.trim() || undefined,
         }).catch(() => ({ summary: {}, dateGroups: [], allCollections: [] })),
         financeApprovalsService.getPendingApprovals().catch(() => null),
+        financeControllerService.listCollectionVerifiers().catch(() => []),
       ]);
+      setVerifiers(
+        (verifierRes || []).filter((user) => isEligibleCollectionAssignee(user)),
+      );
       setIncomingPayments(incRes?.data || []);
       setCashSubmissions(cashRes?.data || []);
       setStationCashData(stationRes || { summary: {}, dateGroups: [], allCollections: [] });
@@ -151,7 +152,7 @@ export default function IncomingPaymentsApprovalPage({
   };
 
   const handleBatchVerifyStation = (batch: any) => {
-    if (!isSuperuserFounder) {
+    if (!canApproveStation) {
       toast.error("Station cash approvals are restricted to Founder / Superadmin accounts only.");
       return;
     }
@@ -186,7 +187,7 @@ export default function IncomingPaymentsApprovalPage({
   };
 
   const handleSingleStationAction = async (item: any, action: "APPROVE" | "REJECT") => {
-    if (!isSuperuserFounder) {
+    if (!canApproveStation) {
       toast.error("Station cash approvals are restricted to Founder / Superadmin accounts only.");
       return;
     }
@@ -500,7 +501,7 @@ export default function IncomingPaymentsApprovalPage({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
-                Needs review
+                Incoming Needs Review
               </p>
               <h3 className="mt-2 text-[22px] font-bold leading-none text-[#0B1528] tabular-nums">
                 {loading ? "—" : pendingCount}
@@ -520,7 +521,7 @@ export default function IncomingPaymentsApprovalPage({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
-                Awaiting credit
+                Pending Value
               </p>
               <h3 className="mt-2 text-[22px] font-bold leading-none text-[#0B1528] tabular-nums">
                 {loading ? "—" : (
@@ -545,7 +546,7 @@ export default function IncomingPaymentsApprovalPage({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
-                Reconciled
+                Verified
               </p>
               <h3 className="mt-2 text-[22px] font-bold leading-none text-[#0B1528] tabular-nums">
                 {loading ? "—" : verifiedCount}
@@ -565,7 +566,7 @@ export default function IncomingPaymentsApprovalPage({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
-                Cleared value
+                Verified Value
               </p>
               <h3 className="mt-2 text-[22px] font-bold leading-none text-[#0B1528] tabular-nums">
                 {loading ? "—" : (
@@ -801,8 +802,8 @@ export default function IncomingPaymentsApprovalPage({
                                   <Button
                                     size="sm"
                                     onClick={() => handleBatchVerifyStation(sg)}
-                                    disabled={!isSuperuserFounder}
-                                    title={!isSuperuserFounder ? "Founder access required" : "Batch verify all collections at this station"}
+                                    disabled={!canApproveStation}
+                                    title={!canApproveStation ? "Founder access required" : "Batch verify all collections at this station"}
                                     className="h-7 text-[10px] font-bold bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
                                   >
                                     <CheckCheck className="w-3.5 h-3.5" />
@@ -905,7 +906,7 @@ export default function IncomingPaymentsApprovalPage({
                                             <div className="flex items-center justify-end gap-1">
                                               <Button
                                                 size="sm"
-                                                disabled={!isSuperuserFounder}
+                                                disabled={!canApproveStation}
                                                 onClick={() => handleSingleStationAction(item, "APPROVE")}
                                                 className="h-6 px-2 text-[9px] font-bold bg-green-600 hover:bg-green-700 text-white"
                                               >
@@ -914,7 +915,7 @@ export default function IncomingPaymentsApprovalPage({
                                               <Button
                                                 size="sm"
                                                 variant="outline"
-                                                disabled={!isSuperuserFounder}
+                                                disabled={!canApproveStation}
                                                 onClick={() => handleSingleStationAction(item, "REJECT")}
                                                 className="h-6 px-2 text-[9px] font-bold text-red-600 border-red-200 hover:bg-red-50"
                                               >
@@ -963,16 +964,15 @@ export default function IncomingPaymentsApprovalPage({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#F8FAFC] border-b border-[#E8EEF4] text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                      <th className="px-4 py-2.5">Booking ID</th>
-                      <th className="px-4 py-2.5">Customer / Group</th>
-                      <th className="px-4 py-2.5">Payment Mode / Type</th>
+                      <th className="px-4 py-2.5">Booking</th>
+                      <th className="px-4 py-2.5">Customer</th>
+                      <th className="px-4 py-2.5">Payment</th>
                       <th className="px-4 py-2.5 text-right">Amount</th>
-                      <th className="px-4 py-2.5">Proof / Slip</th>
                       <th className="px-4 py-2.5">Collected By</th>
-                      <th className="px-4 py-2.5">Approval Assignee</th>
+                      <th className="px-4 py-2.5">Approval</th>
                       <th className="px-4 py-2.5">Date</th>
                       <th className="px-4 py-2.5">Status</th>
-                      <th className="px-4 py-2.5 text-right pr-4">Actions</th>
+                      <th className="px-4 py-2.5 text-right pr-4">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E3EAF2] text-[11px] font-semibold text-[#162B45]">
@@ -1014,6 +1014,15 @@ export default function IncomingPaymentsApprovalPage({
                                 {item.paymentMode?.replace(/_/g, " ")} (Online)
                               </Badge>
                             )}
+                            {item.proofUrl ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewProofItem(item)}
+                                className="mt-1 block text-[10px] font-semibold text-blue-700 hover:underline"
+                              >
+                                View proof
+                              </button>
+                            ) : null}
                           </td>
                           <td className={cn(
                             "px-4 py-2 text-right font-mono font-bold text-[12px]",
@@ -1021,28 +1030,17 @@ export default function IncomingPaymentsApprovalPage({
                           )}>
                             ₹{Number(item.amount || 0).toLocaleString("en-IN")}
                           </td>
-                          <td className="px-4 py-2">
-                            {item.proofUrl ? (
-                              <button
-                                type="button"
-                                onClick={() => setPreviewProofItem(item)}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[9.5px] font-bold transition-all shadow-2xs group"
-                                title="Click to view payment proof / UTR receipt"
-                              >
-                                <Eye className="w-3 h-3 text-blue-600 group-hover:scale-110 transition-transform" />
-                                <span>View Proof</span>
-                              </button>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 italic">No proof</span>
-                            )}
-                          </td>
                           <td className="px-4 py-2 text-slate-500 font-medium text-[10.5px]">
                             {item.collectedBy}
                           </td>
                           <td className="px-4 py-2">
                             {isPendingStatus(item) ? (
                               <Select
-                                value={item.assigneeId || "UNASSIGNED"}
+                                value={
+                                  item.assigneeId && verifiers.some((v) => v.id === item.assigneeId)
+                                    ? item.assigneeId
+                                    : "UNASSIGNED"
+                                }
                                 onValueChange={(val) => handleAssignApprover(item.id, val)}
                                 disabled={assigningId === item.id}
                               >
@@ -1051,16 +1049,16 @@ export default function IncomingPaymentsApprovalPage({
                                 </SelectTrigger>
                                 <SelectContent className="rounded">
                                   <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
-                                  {staffUsers.map((staff) => (
+                                  {verifiers.map((staff) => (
                                     <SelectItem key={staff.id} value={staff.id}>
-                                      {staff.name} ({staff.role || "Staff"})
+                                      {staff.name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             ) : (
                               <span className="text-[10px] text-slate-600 font-medium">
-                                {item.assigneeName || "Finance Team"}
+                                {item.assigneeName || "—"}
                               </span>
                             )}
                           </td>
@@ -1219,6 +1217,27 @@ export default function IncomingPaymentsApprovalPage({
 
                       {isPending ? (
                         <div className="flex flex-col gap-2 sm:flex-row">
+                          <Select
+                            value={
+                              item.assigneeId && verifiers.some((v) => v.id === item.assigneeId)
+                                ? item.assigneeId
+                                : "UNASSIGNED"
+                            }
+                            onValueChange={(val) => handleAssignApprover(item.id, val)}
+                            disabled={assigningId === item.id}
+                          >
+                            <SelectTrigger className="h-9 w-full text-[10px] rounded border-slate-200 bg-white font-medium">
+                              <SelectValue placeholder="Approval assignee" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded">
+                              <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+                              {verifiers.map((staff) => (
+                                <SelectItem key={staff.id} value={staff.id}>
+                                  {staff.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           {isCash && !canVerify ? (
                             <Button
                               size="sm"
@@ -1518,7 +1537,7 @@ export default function IncomingPaymentsApprovalPage({
                 }}
                 className={cn(
                   "h-8 text-xs font-bold text-white shadow-none",
-                  isSuperuserFounder ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"
+                  canVerify ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"
                 )}
               >
                 Verify

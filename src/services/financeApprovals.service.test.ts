@@ -37,3 +37,23 @@ describe("financeApprovalsService.verifyCollection", () => {
     expect(result.payment.status).toBe("Verified");
   });
 });
+
+describe("financeApprovalsService vendor two-step", () => {
+  it("reviews through the FC endpoint and approves through the founder endpoint", async () => {
+    vi.mocked(api.patch).mockResolvedValue({
+      data: { success: true, payment: { approvalStatus: "REVIEWED_FINANCE_CONTROLLER" } },
+    });
+    await financeApprovalsService.reviewVendorPaymentFC("vp_1", { reason: "Invoice checked" });
+    expect(api.patch).toHaveBeenCalledWith("/finance/vendor-payments/vp_1/review-fc", {
+      reason: "Invoice checked",
+    });
+
+    vi.mocked(api.patch).mockResolvedValue({
+      data: { success: true, payment: { approvalStatus: "APPROVED_FOUNDER", status: "Paid" } },
+    });
+    await financeApprovalsService.approveVendorPaymentFounder("vp_1", { reason: "Cleared" });
+    expect(api.patch).toHaveBeenCalledWith("/finance/vendor-payments/vp_1/approve-founder", {
+      reason: "Cleared",
+    });
+  });
+});

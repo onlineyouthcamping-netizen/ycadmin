@@ -805,6 +805,21 @@ export interface VendorPaymentRequestItem {
   depositAccountName?: string;
   notes?: string;
   createdAt: string;
+  sourceType?: string;
+  sourceId?: string | null;
+  operationalLinked?: boolean;
+  departureHref?: string | null;
+  departureDate?: string | null;
+  serviceDescription?: string;
+  tripName?: string;
+  category?: string;
+  approvalStatus?: string;
+  status?: string;
+  totalCost?: number;
+  overpaidAmount?: number;
+  isOverpaid?: boolean;
+  requiresFounderApproval?: boolean;
+  billReference?: string;
 }
 
 export interface TicketFinanceAuditItem {
