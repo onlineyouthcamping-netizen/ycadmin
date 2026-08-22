@@ -663,25 +663,11 @@ export default function AccountingPage() {
 
   // Approval badges use finance approvalStatus only — receipt status (Verified/Paid)
   // is operational and must not be shown as "Approved & Verified".
-  const getApprovalBadge = (approvalStatus?: string, status?: string, requiresFounder?: boolean) => {
+  const getApprovalBadge = (approvalStatus?: string, status?: string, _requiresFounder?: boolean) => {
     if (approvalStatus === "APPROVED_FOUNDER") {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">
           <CheckCircle2 className="w-3 h-3 text-green-600" /> Approved & Verified
-        </span>
-      );
-    }
-    if (approvalStatus === "REVIEWED_FINANCE_CONTROLLER") {
-      if (requiresFounder) {
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-50 text-slate-700 border border-slate-200 animate-pulse">
-            <ShieldCheck className="w-3 h-3 text-slate-600" /> Awaiting Founder (&gt;₹50K)
-          </span>
-        );
-      }
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-          <Clock className="w-3 h-3 text-blue-600" /> Awaiting Founder
         </span>
       );
     }
@@ -694,7 +680,7 @@ export default function AccountingPage() {
     }
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-        <Clock className="w-3 h-3 text-amber-600" /> Pending FC Review
+        <Clock className="w-3 h-3 text-amber-600" /> Pending verification
       </span>
     );
   };
@@ -766,7 +752,7 @@ export default function AccountingPage() {
 
   const handleReassignPaymentAccount = async (paymentId: string, accountId: string) => {
     if (!paymentId || paymentId.startsWith("adv-")) {
-      toast.info("This is an advance balance record. Click 'Sync Treasury' to generate its verified receipt first.");
+      toast.info("This is an advance balance record. Click 'Sync Treasury' to generate its pending receipt first.");
       return;
     }
     try {
@@ -873,7 +859,7 @@ export default function AccountingPage() {
   // Aggregate Treasury Metrics
   const treasurySummary = useMemo(() => {
     const totalInflow = allClientReceipts
-      .filter((r) => r.status === "Verified")
+      .filter((r) => r.approvalStatus === "APPROVED_FOUNDER")
       .reduce((sum, r) => sum + r.amount, 0);
 
     const totalOutflow =
@@ -918,7 +904,13 @@ export default function AccountingPage() {
 
       const matchesStatus =
         paymentStatusFilter === "ALL" ||
-        r.status?.toLowerCase() === paymentStatusFilter.toLowerCase();
+        (paymentStatusFilter === "verified" && r.approvalStatus === "APPROVED_FOUNDER") ||
+        (paymentStatusFilter === "pending verification" &&
+          r.approvalStatus !== "APPROVED_FOUNDER" &&
+          r.approvalStatus !== "REJECTED" &&
+          r.status !== "Rejected") ||
+        (paymentStatusFilter === "rejected" &&
+          (r.approvalStatus === "REJECTED" || r.status === "Rejected"));
 
       return matchesSearch && matchesMode && matchesStatus;
     });
@@ -2897,44 +2889,25 @@ export default function AccountingPage() {
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
-            {/* Approval Chain Stepper */}
+            {/* Single verification status */}
             {auditModalState?.chain && (
-              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-[#E8EEF4] rounded-lg">
+              <div className="p-3 bg-slate-50 border border-[#E8EEF4] rounded-lg">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0B1528]">
                     <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">1</span>
-                    Step 1: FC Review
+                    Verification
                   </div>
                   <div className="text-[11px] text-slate-500 pl-6.5">
-                    {auditModalState.chain.step1_financeController?.status === "DONE" ? (
-                      <span className="text-green-600 font-medium">✓ Reviewed & Verified</span>
-                    ) : auditModalState.chain.step1_financeController?.status === "REJECTED" ? (
+                    {(auditModalState.chain.verification || auditModalState.chain.step1_financeController)?.status === "DONE" ? (
+                      <span className="text-green-600 font-medium">✓ Verified</span>
+                    ) : (auditModalState.chain.verification || auditModalState.chain.step1_financeController)?.status === "REJECTED" ? (
                       <span className="text-red-600 font-medium">✕ Rejected</span>
                     ) : (
-                      <span className="text-amber-600 font-medium">⏳ Pending FC Review</span>
+                      <span className="text-amber-600 font-medium">⏳ Pending verification</span>
                     )}
-                    {auditModalState.chain.step1_financeController?.approvedAt && (
+                    {(auditModalState.chain.verification || auditModalState.chain.step1_financeController)?.approvedAt && (
                       <div className="text-[10px] text-slate-400">
-                        {safeFormatDateTime(auditModalState.chain.step1_financeController.approvedAt)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0B1528]">
-                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-[10px] font-bold">2</span>
-                    Step 2: Founder Sign-off
-                  </div>
-                  <div className="text-[11px] text-slate-500 pl-6.5">
-                    {auditModalState.chain.step2_founder?.status === "DONE" ? (
-                      <span className="text-green-600 font-medium">✓ Founder Approved</span>
-                    ) : (
-                      <span className="text-slate-400 font-medium">⏳ Awaiting Sign-off</span>
-                    )}
-                    {auditModalState.chain.step2_founder?.approvedAt && (
-                      <div className="text-[10px] text-slate-400">
-                        {safeFormatDateTime(auditModalState.chain.step2_founder.approvedAt)}
+                        {safeFormatDateTime((auditModalState.chain.verification || auditModalState.chain.step1_financeController)?.approvedAt)}
                       </div>
                     )}
                   </div>

@@ -50,6 +50,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { IncomingPaymentItem, CashSubmissionItem } from "@/types";
+import {
+  canVerifyCollection,
+  canonicalCollectionStatus,
+  isCollectionPending,
+  isCollectionRejected,
+  isCollectionVerified,
+} from "@/utils/collectionVerification";
 
 interface IncomingPaymentsApprovalPageProps {
   hideHeader?: boolean;
@@ -66,6 +73,7 @@ export default function IncomingPaymentsApprovalPage({
     ["superadmin", "founder", "admin"].includes(userRole) ||
     (currentUser as any)?.isSuperuser ||
     (currentUser?.email && currentUser.email.toLowerCase().includes("hemal"));
+  const canVerify = canVerifyCollection(currentUser);
 
   const [incomingPayments, setIncomingPayments] = useState<IncomingPaymentItem[]>([]);
   const [cashSubmissions, setCashSubmissions] = useState<CashSubmissionItem[]>([]);
@@ -98,12 +106,10 @@ export default function IncomingPaymentsApprovalPage({
     try {
       const [incRes, cashRes, stationRes, pendingRes] = await Promise.all([
         financeControllerService.getIncomingQueue({
-          status: statusFilter === "ALL" ? undefined : statusFilter,
           search: search.trim() || undefined,
           limit: 50,
         }).catch(() => ({ data: [], pagination: {} })),
         financeControllerService.getCashQueue({
-          status: statusFilter === "ALL" ? undefined : statusFilter,
           search: search.trim() || undefined,
           limit: 50,
         }).catch(() => ({ data: [], pagination: {} })),
@@ -205,8 +211,7 @@ export default function IncomingPaymentsApprovalPage({
   };
 
   // Merge items for normal table
-  const allRawItems = [
-    ...opsClientPayments.map((cp) => ({
+  const opsClientItems = opsClientPayments.map((cp) => ({
       id: cp.id,
       type: "OPS_CLIENT_PAYMENT",
       bookingId: cp.booking?.bookingId || cp.bookingId || "—",
@@ -215,15 +220,23 @@ export default function IncomingPaymentsApprovalPage({
       paymentMode: cp.paymentMode || cp.method || "PAYMENT_LINK",
       reference: cp.reference || cp.transactionRef || cp.gatewayReference || "—",
       date: cp.receivedAt || cp.createdAt,
-      status: cp.approvalStatus || cp.status || "PENDING",
+      approvalStatus: cp.approvalStatus || "PENDING",
+      status: canonicalCollectionStatus(cp.approvalStatus, cp.status),
       collectedBy: cp.receivedBy || "Client Collection",
       assigneeId: cp.actionedById || null,
       assigneeName: cp.actionedBy?.name || null,
       notes: cp.notes || cp.remarks,
       proofUrl: cp.proofFileUrl || cp.proofUrl || cp.paymentProof || (cp as any).receiptUrl || null,
       raw: cp,
-    })),
-    ...incomingPayments.map((p) => ({
+    }));
+  const opsDedupeKeys = new Set(
+    opsClientItems.map((item) => `${item.bookingId}|${Number(item.amount) || 0}`),
+  );
+  const allRawItems = [
+    ...opsClientItems,
+    ...incomingPayments
+      .filter((p) => !opsDedupeKeys.has(`${p.bookingId}|${Number(p.amount) || 0}`))
+      .map((p) => ({
       id: p.id,
       type: "ONLINE_OR_BANK",
       bookingId: p.bookingId,
@@ -232,7 +245,8 @@ export default function IncomingPaymentsApprovalPage({
       paymentMode: p.paymentMode || "PAYMENT_LINK",
       reference: p.transactionRef || p.gatewayReference || p.referenceNumber || "—",
       date: p.receivedAt || p.createdAt,
-      status: p.status,
+      approvalStatus: (p as any).approvalStatus || null,
+      status: canonicalCollectionStatus((p as any).approvalStatus, p.status),
       collectedBy: p.submittedBy || "Online Gateway / Bank",
       assigneeId: (p as any).actionedById || (p.raw as any)?.actionedById || null,
       assigneeName: (p as any).actionedBy || (p.raw as any)?.actionedBy?.name || null,
@@ -249,7 +263,8 @@ export default function IncomingPaymentsApprovalPage({
       paymentMode: "CASH_HANDOVER",
       reference: c.id?.slice(-8),
       date: c.submittedAt || c.createdAt,
-      status: c.status,
+      approvalStatus: (c as any).approvalStatus || null,
+      status: canonicalCollectionStatus((c as any).approvalStatus, c.status),
       collectedBy: c.salespersonName || "Sales Executive",
       assigneeId: (c as any).actionedById || (c.raw as any)?.actionedById || null,
       assigneeName: (c as any).actionedBy?.name || (c.raw as any)?.actionedBy?.name || null,
@@ -266,6 +281,7 @@ export default function IncomingPaymentsApprovalPage({
       paymentMode: "STATION_CASH",
       reference: sc.receiptNumber || sc.id?.slice(-8),
       date: sc.collectedAt || sc.departureDate,
+      approvalStatus: sc.approvalStatus || null,
       status: sc.status,
       collectedBy: `${sc.collectorName || "Station Lead"} (${sc.station})`,
       assigneeId: sc.verifiedByAdminId || null,
@@ -298,12 +314,20 @@ export default function IncomingPaymentsApprovalPage({
       if (item.type !== "STATION_COLLECTION") return false;
     }
     if (statusFilter !== "ALL") {
-      if (statusFilter === "PENDING_VERIFICATION") {
-        if (item.status !== "PENDING" && item.status !== "PENDING_VERIFICATION" && item.status !== "REVIEWED_FINANCE_CONTROLLER" && item.status !== "PENDING_HANDOVER") {
+      if (item.type === "STATION_COLLECTION") {
+        if (statusFilter === "PENDING_VERIFICATION") {
+          if (item.status === "VERIFIED" || item.status === "REJECTED") return false;
+        } else if (statusFilter === "VERIFIED") {
+          if (item.status !== "VERIFIED") return false;
+        } else if (statusFilter === "REJECTED" && item.status !== "REJECTED") {
           return false;
         }
-      } else if (item.status !== statusFilter) {
-        return false;
+      } else if (statusFilter === "PENDING_VERIFICATION") {
+        if (!isCollectionPending(item.approvalStatus, item.status)) return false;
+      } else if (statusFilter === "VERIFIED") {
+        if (!isCollectionVerified(item.approvalStatus)) return false;
+      } else if (statusFilter === "REJECTED") {
+        if (!isCollectionRejected(item.approvalStatus, item.status)) return false;
       }
     }
     if (assigneeFilter === "ME" && item.assigneeId !== currentUser?.id) return false;
@@ -317,27 +341,35 @@ export default function IncomingPaymentsApprovalPage({
   const stationPendingCash = stationCashData?.summary?.totalCashPending || 0;
   const stationVerifiedCash = stationCashData?.summary?.totalCashVerified || 0;
 
-  const isPendingStatus = (s: string) =>
-    s === "PENDING" || s === "PENDING_VERIFICATION" || s === "PENDING_HANDOVER" || s === "REVIEWED_FINANCE_CONTROLLER";
+  const isPendingStatus = (item: { approvalStatus?: string | null; status?: string; type?: string }) => {
+    if (item.type === "STATION_COLLECTION") {
+      return item.status === "PENDING_VERIFICATION" || item.status === "PENDING";
+    }
+    return isCollectionPending(item.approvalStatus, item.status);
+  };
 
-  const isVerifiedStatus = (s: string) =>
-    s === "VERIFIED" || s === "APPROVED" || s === "COMPLETED" || s === "APPROVED_FOUNDER";
+  const isVerifiedStatus = (item: { approvalStatus?: string | null; status?: string; type?: string }) => {
+    if (item.type === "STATION_COLLECTION") {
+      return item.status === "VERIFIED";
+    }
+    return isCollectionVerified(item.approvalStatus);
+  };
 
   const pendingCount = paymentType === "station_datewise"
     ? stationPendingCount
-    : allItems.filter((i) => isPendingStatus(i.status)).length;
+    : allItems.filter((i) => isPendingStatus(i)).length;
 
   const verifiedCount = paymentType === "station_datewise"
     ? stationVerifiedCount
-    : allItems.filter((i) => isVerifiedStatus(i.status)).length;
+    : allItems.filter((i) => isVerifiedStatus(i)).length;
 
   const totalVerifiedSum = paymentType === "station_datewise"
     ? stationVerifiedCash
-    : allItems.filter((i) => isVerifiedStatus(i.status)).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    : allItems.filter((i) => isVerifiedStatus(i)).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
   const totalPendingSum = paymentType === "station_datewise"
     ? stationPendingCash
-    : allItems.filter((i) => isPendingStatus(i.status)).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    : allItems.filter((i) => isPendingStatus(i)).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
   const handleVerify = async () => {
     if (!selectedPayment) return;
@@ -351,15 +383,10 @@ export default function IncomingPaymentsApprovalPage({
         });
         toast.success("Station collection verified and approved");
       } else if (selectedPayment.type === "OPS_CLIENT_PAYMENT") {
-        if (isSuperuserFounder) {
-          await financeApprovalsService.approveCollectionFounder(selectedPayment.id, {
-            reason: actionNotes.trim() || undefined,
-          });
-          toast.success("Founder approved and cleared customer payment successfully");
-        } else {
-          await financeApprovalsService.reviewCollectionFC(selectedPayment.id, actionNotes.trim() || undefined);
-          toast.success("Finance Controller verified payment");
-        }
+        await financeApprovalsService.verifyCollection(selectedPayment.id, {
+          reason: actionNotes.trim() || undefined,
+        });
+        toast.success("Payment verified and approved");
       } else if (selectedPayment.type === "CASH_HANDOVER") {
         await financeControllerService.performCashAction(selectedPayment.id, {
           action: "APPROVE",
@@ -990,7 +1017,7 @@ export default function IncomingPaymentsApprovalPage({
                           </td>
                           <td className={cn(
                             "px-4 py-2 text-right font-mono font-bold text-[12px]",
-                            isVerifiedStatus(item.status) ? "text-green-600" : isPendingStatus(item.status) ? "text-amber-600" : "text-[#0B1528]"
+                            isVerifiedStatus(item) ? "text-green-600" : isPendingStatus(item) ? "text-amber-600" : "text-[#0B1528]"
                           )}>
                             ₹{Number(item.amount || 0).toLocaleString("en-IN")}
                           </td>
@@ -1013,9 +1040,7 @@ export default function IncomingPaymentsApprovalPage({
                             {item.collectedBy}
                           </td>
                           <td className="px-4 py-2">
-                            {item.status === "PENDING_VERIFICATION" ||
-                            item.status === "PENDING_HANDOVER" ||
-                            item.status === "PENDING" ? (
+                            {isPendingStatus(item) ? (
                               <Select
                                 value={item.assigneeId || "UNASSIGNED"}
                                 onValueChange={(val) => handleAssignApprover(item.id, val)}
@@ -1047,32 +1072,36 @@ export default function IncomingPaymentsApprovalPage({
                               variant="outline"
                               className={cn(
                                 "text-[9px] font-bold uppercase",
-                                item.status === "REVIEWED_FINANCE_CONTROLLER"
-                                  ? "bg-slate-50 text-slate-700 border-slate-200"
-                                  : item.status === "VERIFIED" || item.status === "APPROVED" || item.status === "APPROVED_FOUNDER" || item.status === "COMPLETED"
+                                isVerifiedStatus(item)
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : item.status === "REJECTED"
+                                  : item.status === "REJECTED" || isCollectionRejected(item.approvalStatus, item.status)
                                   ? "bg-rose-50 text-rose-700 border-rose-200"
                                   : "bg-amber-50 text-amber-700 border-amber-200"
                               )}
                             >
-                              {item.status === "REVIEWED_FINANCE_CONTROLLER"
-                                ? "FC Reviewed (Awaiting Founder)"
-                                : item.status}
+                              {isVerifiedStatus(item)
+                                ? "VERIFIED"
+                                : item.status === "REJECTED" || isCollectionRejected(item.approvalStatus, item.status)
+                                  ? "REJECTED"
+                                  : "PENDING"}
                             </Badge>
                           </td>
                           <td className="px-4 py-2 text-right pr-4">
-                            {isPendingStatus(item.status) ? (
+                            {isPendingStatus(item) ? (
                               <div className="flex items-center justify-end gap-1.5">
-                                {isCash && !isSuperuserFounder ? (
+                                {isCash && !canVerify ? (
                                   <Button
                                     size="sm"
                                     disabled
-                                    title="Cash approvals are restricted to Superuser / Founder accounts only"
+                                    title="Cash approvals are restricted to Founder or Finance Controller"
                                     className="h-6.5 text-[9.5px] font-bold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed flex items-center gap-1"
                                   >
                                     Superuser Only
                                   </Button>
+                                ) : !canVerify ? (
+                                  <span className="text-[10px] text-slate-400 italic font-medium">
+                                    Awaiting verification
+                                  </span>
                                 ) : (
                                   <>
                                     <Button
@@ -1081,18 +1110,9 @@ export default function IncomingPaymentsApprovalPage({
                                         setSelectedPayment(item);
                                         setActionModalType("verify");
                                       }}
-                                      className={cn(
-                                        "h-6.5 text-[9.5px] font-bold text-white shadow-none",
-                                        isSuperuserFounder
-                                          ? "bg-emerald-600 hover:bg-emerald-700"
-                                          : "bg-blue-600 hover:bg-blue-700"
-                                      )}
+                                      className="h-6.5 text-[9.5px] font-bold text-white shadow-none bg-emerald-600 hover:bg-emerald-700"
                                     >
-                                      {isSuperuserFounder
-                                        ? isCash
-                                          ? "👑 Approve Cash"
-                                          : "👑 Founder Approve"
-                                        : "FC Review & Verify"}
+                                      {isCash ? "Verify Cash" : "Verify"}
                                     </Button>
                                     <Button
                                       size="sm"
@@ -1110,7 +1130,7 @@ export default function IncomingPaymentsApprovalPage({
                               </div>
                             ) : (
                               <span className="text-[10px] text-slate-400 italic font-medium">
-                                {item.status === "APPROVED_FOUNDER" ? "Founder Cleared" : "Verified"}
+                                {isVerifiedStatus(item) ? "Verified" : item.status}
                               </span>
                             )}
                           </td>
@@ -1142,10 +1162,7 @@ export default function IncomingPaymentsApprovalPage({
                   const isCash =
                     item.type === "CASH_HANDOVER" ||
                     item.paymentMode?.toUpperCase().includes("CASH");
-                  const isPending =
-                    item.status === "PENDING_VERIFICATION" ||
-                    item.status === "PENDING_HANDOVER" ||
-                    item.status === "PENDING";
+                  const isPending = isPendingStatus(item);
 
                   return (
                     <div key={item.id} className="space-y-3 p-3.5">
@@ -1169,16 +1186,14 @@ export default function IncomingPaymentsApprovalPage({
                             variant="outline"
                             className={cn(
                               "mt-1 text-[8px] font-bold uppercase",
-                              item.status === "VERIFIED" ||
-                                item.status === "APPROVED" ||
-                                item.status === "COMPLETED"
+                              isVerifiedStatus(item)
                                 ? "border-green-200 bg-green-50 text-green-700"
                                 : item.status === "REJECTED"
                                   ? "border-red-200 bg-red-50 text-red-700"
                                   : "border-amber-200 bg-amber-50 text-amber-700",
                             )}
                           >
-                            {item.status}
+                            {isVerifiedStatus(item) ? "VERIFIED" : item.status === "REJECTED" ? "REJECTED" : "PENDING"}
                           </Badge>
                         </div>
                       </div>
@@ -1204,14 +1219,18 @@ export default function IncomingPaymentsApprovalPage({
 
                       {isPending ? (
                         <div className="flex flex-col gap-2 sm:flex-row">
-                          {isCash && !isSuperuserFounder ? (
+                          {isCash && !canVerify ? (
                             <Button
                               size="sm"
                               disabled
                               className="h-9 w-full text-[10px] font-bold"
                             >
-                              Superuser approval required
+                              Founder or Finance Controller required
                             </Button>
+                          ) : !canVerify ? (
+                            <span className="text-[10px] text-slate-400 italic font-medium">
+                              Awaiting verification
+                            </span>
                           ) : (
                             <>
                               <Button
@@ -1222,7 +1241,7 @@ export default function IncomingPaymentsApprovalPage({
                                 }}
                                 className="h-9 flex-1 bg-green-600 text-[10px] font-bold hover:bg-green-700"
                               >
-                                {isCash ? "Approve cash" : "Verify payment"}
+                                {isCash ? "Verify cash" : "Verify"}
                               </Button>
                               <Button
                                 size="sm"
@@ -1329,12 +1348,10 @@ export default function IncomingPaymentsApprovalPage({
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-emerald-800 flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              {isSuperuserFounder ? "👑 Founder Payment Approval & Clearance" : "Verify & Approve Payment"}
+              Verify payment
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              {isSuperuserFounder
-                ? "Final Founder sign-off. This will mark the customer collection as fully approved and reconciled into company accounts."
-                : "Confirm that this payment has been deposited into the company bank account."}
+              One verification by Founder or Finance Controller marks this collection as approved and verified.
             </DialogDescription>
           </DialogHeader>
 
@@ -1384,10 +1401,10 @@ export default function IncomingPaymentsApprovalPage({
 
               <div>
                 <label className="text-[10px] font-bold uppercase text-slate-500">
-                  {isSuperuserFounder ? "Founder Clearance Notes (Optional)" : "Verification Notes (Optional)"}
+                  Verification notes (optional)
                 </label>
                 <Input
-                  placeholder={isSuperuserFounder ? "e.g. Cleared by Hemal Patel" : "e.g. Bank credit confirmed on statement"}
+                  placeholder="e.g. Bank credit confirmed on statement"
                   value={actionNotes}
                   onChange={(e) => setActionNotes(e.target.value)}
                   className="h-8 text-xs mt-1"
@@ -1411,7 +1428,7 @@ export default function IncomingPaymentsApprovalPage({
               onClick={handleVerify}
               className="h-8 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
             >
-              {isSuperuserFounder ? "Confirm Founder Approved" : "Confirm Verified"}
+              Confirm verified
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1491,7 +1508,7 @@ export default function IncomingPaymentsApprovalPage({
             >
               Close
             </Button>
-            {isPendingStatus(previewProofItem?.status) && (
+            {previewProofItem && isPendingStatus(previewProofItem) && (
               <Button
                 size="sm"
                 onClick={() => {
@@ -1504,7 +1521,7 @@ export default function IncomingPaymentsApprovalPage({
                   isSuperuserFounder ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"
                 )}
               >
-                {isSuperuserFounder ? "👑 Founder Approve This Payment" : "Verify Payment"}
+                Verify
               </Button>
             )}
           </DialogFooter>

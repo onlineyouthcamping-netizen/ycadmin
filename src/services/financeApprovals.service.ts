@@ -24,6 +24,11 @@ export interface CollectionAuditResponse {
   payment: any;
   auditTrail: FinanceAuditLogEntry[];
   approvalChain: {
+    verification?: {
+      status: "DONE" | "PENDING" | "REJECTED";
+      approvedAt?: string | null;
+      approvedBy?: string | null;
+    };
     step1_financeController: {
       status: "DONE" | "PENDING" | "REJECTED";
       approvedAt?: string | null;
@@ -84,13 +89,20 @@ export interface MonthlyReconciliationResponse {
 }
 
 export const financeApprovalsService = {
-  // Collections 2-Tier Approval
   reviewCollectionFC: async (paymentId: string, reason?: string) => {
     const res = await api.patch(`/finance/collections/${paymentId}/review-fc`, { reason });
     return res.data;
   },
 
   approveCollectionFounder: async (
+    paymentId: string,
+    payload?: { reason?: string; proofFileUrl?: string }
+  ) => {
+    const res = await api.patch(`/finance/collections/${paymentId}/approve-founder`, payload || {});
+    return res.data;
+  },
+
+  verifyCollection: async (
     paymentId: string,
     payload?: { reason?: string; proofFileUrl?: string }
   ) => {
