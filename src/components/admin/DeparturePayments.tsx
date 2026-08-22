@@ -5118,12 +5118,6 @@ export default function DeparturePayments({
                 accept="image/*,.pdf,application/pdf"
               />
             </div>
-                onUpload={(url) =>
-                  setActivityPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
-                }
-                compact
-              />
-            </div>
 
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
