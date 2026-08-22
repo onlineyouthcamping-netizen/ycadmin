@@ -26,6 +26,11 @@ import { financeControllerService } from "@/services/financeController.service";
 import { financeApprovalsService } from "@/services/financeApprovals.service";
 import { useAuthStore } from "@/store/auth.store";
 import { canVerifyCollection } from "@/utils/collectionVerification";
+import {
+  extractBillReference,
+  formatVendorService,
+  sanitizePlainLabel,
+} from "@/utils/vendorDisplayText";
 import type { VendorPaymentRequestItem } from "@/types";
 
 interface OutgoingPaymentsApprovalPageProps {
@@ -36,10 +41,6 @@ type OutgoingCategory = "all" | "Hotels" | "Transport" | "Activities" | "Guides"
 
 function formatINR(value: number) {
   return `₹${Number(value || 0).toLocaleString("en-IN")}`;
-}
-
-function collapseText(value: unknown) {
-  return String(value || "").replace(/\s+/g, " ").trim();
 }
 
 function vendorStatusLabel(item: {
@@ -54,38 +55,6 @@ function vendorStatusLabel(item: {
   if (approval === "REVIEWED_FINANCE_CONTROLLER") return "Reviewed";
   if (item.isOverpaid) return "Overpaid";
   return "Pending";
-}
-
-function serviceDisplay(item: {
-  vendorName: string;
-  serviceDescription: string;
-  billReference: string;
-  category: string;
-}) {
-  const vendor = collapseText(item.vendorName).toLowerCase();
-  const description = collapseText(item.serviceDescription);
-  const reference = collapseText(item.billReference);
-  const looksLikeCalc = /[=×]|(\d+\s*[xX×]\s*\d+)/.test(description);
-  const descriptionRepeatsVendor = Boolean(description) && description.toLowerCase() === vendor;
-
-  let primary = description;
-  if (!description || descriptionRepeatsVendor || looksLikeCalc) {
-    primary =
-      reference && reference.toLowerCase() !== vendor
-        ? reference
-        : item.category || "Service";
-  }
-
-  const secondary =
-    description && description !== primary && !descriptionRepeatsVendor
-      ? description
-      : reference && reference !== primary && reference.toLowerCase() !== vendor
-        ? reference
-        : "";
-
-  const tooltip = [description, reference].filter((part, index, all) => part && all.indexOf(part) === index).join(" · ");
-
-  return { primary, secondary, tooltip: tooltip || primary };
 }
 
 const PILL =
@@ -138,15 +107,19 @@ export default function OutgoingPaymentsApprovalPage({
       const isOverpaid = Boolean((v as any).isOverpaid) || outstandingAmount < 0;
       return {
         id: v.id,
-        category: v.category || v.vendorType || "Hotels",
-        vendorName: v.vendorName || "Vendor",
-        tripName: v.tripName || v.tripTitle || "Trip",
+        category: sanitizePlainLabel(v.category || v.vendorType, "Hotels"),
+        vendorName: sanitizePlainLabel(v.vendorName, "Vendor"),
+        tripName: sanitizePlainLabel(v.tripName || v.tripTitle, "Trip"),
         tripId: v.tripId,
         departureDate: v.departureDate || null,
-        serviceDescription: v.serviceDescription || v.vendorType || v.category || "Service",
+        serviceDescription: v.serviceDescription || (v as any).notes || v.vendorType || v.category || "Service",
+        notes: (v as any).notes || (v as any).remarks || "",
         operationalLinked: Boolean(v.operationalLinked),
         departureHref: v.departureHref || null,
-        billReference: v.billReference || (v as any).transactionRef || `BILL-${String(v.id || "").slice(-6)}`,
+        billReference: extractBillReference(
+          v.billReference || (v as any).transactionRef,
+          v.id,
+        ),
         totalCost,
         paidAmount,
         outstandingAmount,
@@ -166,10 +139,13 @@ export default function OutgoingPaymentsApprovalPage({
       if (statusFilter === "REJECTED" && label !== "Rejected") return false;
       if (search.trim()) {
         const q = search.toLowerCase();
+        const service = formatVendorService(item);
         return (
           item.vendorName.toLowerCase().includes(q) ||
           item.tripName.toLowerCase().includes(q) ||
-          item.serviceDescription.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q) ||
+          service.primary.toLowerCase().includes(q) ||
+          service.secondary.toLowerCase().includes(q) ||
           item.billReference.toLowerCase().includes(q)
         );
       }
@@ -376,7 +352,7 @@ export default function OutgoingPaymentsApprovalPage({
               <tbody className="text-[12px]">
                 {aggregatedItems.map((item) => {
                   const label = vendorStatusLabel(item);
-                  const service = serviceDisplay(item);
+                  const service = formatVendorService(item);
                   const showReview = canAct && (isFinanceController || isFounder) && label === "Pending";
                   const showApprove = canAct && isFounder && (label === "Reviewed" || (label === "Pending" && !item.requiresFounderApproval));
                   const settled = label === "Settled";
@@ -522,21 +498,26 @@ export default function OutgoingPaymentsApprovalPage({
               Two-step vendor approval. Finance Controller reviews first; Founder approves when the balance requires it.
             </DialogDescription>
           </DialogHeader>
-          {selectedItem && (
+          {selectedItem && (() => {
+            const service = formatVendorService(selectedItem);
+            return (
             <div className="space-y-3 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
                 <div className="flex justify-between gap-3">
                   <span className="text-slate-500">Vendor</span>
-                  <span className="font-semibold text-right">{selectedItem.vendorName}</span>
+                  <span className="truncate font-semibold text-right" title={selectedItem.vendorName}>
+                    {selectedItem.vendorName}
+                  </span>
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="text-slate-500">Departure / Trip</span>
-                  <span className="text-right">{selectedItem.tripName}</span>
+                  <span className="truncate text-right" title={selectedItem.tripName}>{selectedItem.tripName}</span>
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="shrink-0 text-slate-500">Service</span>
-                  <span className="max-w-[240px] text-right" title={selectedItem.serviceDescription}>
-                    {selectedItem.serviceDescription}
+                  <span className="max-w-[240px] truncate text-right" title={service.tooltip}>
+                    {service.primary}
+                    {service.secondary ? ` · ${service.secondary}` : ""}
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
@@ -559,7 +540,8 @@ export default function OutgoingPaymentsApprovalPage({
                 className="h-8 text-xs"
               />
             </div>
-          )}
+            );
+          })()}
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setActionType(null)}>
               Cancel
