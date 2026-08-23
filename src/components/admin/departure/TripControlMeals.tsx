@@ -55,11 +55,14 @@ export function TripControlMealsCell({ row }: { row: MealsRow }) {
         <button
           type="button"
           onClick={(e) => e.stopPropagation()}
-          aria-label={hasDishes ? `Open menu: ${chip}` : chip}
+          aria-label={hasDishes ? `Open dishes for ${chip}` : chip}
+          className="inline-flex items-center gap-1.5 max-w-full text-left rounded-md px-1.5 py-1 -mx-1.5 hover:bg-[#F4F7FB] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4D00]/30"
         >
           <span className="text-[12px] font-medium text-[#0B1528] truncate">{chip}</span>
           {hasDishes && (
-            <span className="text-[10px] font-medium text-[#FF4D00] shrink-0 whitespace-nowrap">Menu</span>
+            <span className="text-[10px] font-medium text-[#FF4D00] shrink-0 whitespace-nowrap">
+              View dishes
+            </span>
           )}
         </button>
       </DropdownMenuTrigger>

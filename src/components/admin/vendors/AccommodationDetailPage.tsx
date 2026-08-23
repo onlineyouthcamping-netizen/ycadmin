@@ -293,18 +293,40 @@ export function AccommodationDetailPage({
     const isAct = type.includes("ACTIVITIES") || type.includes("ACTIVITY") || type.includes("ADVENTURE") || type.includes("EXPERIENCE");
     const isOth = type.includes("OTHER") || type.includes("MISC") || type.includes("EQUIPMENT") || type.includes("GEAR") || type.includes("PERMIT") || type === "GENERAL";
 
-    const menuItems = Array.isArray(v?.foodMenu)
+    const rawMenu = Array.isArray(v?.foodMenu)
       ? v.foodMenu
       : Array.isArray(meta.foodMenu)
         ? meta.foodMenu
-        : [];
+        : meta.foodMenu && typeof meta.foodMenu === "object"
+          ? meta.foodMenu
+          : v?.foodMenu && typeof v.foodMenu === "object"
+            ? v.foodMenu
+            : [];
+    const menuItems = Array.isArray(rawMenu)
+      ? rawMenu
+      : ["breakfast", "lunch", "dinner", "snacks"]
+          .filter((k) => String((rawMenu as any)?.[k] || "").trim())
+          .map((k) => ({
+            type: k.toUpperCase(),
+            name: k,
+            inclusions: String((rawMenu as any)[k]).trim(),
+          }));
+    const looksLikeDishes = (text: string) => {
+      const s = String(text || "").trim();
+      if (s.length < 3) return "";
+      if (/\b(bash|sudo|npm|npx|git|deploy_vps)\b|\.sh\b/i.test(s)) return "";
+      if (/^(breakfast|lunch|dinner|snacks?|breakfastmenu|lunchmenu|dinnermenu)$/i.test(s.replace(/[\s_-]+/g, ""))) {
+        return "";
+      }
+      return s;
+    };
     const mealFromMenu = (needle: string) => {
       const row = menuItems.find((item: any) =>
         String(item?.type || item?.mealType || item?.name || "")
           .toUpperCase()
           .includes(needle),
       );
-      return String(row?.inclusions || row?.menuDescription || row?.dishes || "").trim();
+      return looksLikeDishes(String(row?.inclusions || row?.menuDescription || row?.dishes || ""));
     };
 
     return {
@@ -1542,7 +1564,12 @@ export function AccommodationDetailPage({
           { type: "LUNCH", name: "Lunch", inclusions: String(overviewForm.lunchMenu || "").trim() },
           { type: "DINNER", name: "Dinner", inclusions: String(overviewForm.dinnerMenu || "").trim() },
           { type: "SNACKS", name: "Snacks", inclusions: String(overviewForm.snacksMenu || "").trim() },
-        ].filter((item) => item.inclusions);
+        ].filter((item) => {
+          const s = item.inclusions;
+          if (!s) return false;
+          if (/\b(bash|sudo|npm|npx|git|deploy_vps)\b|\.sh\b/i.test(s)) return false;
+          return true;
+        });
         payload.foodMenuIncluded = {
           breakfast: !!overviewForm.breakfastIncluded,
           lunch: !!overviewForm.lunchIncluded,

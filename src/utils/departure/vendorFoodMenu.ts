@@ -60,32 +60,70 @@ function dishText(t: any): string {
       .filter(Boolean)
       .join(", ");
   }
-  return String(
-    t.inclusions || t.menuDescription || t.menuDescription || t.description || t.menu || t.dishes || t.items || "",
-  ).trim();
+  const raw = t.inclusions ?? t.menuDescription ?? t.description ?? t.dishes;
+  if (typeof raw === "string") return raw.trim();
+  if (Array.isArray(raw)) {
+    return raw.map((x) => (typeof x === "string" ? x : "")).filter(Boolean).join(", ");
+  }
+  return "";
+}
+
+const JUNK_DISH = /\b(bash|sudo|npm|npx|git|deploy_vps|chmod|curl)\b|\.sh\b|^\s*\{/;
+const MEAL_NAME_ONLY = /^(breakfast|lunch|dinner|snacks?|tea|meals?|breakfastmenu|lunchmenu|dinnermenu)s?$/i;
+
+export function isPlausibleDishText(raw: string): boolean {
+  const s = String(raw || "").trim();
+  if (s.length < 3) return false;
+  if (JUNK_DISH.test(s)) return false;
+  if (MEAL_NAME_ONLY.test(s.replace(/[\s_-]+/g, "").toLowerCase())) return false;
+  return true;
 }
 
 function fromTariff(t: any, idx: number): VendorMenuItem | null {
   if (t == null) return null;
   if (typeof t === "string") {
     const s = t.trim();
-    if (!s) return null;
-    return { id: `menu-${idx}`, name: mealTypeLabel(s), type: mealTypeLabel(s), inclusions: s };
+    if (!isPlausibleDishText(s)) return null;
+    const type = mealTypeLabel(s);
+    if (type !== "Meal" && s.replace(/[\s_-]+/g, "").toLowerCase() === type.replace(/\s+/g, "").toLowerCase()) {
+      return null;
+    }
+    return { id: `menu-${idx}`, name: type, type, inclusions: s };
   }
   if (typeof t !== "object") return null;
   const name = String(t.name || t.mealType || t.title || t.packageName || "").trim();
   const inclusions = dishText(t);
-  const type = mealTypeLabel(t.type || t.mealType || t.mealType || t.category || name);
-  if (!name && !inclusions) return null;
+  const type = mealTypeLabel(t.type || t.mealType || t.category || name);
+  const dishes = isPlausibleDishText(inclusions) ? inclusions : "";
+  if (!dishes) return null;
   const rate = Number(t.perPaxRate ?? t.ratePerPerson ?? t.rate ?? t.amount ?? 0);
   return {
     id: t.id || `menu-${idx}`,
     name: name || type,
-    inclusions,
+    inclusions: dishes,
     type,
     ratePerPerson: Number.isFinite(rate) && rate > 0 ? rate : undefined,
     isVeg: t.isVeg !== false && t.veg !== false,
   };
+}
+
+export function foodMenuObjectToItems(raw: unknown): any[] {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== "object") return [];
+  const o = raw as Record<string, unknown>;
+  const keys: Array<{ key: string; type: string }> = [
+    { key: "breakfast", type: "BREAKFAST" },
+    { key: "lunch", type: "LUNCH" },
+    { key: "dinner", type: "DINNER" },
+    { key: "snacks", type: "SNACKS" },
+  ];
+  return keys
+    .map(({ key, type }) => {
+      const inclusions = String(o[key] ?? "").trim();
+      if (!inclusions) return null;
+      return { type, name: mealTypeLabel(type), inclusions };
+    })
+    .filter(Boolean);
 }
 
 function parseNotesMeta(notes: unknown): any {
@@ -208,13 +246,16 @@ export function parseVendorFoodMenu(vendor: any): VendorMenuSource | null {
     vendor.id;
 
   const meta = parseNotesMeta(vendor.notes);
-  const fromTariffs = asArray(vendor.mealTariffs || vendor.mealTariffs).map(fromTariff).filter(Boolean) as VendorMenuItem[];
+  const dedicatedMenu = [
+    ...foodMenuObjectToItems(vendor.foodMenu).map(fromTariff).filter(Boolean),
+    ...foodMenuObjectToItems(meta?.foodMenu).map(fromTariff).filter(Boolean),
+  ] as VendorMenuItem[];
+  const fromTariffs = asArray(vendor.mealTariffs).map(fromTariff).filter(Boolean) as VendorMenuItem[];
   const fromPlans = asArray(vendor.mealPlans).map(fromTariff).filter(Boolean) as VendorMenuItem[];
-  const fromFoodRates = asArray(vendor.foodRates || vendor.foodRates).map(fromTariff).filter(Boolean) as VendorMenuItem[];
-  const fromMenu = asArray(vendor.foodMenu || vendor.menu || vendor.menuItems || vendor.dishes)
+  const fromFoodRates = asArray(vendor.foodRates).map(fromTariff).filter(Boolean) as VendorMenuItem[];
+  const fromCatalog = asArray(vendor.menu || vendor.menuItems || vendor.dishes)
     .map(fromTariff)
     .filter(Boolean) as VendorMenuItem[];
-  const fromNotes = asArray(meta?.foodMenu).map(fromTariff).filter(Boolean) as VendorMenuItem[];
 
   const nested = vendor.vendor ? parseVendorFoodMenu(vendor.vendor) : null;
   const nestedVendorId =
@@ -224,12 +265,10 @@ export function parseVendorFoodMenu(vendor: any): VendorMenuSource | null {
 
   const seen = new Set<string>();
   const items: VendorMenuItem[] = [];
+  const preferDedicated = dedicatedMenu.length > 0;
   [
-    ...fromTariffs,
-    ...fromPlans,
-    ...fromFoodRates,
-    ...fromMenu,
-    ...fromNotes,
+    ...dedicatedMenu,
+    ...(preferDedicated ? [] : [...fromTariffs, ...fromPlans, ...fromFoodRates, ...fromCatalog]),
     ...(nested?.items || []),
     ...(nestedVendorId?.items || []),
   ].forEach((item) => {

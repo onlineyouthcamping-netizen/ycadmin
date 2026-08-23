@@ -8,6 +8,7 @@ import {
   mealChipLabel,
   parseVendorFoodMenu,
   titleCaseMealPlan,
+  isPlausibleDishText,
 } from "../vendorFoodMenu";
 
 describe("vendorFoodMenu", () => {
@@ -99,6 +100,25 @@ describe("vendorFoodMenu", () => {
     const fallback = formatDayMeals(null, "PLAN Breakfast & Dinner");
     expect(fallback.source).toBe("itinerary");
     expect(fallback.groups[0]?.dishes).toBe("Breakfast & Dinner");
+  });
+
+  it("ignores command junk and field-name leftovers so ops only shows real dishes", () => {
+    expect(isPlausibleDishText("bash deploy_vps.sh")).toBe(false);
+    expect(isPlausibleDishText("BreakfastMenu")).toBe(false);
+    const junk = parseVendorFoodMenu({
+      name: "Barpa Cottage Manali",
+      foodMenu: [
+        { type: "BREAKFAST", name: "Breakfast", inclusions: "bash deploy_vps.sh" },
+      ],
+    });
+    expect(junk?.items || []).toHaveLength(0);
+
+    const keyed = parseVendorFoodMenu({
+      name: "Barpa Cottage",
+      foodMenu: { breakfast: "Poha, paratha, tea", lunch: "Dal, rice, roti" },
+    });
+    expect(keyed?.items.find((i) => i.type === "Breakfast")?.inclusions).toContain("Poha");
+    expect(formatDayMeals(keyed, "Breakfast & Dinner").groups.find((g) => g.type === "Breakfast")?.dishes).toContain("Poha");
   });
 
   it("title-cases messy booking meal strings and collapses identical dishes", () => {
