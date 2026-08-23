@@ -32,6 +32,7 @@ import { opsService, OpsDayItinerary } from "@/services/ops.service";
 import api from "@/services/api";
 import TripControlRowDrawer, { TripControlRowData } from "./TripControlRowDrawer";
 import { TripControlMealsCell } from "./TripControlMeals";
+import { findHotelForDay } from "@/utils/accommodationCalculator";
 import { pickOpsDayRow } from "@/utils/departure/opsDayItineraryMatch";
 import {
   compactMealSummary,
