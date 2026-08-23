@@ -27,8 +27,10 @@ import {
   User,
   UtensilsCrossed,
   Package,
+  ExternalLink,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, safeFormatDate } from "@/lib/utils";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -39,6 +41,14 @@ import {
   collectionAccountsService,
   CollectionAccount,
 } from "@/services/collectionAccounts.service";
+import { ImageUpload } from "@/components/admin/ImageUpload";
+import { useAuthStore } from "@/store/auth.store";
+import { canViewProfit } from "@/config/permissions.config";
+import {
+  formatVendorName,
+  hotelServiceLine,
+  refineServiceAgainstVendor,
+} from "@/utils/vendorDisplayText";
 
 /** Misc vendor-payment rows live in the Misc tab until explicitly approved. */
 function isMiscellaneousVendorCategory(category?: string | null) {
@@ -95,10 +105,16 @@ function resolveMiscApproverDisplay(row: {
   // paidBy is overwritten to the approver on Approve; safe only when already APPROVED
   return row.approvedBy || row.paidBy || "Finance Admin";
 }
-import { ImageUpload } from "@/components/admin/ImageUpload";
-import { useAuthStore } from "@/store/auth.store";
-import { canViewProfit } from "@/config/permissions.config";
-import api from "@/services/api";
+
+function partnerDisplayName(row: any): string {
+  return formatVendorName(
+    row?.name ||
+      row?.vendorName ||
+      row?.hotelName ||
+      (typeof row?.vendorId === "object" ? row.vendorId?.name : row?.vendorId) ||
+      row?.vendor?.name,
+  );
+}
 
 interface DeparturePaymentsProps {
   tripId: string;
@@ -221,6 +237,7 @@ export default function DeparturePayments({
     needsReimbursement: false,
     transactionId: "",
     invoiceProof: "",
+    paymentProof: "",
     status: "Advance Paid",
     remarks: "",
   });
@@ -670,7 +687,7 @@ export default function DeparturePayments({
         if (tv.assignmentStatus === "CANCELLED" || tv.status === "CANCELLED" || tv.rawAssignment?.assignmentStatus === "CANCELLED") {
           return;
         }
-        const vName = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId) || tv.vendor?.name;
+        const vName = partnerDisplayName(tv);
         if (!vName || vName === "NO_STAY" || vName === "—" || vName.toLowerCase().includes("night journey")) return;
         
         const vCat =
@@ -762,7 +779,7 @@ export default function DeparturePayments({
       // Merge direct Hotel Bookings from OpsHotelBooking into mergedVendors
       const rawHotels = Array.isArray(hotelsRes) ? hotelsRes : (hotelsRes?.data || []);
       (rawHotels || []).forEach((h: any) => {
-        const hName = String(h.hotelName || h.name || "").trim();
+        const hName = formatVendorName(h.hotelName || h.name);
         if (!hName || hName === "NO_STAY" || hName === "NO STAY" || hName === "—" || hName.toLowerCase().includes("night journey")) {
           return;
         }
@@ -788,14 +805,18 @@ export default function DeparturePayments({
                 ? "Advance Paid"
                 : "Pending";
           if (!mergedVendors[existingIdx].serviceDescription || mergedVendors[existingIdx].serviceDescription === "hotel services") {
-            mergedVendors[existingIdx].serviceDescription = `${h.location ? h.location + " • " : ""}${h.numberOfRooms || 1} Rooms (${h.roomType || "Standard"})`;
+            mergedVendors[existingIdx].serviceDescription = hotelServiceLine({
+              ...h,
+              hotelName: hName,
+              serviceDescription: mergedVendors[existingIdx].serviceDescription,
+            });
           }
         } else {
           mergedVendors.push({
             id: h.id || `hotel-${hName}`,
             vendorName: hName,
             category: "Hotels",
-            serviceDescription: `${h.location ? h.location + " • " : ""}${h.numberOfRooms || 1} Rooms (${h.roomType || "Standard"})`,
+            serviceDescription: hotelServiceLine({ ...h, hotelName: hName }),
             agreedAmount: agreed,
             advancePaid: paid,
             balanceAmount: balance,
@@ -1501,8 +1522,8 @@ export default function DeparturePayments({
       : vendorPaymentForm.collectionAccountId || null;
 
     if (editingVendorPayment) {
-      if (inputAmount > 0 && !vendorPaymentForm.invoiceProof) {
-        toast.error("Upload payment proof (screenshot or PDF) before recording this payout");
+      if (inputAmount > 0 && !vendorPaymentForm.invoiceProof && !vendorPaymentForm.paymentProof) {
+        toast.error("Upload invoice or payment screenshot before recording this payout");
         return;
       }
       const prevPaid = Number(editingVendorPayment.advancePaid) || 0;
@@ -1551,6 +1572,12 @@ export default function DeparturePayments({
       try {
         await opsService.updateVendorPayment(tripId, editingVendorPayment.id, {
           ...vendorPaymentForm,
+          vendorName: formatVendorName(vendorPaymentForm.vendorName),
+          serviceDescription: refineServiceAgainstVendor(
+            vendorPaymentForm.serviceDescription,
+            vendorPaymentForm.vendorName,
+          ),
+          paymentProofUrl: vendorPaymentForm.paymentProof,
           ...operationalSourcePayload(editingVendorPayment, vendorPaymentForm.category),
           departureDate: departureDateStr,
           advancePaid: newTotalPaid,
@@ -1592,8 +1619,8 @@ export default function DeparturePayments({
         ),
       );
     } else {
-      if (inputAmount > 0 && !vendorPaymentForm.invoiceProof) {
-        toast.error("Upload payment proof (screenshot or PDF) before recording this payout");
+      if (inputAmount > 0 && !vendorPaymentForm.invoiceProof && !vendorPaymentForm.paymentProof) {
+        toast.error("Upload invoice or payment screenshot before recording this payout");
         return;
       }
       const remaining = Math.max(0, agreedNum - inputAmount);
@@ -1636,12 +1663,15 @@ export default function DeparturePayments({
 
       const newVnd = {
         id: `VND-${Date.now()}`,
-        vendorName: vendorPaymentForm.vendorName,
+        vendorName: formatVendorName(vendorPaymentForm.vendorName),
         category: vendorPaymentForm.category,
         invoiceNumber: `INV-${Math.floor(100 + Math.random() * 900)}`,
         invoiceDate: vendorPaymentForm.paymentDate,
         serviceDescription:
-          vendorPaymentForm.serviceDescription || "Trip Service Invoice",
+          refineServiceAgainstVendor(
+            vendorPaymentForm.serviceDescription,
+            vendorPaymentForm.vendorName,
+          ) || "Trip service",
         agreedAmount: agreedNum,
         advancePaid: inputAmount,
         remainingPayable: remaining,
@@ -1653,6 +1683,7 @@ export default function DeparturePayments({
         paidBy: isCustomPayer ? accountNameTag : staffName,
         transactionId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
         invoiceProof: vendorPaymentForm.invoiceProof || "",
+        paymentProofUrl: vendorPaymentForm.paymentProof || "",
         proofUrl: vendorPaymentForm.invoiceProof || "",
         history: newHistoryItem,
       };
@@ -3108,10 +3139,12 @@ export default function DeparturePayments({
                                   onClick={() => {
                                     setEditingVendorPayment(v);
                                     setVendorPaymentForm({
-                                      vendorName: v.vendorName,
+                                      vendorName: formatVendorName(v.vendorName),
                                       category: v.category,
-                                      serviceDescription:
-                                        v.serviceDescription || "",
+                                      serviceDescription: refineServiceAgainstVendor(
+                                        v.serviceDescription,
+                                        v.vendorName,
+                                      ) || hotelServiceLine(v.rawAssignment || v),
                                       agreedAmount: String(v.agreedAmount),
                                       advancePaid: "",
                                       paymentDate: new Date().toISOString().substring(0, 10),
@@ -3124,6 +3157,7 @@ export default function DeparturePayments({
                                       needsReimbursement: false,
                                       transactionId: "",
                                       invoiceProof: v.invoiceProof || "",
+                                      paymentProof: v.advanceProofUrl || v.paymentProofUrl || "",
                                       status: v.status,
                                       remarks: "",
                                     });
@@ -3386,10 +3420,12 @@ export default function DeparturePayments({
                                           onClick={() => {
                                             setEditingVendorPayment(v);
                                             setVendorPaymentForm({
-                                              vendorName: v.vendorName,
+                                              vendorName: formatVendorName(v.vendorName),
                                               category: v.category,
-                                              serviceDescription:
-                                                v.serviceDescription || "",
+                                              serviceDescription: refineServiceAgainstVendor(
+                                                v.serviceDescription,
+                                                v.vendorName,
+                                              ) || hotelServiceLine(v.rawAssignment || v),
                                               agreedAmount: String(
                                                 v.agreedAmount,
                                               ),
@@ -3408,6 +3444,7 @@ export default function DeparturePayments({
                                               needsReimbursement: false,
                                               transactionId: `NEFT-SETTLE-${Date.now()}`,
                                               invoiceProof: "",
+                                              paymentProof: "",
                                               status: "Paid",
                                               remarks:
                                                 "Final balance settlement",
@@ -4332,11 +4369,39 @@ export default function DeparturePayments({
         }}
       >
         <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200 overflow-y-auto max-h-[85vh]">
-          <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
-            {editingVendorPayment
-              ? `Record Payment — ${editingVendorPayment.vendorName}`
-              : "Record Vendor Payment"}
-          </h3>
+          {(() => {
+            const vendorLabel = formatVendorName(
+              editingVendorPayment?.vendorName || vendorPaymentForm.vendorName,
+              "Vendor",
+            );
+            const tripLabel = formatVendorName(
+              tripDetails?.title || tripDetails?.name || "Trip",
+              "Trip",
+            );
+            const tripDate = safeFormatDate(departureDateStr, {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            });
+            const departureHref = `/admin/departure-workspace?departureId=${encodeURIComponent(`${tripId}_${departureDateStr}`)}&tab=finance`;
+            return (
+              <>
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              {editingVendorPayment ? "Record payment" : "Record vendor payable"}
+            </p>
+            <h3 className="text-[15px] font-semibold tracking-tight text-[#162B45]">
+              {vendorLabel}
+            </h3>
+            <Link
+              to={departureHref}
+              className="inline-flex items-center gap-1 text-[12px] text-[#C2410C] hover:underline"
+            >
+              {tripLabel}
+              <span className="text-slate-400">· {tripDate}</span>
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
 
           {editingVendorPayment && (
             <div className="bg-[#FF4D00]/5/80 border border-[#FF4D00]/30 rounded-lg p-3 text-xs space-y-1 my-2">
@@ -4363,8 +4428,8 @@ export default function DeparturePayments({
 
           <form onSubmit={handleVendorPaymentSubmit} className="space-y-3 mt-2">
             <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Vendor Partner Name
+              <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                Vendor
               </label>
               <select
                 value={vendorPaymentForm.vendorName}
@@ -4377,12 +4442,8 @@ export default function DeparturePayments({
                     }));
                     return;
                   }
-                  // Find selected vendor from tripVendors or vendorPayments
-                  const foundTv = (tripVendors || []).find((tv) => {
-                    const name = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId);
-                    return name === val;
-                  });
-                  const foundVp = vendorPayments.find((vp) => vp.vendorName === val);
+                  const foundTv = (tripVendors || []).find((tv) => partnerDisplayName(tv) === val);
+                  const foundVp = vendorPayments.find((vp) => formatVendorName(vp.vendorName) === val);
 
                   const catMap: Record<string, string> = {
                     hotel: "Hotels",
@@ -4399,7 +4460,10 @@ export default function DeparturePayments({
                     ? String(foundTv.agreedCost || foundTv.totalAmount || 0)
                     : String(foundVp?.agreedAmount || 0);
 
-                  const serviceDesc = foundTv?.notes || foundVp?.serviceDescription || `${cat} services`;
+                  const raw = foundTv?.rawAssignment || foundTv || foundVp;
+                  const serviceDesc =
+                    hotelServiceLine({ ...raw, hotelName: val, vendorName: val }) ||
+                    refineServiceAgainstVendor(foundTv?.notes || foundVp?.serviceDescription, val);
 
                   setVendorPaymentForm((prev) => ({
                     ...prev,
@@ -4409,18 +4473,17 @@ export default function DeparturePayments({
                     serviceDescription: serviceDesc,
                   }));
                 }}
-                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-slate-400 mb-1"
+                className="w-full h-9 text-xs font-medium border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-slate-400 mb-1"
               >
-                <option value="">Select Vendor Partner...</option>
+                <option value="">Select vendor...</option>
                 {tripVendors && tripVendors.length > 0 && (
-                  <optgroup label="Departure Configured Vendors">
+                  <optgroup label="This departure">
                     {tripVendors.map((tv, i) => {
-                      const name = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId) || `Vendor ${i + 1}`;
-                      const type = (tv.vendorType || "Service").toUpperCase();
+                      const name = partnerDisplayName(tv);
                       const cost = tv.agreedCost || tv.totalAmount || 0;
                       return (
                         <option key={`tv-${i}`} value={name}>
-                          {name} ({type}) {cost > 0 ? `– ₹${cost.toLocaleString("en-IN")}` : ''}
+                          {name}{cost > 0 ? ` — ₹${Number(cost).toLocaleString("en-IN")}` : ""}
                         </option>
                       );
                     })}
@@ -4437,7 +4500,7 @@ export default function DeparturePayments({
                 )}
                 <option value="__custom__">+ Enter Custom Vendor</option>
               </select>
-              {(!vendorPaymentForm.vendorName || !tripVendors?.some((tv) => (tv.name || tv.vendorName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId)) === vendorPaymentForm.vendorName)) && (
+              {(!vendorPaymentForm.vendorName || !tripVendors?.some((tv) => partnerDisplayName(tv) === vendorPaymentForm.vendorName)) && (
                 <input
                   type="text"
                   required
@@ -4684,25 +4747,42 @@ export default function DeparturePayments({
               />
             </div>
 
-            {/* Payment Proof / Receipt Screenshot Upload */}
             <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Payment Proof / Receipt Screenshot <span className="text-red-600">*</span>
-              </label>
-              <ImageUpload
-                label="Upload Payment Proof Screenshot"
-                value={vendorPaymentForm.invoiceProof}
-                onUpload={(url) =>
-                  setVendorPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
-                }
-                compact
-                accept="image/*,.pdf,application/pdf"
-              />
+              <p className="text-[11px] font-semibold text-slate-600 mb-2">Proofs</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-medium text-slate-500 block mb-1">Invoice / bill</label>
+                  <ImageUpload
+                    label="Invoice or bill"
+                    value={vendorPaymentForm.invoiceProof}
+                    onUpload={(url) =>
+                      setVendorPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
+                    }
+                    compact
+                    accept="image/*,.pdf,application/pdf"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-slate-500 block mb-1">Payment screenshot</label>
+                  <ImageUpload
+                    label="UPI / bank screenshot"
+                    value={vendorPaymentForm.paymentProof}
+                    onUpload={(url) =>
+                      setVendorPaymentForm((prev) => ({ ...prev, paymentProof: url }))
+                    }
+                    compact
+                    accept="image/*,.pdf,application/pdf"
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-[10px] text-slate-500">
+                Founder or Finance Controller verifies this payout. You are recording it.
+              </p>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Service Description
+              <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                Service
               </label>
               <textarea
                 rows={2}
@@ -4735,6 +4815,9 @@ export default function DeparturePayments({
               </Button>
             </div>
           </form>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

@@ -8,6 +8,7 @@ import {
   RotateCw,
   Eye,
   Upload,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ import { canReviewVendorPayout } from "@/utils/collectionVerification";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import {
   extractBillReference,
+  formatVendorName,
   formatVendorService,
   sanitizePlainLabel,
 } from "@/utils/vendorDisplayText";
@@ -76,24 +78,20 @@ function vendorProofSlots(item: any) {
 }
 
 function ProofPreview({ url, label }: { url: string; label: string }) {
-  if (!url) {
-    return (
-      <div className="flex h-28 items-center justify-center rounded border border-dashed border-slate-200 bg-slate-50 text-[10px] text-slate-400">
-        {label} not uploaded
-      </div>
-    );
-  }
-  if (/\.pdf($|\?)/i.test(url)) {
-    return (
-      <a href={url} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-blue-700 underline">
-        {label}: Open PDF
-      </a>
-    );
-  }
   return (
-    <div className="space-y-1">
-      <p className="text-[10px] font-semibold text-slate-600">{label}</p>
-      <img src={url} alt={label} className="max-h-40 w-full rounded border bg-white object-contain" />
+    <div className="flex min-h-[10rem] flex-col rounded-lg border border-[#E3EAF2] bg-white p-2">
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      {!url ? (
+        <div className="flex flex-1 items-center justify-center rounded bg-slate-50 text-[11px] text-slate-400">
+          Not uploaded
+        </div>
+      ) : /\.pdf($|\?)/i.test(url) ? (
+        <a href={url} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-[#C2410C] underline">
+          Open PDF
+        </a>
+      ) : (
+        <img src={url} alt={label} className="max-h-40 w-full flex-1 rounded object-contain" />
+      )}
     </div>
   );
 }
@@ -143,7 +141,7 @@ export default function OutgoingPaymentsApprovalPage({
       return {
         id: v.id,
         category: sanitizePlainLabel(v.category || v.vendorType, "Hotels"),
-        vendorName: sanitizePlainLabel(v.vendorName, "Vendor"),
+        vendorName: formatVendorName(v.vendorName, "Vendor"),
         tripName: sanitizePlainLabel(v.tripName || v.tripTitle, "Trip"),
         tripId: v.tripId,
         departureDate: v.departureDate || null,
@@ -559,7 +557,7 @@ export default function OutgoingPaymentsApprovalPage({
       <Dialog open={Boolean(actionType)} onOpenChange={(open) => { if (!open) closeAction(); }}>
         <DialogContent className="max-w-lg bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold">
+            <DialogTitle className="text-[15px] font-semibold tracking-tight text-[#162B45]">
               {actionType === "review" || actionType === "approve"
                 ? "Verify vendor payout"
                 : actionType === "view-proof"
@@ -567,62 +565,52 @@ export default function OutgoingPaymentsApprovalPage({
                     : "Upload payment proof"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              One person verifies this payout. Invoice proof and payment screenshot are stored separately on the bill.
+              Founder or Finance Controller verifies. Invoice and payment screenshot are stored separately.
             </DialogDescription>
           </DialogHeader>
           {selectedItem && (() => {
             const service = formatVendorService(selectedItem);
             const tripDate = tripDateLabel(selectedItem.departureDate);
+            const vendorLabel = formatVendorName(selectedItem.vendorName);
             return (
-            <div className="space-y-3 text-xs">
-              <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
-                <div className="flex justify-between gap-3">
-                  <span className="text-slate-500">Vendor</span>
-                  <span className="truncate font-semibold text-right" title={selectedItem.vendorName}>
-                    {selectedItem.vendorName}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="shrink-0 text-slate-500">Departure / Trip</span>
+            <div className="space-y-3 text-[12px]">
+              <dl className="grid grid-cols-[6.75rem_1fr] gap-x-3 gap-y-2 rounded-lg border border-[#E3EAF2] bg-[#F8FAFC] px-3 py-2.5">
+                <dt className="text-slate-500">Vendor</dt>
+                <dd className="min-w-0 font-semibold text-[#162B45]" title={vendorLabel}>{vendorLabel}</dd>
+                <dt className="text-slate-500">Trip</dt>
+                <dd className="min-w-0">
                   {selectedItem.departureHref ? (
                     <Link
                       to={selectedItem.departureHref}
-                      className="max-w-[240px] text-right text-[#C2410C] hover:underline"
+                      className="inline-flex max-w-full items-center gap-1 text-[#C2410C] hover:underline"
                       onClick={closeAction}
                     >
-                      <span className="block truncate font-semibold text-[#162B45]">{selectedItem.tripName}</span>
-                      {tripDate ? <span className="block text-[10px] text-slate-500">{tripDate}</span> : null}
+                      <span className="truncate font-medium">{selectedItem.tripName}</span>
+                      {tripDate ? <span className="shrink-0 text-slate-500">{tripDate}</span> : null}
+                      <ExternalLink className="h-3 w-3 shrink-0" />
                     </Link>
                   ) : (
-                    <span className="max-w-[240px] truncate text-right" title={selectedItem.tripName}>
+                    <span>
                       {selectedItem.tripName}
                       {tripDate ? ` · ${tripDate}` : ""}
                     </span>
                   )}
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-slate-500">Approved by</span>
-                  <span className="truncate text-right font-medium">
-                    {selectedItem.approvedByName || "Not verified yet"}
-                  </span>
-                </div>
-                {!selectedItem.operationalLinked && (
-                  <p className="text-[10px] text-slate-400">Operational record unavailable — proof is stored on this payout.</p>
-                )}
-                <div className="flex justify-between gap-3">
-                  <span className="shrink-0 text-slate-500">Service</span>
-                  <span className="max-w-[240px] truncate text-right" title={service.tooltip}>
-                    {service.primary}
-                    {service.secondary ? ` · ${service.secondary}` : ""}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-slate-500">Total / Paid</span>
-                  <span className="font-mono">
-                    {formatINR(selectedItem.totalCost)} / {formatINR(selectedItem.paidAmount)}
-                  </span>
-                </div>
-              </div>
+                </dd>
+                <dt className="text-slate-500">Approved by</dt>
+                <dd className="font-medium text-[#162B45]">{selectedItem.approvedByName || "Not verified yet"}</dd>
+                <dt className="text-slate-500">Service</dt>
+                <dd className="min-w-0 text-[#162B45]" title={service.tooltip}>
+                  {service.primary}
+                  {service.secondary ? ` · ${service.secondary}` : ""}
+                </dd>
+                <dt className="text-slate-500">Total / Paid</dt>
+                <dd className="font-mono tabular-nums">
+                  {formatINR(selectedItem.totalCost)} / {formatINR(selectedItem.paidAmount)}
+                </dd>
+              </dl>
+              {!selectedItem.operationalLinked && (
+                <p className="text-[10px] text-slate-400">Operational record unavailable — proof is stored on this payout.</p>
+              )}
               {actionType === "view-proof" ? (
                 <div className="grid grid-cols-2 gap-2">
                   <ProofPreview url={proofUrlInput || selectedItem.invoiceProofUrl || selectedItem.proofUrl} label="Invoice / bill" />

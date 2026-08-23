@@ -140,6 +140,73 @@ export function sanitizePlainLabel(value: unknown, fallback = ""): string {
   return text || fallback;
 }
 
+const CATEGORY_TAG = /\s*\((hotel|hotels|transport|guide|guides|activity|activities|vendor|misc|miscellaneous)\)\s*/gi;
+
+export function stripCategoryTag(value: unknown): string {
+  return collapseText(String(value || "").replace(CATEGORY_TAG, " "));
+}
+
+/** One display name everywhere: no ALL CAPS, no “(HOTEL)” suffix. */
+export function formatVendorName(value: unknown, fallback = "Vendor"): string {
+  let text = stripCategoryTag(sanitizePlainLabel(value));
+  if (!text) return fallback;
+  const letters = text.replace(/[^A-Za-z]/g, "");
+  if (letters && (letters === letters.toUpperCase() || letters === letters.toLowerCase())) {
+    text = text
+      .toLowerCase()
+      .replace(/\b([a-z])/g, (match) => match.toUpperCase());
+  }
+  return text;
+}
+
+export function refineServiceAgainstVendor(description: unknown, vendorName?: unknown): string {
+  const vendor = formatVendorName(vendorName, "").toLowerCase();
+  const raw = stripCategoryTag(sanitizeDisplayText(description)).replace(/\s*[•|/]\s*/g, " · ");
+  if (!raw) return "";
+  return raw
+    .split(/\s*·\s*/)
+    .map((part) => collapseText(part))
+    .filter((part) => {
+      const token = part.toLowerCase();
+      if (!token) return false;
+      if (vendor && token === vendor) return false;
+      if (vendor && vendor.includes(token) && token.length <= 18) return false;
+      return true;
+    })
+    .join(" · ");
+}
+
+export function hotelServiceLine(record: {
+  location?: unknown;
+  numberOfRooms?: unknown;
+  rooms?: unknown;
+  roomType?: unknown;
+  hotelName?: unknown;
+  vendorName?: unknown;
+  serviceDescription?: unknown;
+}): string {
+  const vendor = formatVendorName(record.hotelName || record.vendorName, "");
+  const rooms = Number(record.numberOfRooms ?? record.rooms);
+  const loc = sanitizePlainLabel(record.location);
+  const roomType = sanitizePlainLabel(record.roomType);
+  const parts: string[] = [];
+  if (Number.isFinite(rooms) && rooms > 0) {
+    parts.push(`${Math.round(rooms)} ${rooms === 1 ? "room" : "rooms"}`);
+  }
+  if (roomType && !/^(standard|hotel|custom(\s+prop.*)?)$/i.test(roomType)) {
+    parts.push(roomType);
+  }
+  if (loc && !vendor.toLowerCase().includes(loc.toLowerCase())) {
+    parts.push(loc);
+  }
+  const pricing = formatHotelPricingSummary(record.serviceDescription);
+  if (!parts.length && pricing) return pricing;
+  if (parts.length && pricing && !parts.join(" ").toLowerCase().includes(pricing.toLowerCase())) {
+    parts.push(pricing);
+  }
+  return parts.join(" · ") || fallbackServiceLabel("Hotels");
+}
+
 export function extractBillReference(value: unknown, id?: string): string {
   const raw = collapseText(value);
   const matched = raw.match(/BILL-[A-Za-z0-9]+/i);
@@ -160,10 +227,10 @@ export function formatVendorService(item: {
   notes?: unknown;
   remarks?: unknown;
 }): { primary: string; secondary: string; tooltip: string } {
-  const vendor = sanitizePlainLabel(item.vendorName).toLowerCase();
+  const vendor = formatVendorName(item.vendorName).toLowerCase();
   const category = sanitizePlainLabel(item.category);
   const rawDescription = item.serviceDescription ?? item.notes ?? item.remarks;
-  const description = sanitizeDisplayText(rawDescription);
+  const description = refineServiceAgainstVendor(rawDescription, item.vendorName);
   const reference = extractBillReference(item.billReference, item.id);
   const repeatsVendor = Boolean(description) && description.toLowerCase() === vendor;
   const repeatsCategory =
