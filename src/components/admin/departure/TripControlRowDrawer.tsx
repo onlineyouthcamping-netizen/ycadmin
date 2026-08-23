@@ -41,6 +41,7 @@ export interface TripControlRowData {
   guideStatus?: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED";
   checkInStatus: "CHECKED-IN" | "PENDING" | "NOT REQUIRED";
   remark: string;
+  remarkDisplay?: string;
   mealSummary?: string;
   mealGroups?: Array<{ type: string; dishes: string }>;
   mealSource?: "vendor" | "itinerary" | "none";

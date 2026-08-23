@@ -76,6 +76,106 @@ const TABS = [
   { id: "timeline", label: "Activity Timeline", icon: History },
 ];
 
+const FOOD_MENU_FIELDS = [
+  {
+    includedKey: "breakfastIncluded" as const,
+    menuKey: "breakfastMenu" as const,
+    label: "Breakfast",
+    optional: false,
+    placeholder: "Tea, coffee\nPoha / paratha\nFruit, omelette",
+  },
+  {
+    includedKey: "lunchIncluded" as const,
+    menuKey: "lunchMenu" as const,
+    label: "Lunch",
+    optional: false,
+    placeholder: "Dal, rice, seasonal sabzi\nRoti, salad, buttermilk",
+  },
+  {
+    includedKey: "dinnerIncluded" as const,
+    menuKey: "dinnerMenu" as const,
+    label: "Dinner",
+    optional: false,
+    placeholder: "Dal fry, jeera rice, roti\nSabzi, sweet",
+  },
+  {
+    includedKey: "snacksIncluded" as const,
+    menuKey: "snacksMenu" as const,
+    label: "Snacks",
+    optional: true,
+    placeholder: "Evening tea, pakora, biscuits…",
+  },
+];
+
+function MealInclusionEditor({
+  form,
+  onChange,
+  tall,
+}: {
+  form: any;
+  onChange: (next: any) => void;
+  tall?: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wide mb-1.5">
+          Included meals
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {FOOD_MENU_FIELDS.map((field) => {
+            const on = !!form[field.includedKey];
+            return (
+              <button
+                key={field.includedKey}
+                type="button"
+                onClick={() => onChange({ ...form, [field.includedKey]: !on })}
+                className={cn(
+                  "h-7 px-2.5 rounded-full text-[11px] font-bold border transition-colors",
+                  on
+                    ? "bg-[#FF4D00] text-white border-[#FF4D00]"
+                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300",
+                )}
+              >
+                {field.label}
+                {field.optional ? " (optional)" : ""}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-slate-500 mt-1.5">
+          Turn on only meals this property actually serves. Meal plan codes like AP stay separate; ops can still mark breakfast included or not.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {FOOD_MENU_FIELDS.map((field) => {
+          const on = !!form[field.includedKey];
+          return (
+            <div key={field.menuKey} className={cn(!on && "opacity-70")}>
+              <label className="font-extrabold text-slate-700 block mb-1">{field.label}</label>
+              {on ? (
+                <Textarea
+                  value={form[field.menuKey] ?? ""}
+                  onChange={(e) => onChange({ ...form, [field.menuKey]: e.target.value })}
+                  placeholder={field.placeholder}
+                  className={cn(
+                    "bg-white text-xs border-slate-200 font-medium",
+                    tall ? "min-h-[120px]" : "min-h-[88px]",
+                  )}
+                />
+              ) : (
+                <p className="text-[11px] text-slate-500 bg-white border border-dashed border-slate-200 rounded-md px-3 py-2.5">
+                  Not included. Turn on {field.label.toLowerCase()} above to add dishes.
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function AccommodationDetailPage({
   vendor: initialVendor,
   onBack,
@@ -249,6 +349,22 @@ export function AccommodationDetailPage({
       lunchMenu: mealFromMenu("LUNCH"),
       dinnerMenu: mealFromMenu("DINNER"),
       snacksMenu: mealFromMenu("SNACK") || mealFromMenu("TEA"),
+      breakfastIncluded:
+        typeof (v?.foodMenuIncluded || meta.foodMenuIncluded)?.breakfast === "boolean"
+          ? !!(v?.foodMenuIncluded || meta.foodMenuIncluded).breakfast
+          : true,
+      lunchIncluded:
+        typeof (v?.foodMenuIncluded || meta.foodMenuIncluded)?.lunch === "boolean"
+          ? !!(v?.foodMenuIncluded || meta.foodMenuIncluded).lunch
+          : true,
+      dinnerIncluded:
+        typeof (v?.foodMenuIncluded || meta.foodMenuIncluded)?.dinner === "boolean"
+          ? !!(v?.foodMenuIncluded || meta.foodMenuIncluded).dinner
+          : true,
+      snacksIncluded:
+        typeof (v?.foodMenuIncluded || meta.foodMenuIncluded)?.snacks === "boolean"
+          ? !!(v?.foodMenuIncluded || meta.foodMenuIncluded).snacks
+          : Boolean(mealFromMenu("SNACK") || mealFromMenu("TEA")),
       financialDetails:
         v?.financialDetails ||
         v?.bankDetails ||
@@ -1411,6 +1527,10 @@ export function AccommodationDetailPage({
       delete payload.lunchMenu;
       delete payload.dinnerMenu;
       delete payload.snacksMenu;
+      delete payload.breakfastIncluded;
+      delete payload.lunchIncluded;
+      delete payload.dinnerIncluded;
+      delete payload.snacksIncluded;
       delete payload.financialDetails;
       if (!isTransport) delete payload.routesCovered;
       if (isRestaurant) {
@@ -1423,6 +1543,12 @@ export function AccommodationDetailPage({
           { type: "DINNER", name: "Dinner", inclusions: String(overviewForm.dinnerMenu || "").trim() },
           { type: "SNACKS", name: "Snacks", inclusions: String(overviewForm.snacksMenu || "").trim() },
         ].filter((item) => item.inclusions);
+        payload.foodMenuIncluded = {
+          breakfast: !!overviewForm.breakfastIncluded,
+          lunch: !!overviewForm.lunchIncluded,
+          dinner: !!overviewForm.dinnerIncluded,
+          snacks: !!overviewForm.snacksIncluded,
+        };
       }
       const res = await api.patch(`/vendors/directory/${vendor.id}`, payload);
       const updated = res.data?.data || { ...vendor, ...payload };
@@ -2654,55 +2780,7 @@ export function AccommodationDetailPage({
                         Shown on trip control as Breakfast / Lunch / Dinner dishes
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500">
-                      Enter the full dish list for each meal (one item per line or comma-separated). Meal plan codes like AP stay separate above.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="font-extrabold text-slate-700 block mb-1">Breakfast</label>
-                        <Textarea
-                          value={overviewForm.breakfastMenu ?? ""}
-                          onChange={(e) =>
-                            setOverviewForm({ ...overviewForm, breakfastMenu: e.target.value })
-                          }
-                          placeholder={"Tea, coffee\nPoha / paratha\nFruit, omelette"}
-                          className="bg-white text-xs border-slate-200 font-medium min-h-[88px]"
-                        />
-                      </div>
-                      <div>
-                        <label className="font-extrabold text-slate-700 block mb-1">Lunch</label>
-                        <Textarea
-                          value={overviewForm.lunchMenu ?? ""}
-                          onChange={(e) =>
-                            setOverviewForm({ ...overviewForm, lunchMenu: e.target.value })
-                          }
-                          placeholder={"Dal, rice, seasonal sabzi\nRoti, salad, buttermilk"}
-                          className="bg-white text-xs border-slate-200 font-medium min-h-[88px]"
-                        />
-                      </div>
-                      <div>
-                        <label className="font-extrabold text-slate-700 block mb-1">Dinner</label>
-                        <Textarea
-                          value={overviewForm.dinnerMenu ?? ""}
-                          onChange={(e) =>
-                            setOverviewForm({ ...overviewForm, dinnerMenu: e.target.value })
-                          }
-                          placeholder={"Dal fry, jeera rice, roti\nSabzi, sweet"}
-                          className="bg-white text-xs border-slate-200 font-medium min-h-[88px]"
-                        />
-                      </div>
-                      <div>
-                        <label className="font-extrabold text-slate-700 block mb-1">Snacks (optional)</label>
-                        <Textarea
-                          value={overviewForm.snacksMenu ?? ""}
-                          onChange={(e) =>
-                            setOverviewForm({ ...overviewForm, snacksMenu: e.target.value })
-                          }
-                          placeholder="Evening tea, pakora, biscuits…"
-                          className="bg-white text-xs border-slate-200 font-medium min-h-[88px]"
-                        />
-                      </div>
-                    </div>
+                    <MealInclusionEditor form={overviewForm} onChange={setOverviewForm} />
                   </div>
                 )}
 
@@ -2914,7 +2992,7 @@ export function AccommodationDetailPage({
                     Food Menu
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Full breakfast, lunch, and dinner dishes used on Operations trip control. Save with Overview Changes.
+                    Mark which meals are included, then enter dishes. Used on Operations trip control.
                   </p>
                 </div>
                 <Button
@@ -2925,60 +3003,17 @@ export function AccommodationDetailPage({
                 >
                   {isSavingOverview ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving Changes...
+                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving...
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Save Overview Changes
+                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Save food menu
                     </>
                   )}
                 </Button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div>
-                  <label className="font-extrabold text-slate-700 block mb-1">Breakfast</label>
-                  <Textarea
-                    value={overviewForm.breakfastMenu ?? ""}
-                    onChange={(e) =>
-                      setOverviewForm({ ...overviewForm, breakfastMenu: e.target.value })
-                    }
-                    placeholder={"Tea, coffee\nPoha / paratha\nFruit, omelette"}
-                    className="bg-white text-xs border-slate-200 font-medium min-h-[120px]"
-                  />
-                </div>
-                <div>
-                  <label className="font-extrabold text-slate-700 block mb-1">Lunch</label>
-                  <Textarea
-                    value={overviewForm.lunchMenu ?? ""}
-                    onChange={(e) =>
-                      setOverviewForm({ ...overviewForm, lunchMenu: e.target.value })
-                    }
-                    placeholder={"Dal, rice, seasonal sabzi\nRoti, salad, buttermilk"}
-                    className="bg-white text-xs border-slate-200 font-medium min-h-[120px]"
-                  />
-                </div>
-                <div>
-                  <label className="font-extrabold text-slate-700 block mb-1">Dinner</label>
-                  <Textarea
-                    value={overviewForm.dinnerMenu ?? ""}
-                    onChange={(e) =>
-                      setOverviewForm({ ...overviewForm, dinnerMenu: e.target.value })
-                    }
-                    placeholder={"Dal fry, jeera rice, roti\nSabzi, sweet"}
-                    className="bg-white text-xs border-slate-200 font-medium min-h-[120px]"
-                  />
-                </div>
-                <div>
-                  <label className="font-extrabold text-slate-700 block mb-1">Snacks (optional)</label>
-                  <Textarea
-                    value={overviewForm.snacksMenu ?? ""}
-                    onChange={(e) =>
-                      setOverviewForm({ ...overviewForm, snacksMenu: e.target.value })
-                    }
-                    placeholder="Evening tea, pakora, biscuits…"
-                    className="bg-white text-xs border-slate-200 font-medium min-h-[120px]"
-                  />
-                </div>
+              <div className="text-xs">
+                <MealInclusionEditor form={overviewForm} onChange={setOverviewForm} tall />
               </div>
             </div>
           )}

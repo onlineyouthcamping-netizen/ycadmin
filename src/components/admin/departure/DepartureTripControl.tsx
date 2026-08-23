@@ -35,6 +35,7 @@ import TripControlRowDrawer, { TripControlRowData } from "./TripControlRowDrawer
 import { findHotelForDay } from "@/utils/accommodationCalculator";
 import {
   compactMealSummary,
+  compactTripControlRemarks,
   formatDayMeals,
   matchMenuToStay,
   parseVendorFoodMenu,
@@ -521,6 +522,9 @@ export default function DepartureTripControl({
           : defaultCheckIn);
 
       const currentRemark = dbRow?.remarks !== undefined ? dbRow.remarks : (day.sub || "");
+      const displayRemark = compactTripControlRemarks(String(currentRemark || ""), {
+        hotelName: rawHotelName || hotelName,
+      });
       const itineraryMeals = day.meals && day.meals !== "—" ? String(day.meals) : "";
       const mealMenu = isNoStay
         ? null
@@ -555,6 +559,7 @@ export default function DepartureTripControl({
         guideStatus,
         checkInStatus: currentCheckIn,
         remark: currentRemark,
+        remarkDisplay: displayRemark,
         mealSummary,
         mealMenu,
         mealGroups: dayMeals.groups,
@@ -1281,7 +1286,8 @@ export default function DepartureTripControl({
         r.transportName.toLowerCase().includes(q) ||
         r.guideName.toLowerCase().includes(q) ||
         (r.mealSummary && r.mealSummary.toLowerCase().includes(q)) ||
-        (r.remark && r.remark.toLowerCase().includes(q));
+        (r.remark && r.remark.toLowerCase().includes(q)) ||
+        (r.remarkDisplay && r.remarkDisplay.toLowerCase().includes(q));
 
       if (!matchSearch) return false;
 
@@ -1594,7 +1600,7 @@ export default function DepartureTripControl({
 
                     <td className="py-2.5 px-3.5 align-top">
                       <span className="text-slate-500 text-[12px] whitespace-normal break-words block">
-                        {row.remark || <span className="text-slate-300">No remarks</span>}
+                        {row.remarkDisplay || row.remark || <span className="text-slate-300">No remarks</span>}
                       </span>
                     </td>
                   </tr>
