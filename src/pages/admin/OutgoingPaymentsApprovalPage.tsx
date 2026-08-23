@@ -27,7 +27,7 @@ import { Link } from "react-router-dom";
 import { financeControllerService } from "@/services/financeController.service";
 import { financeApprovalsService } from "@/services/financeApprovals.service";
 import { useAuthStore } from "@/store/auth.store";
-import { canReviewVendorPayout, canApproveVendorPayoutFounder } from "@/utils/collectionVerification";
+import { canReviewVendorPayout } from "@/utils/collectionVerification";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import {
   extractBillReference,
@@ -65,7 +65,6 @@ export default function OutgoingPaymentsApprovalPage({
 }: OutgoingPaymentsApprovalPageProps) {
   const { admin: currentUser } = useAuthStore();
   const canReview = canReviewVendorPayout(currentUser);
-  const canFounderVerify = canApproveVendorPayoutFounder(currentUser);
 
   const [vendorItems, setVendorItems] = useState<VendorPaymentRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,18 +210,12 @@ export default function OutgoingPaymentsApprovalPage({
         return;
       }
 
-      if (actionType === "review") {
-        await financeApprovalsService.reviewVendorPaymentFC(selectedItem.id, {
-          reason: payoutNotes.trim() || undefined,
-          invoiceFileUrl: proof,
-        });
-        toast.success("Finance Controller review recorded. Founder verification is still required.");
-      } else if (actionType === "approve") {
+      if (actionType === "review" || actionType === "approve") {
         await financeApprovalsService.approveVendorPaymentFounder(selectedItem.id, {
           reason: payoutNotes.trim() || undefined,
           invoiceFileUrl: proof,
         });
-        toast.success("Founder verified this vendor payout");
+        toast.success("Vendor payout verified");
       }
       closeAction();
       loadData();
@@ -364,8 +357,7 @@ export default function OutgoingPaymentsApprovalPage({
                 {aggregatedItems.map((item) => {
                   const label = vendorStatusLabel(item);
                   const service = formatVendorService(item);
-                  const showFcApprove = canReview && label === "Pending";
-                  const showFounderVerify = canFounderVerify && label === "Reviewed";
+                  const showVerify = canReview && (label === "Pending" || label === "Reviewed");
                   const settled = label === "Settled";
                   const proofUrl = item.proofUrl;
                   return (
@@ -478,25 +470,10 @@ export default function OutgoingPaymentsApprovalPage({
                               Proof
                             </Button>
                           )}
-                          {showFcApprove && (
+                          {showVerify && (
                             <Button
                               size="sm"
-                              variant="outline"
-                              title="FC Approve"
-                              onClick={() => {
-                                setSelectedItem(item);
-                                setActionType("review");
-                                setProofUrlInput(proofUrl || "");
-                              }}
-                              className="h-6 px-1.5 text-[10px] font-semibold"
-                            >
-                              FC
-                            </Button>
-                          )}
-                          {showFounderVerify && (
-                            <Button
-                              size="sm"
-                              title="Founder verify"
+                              title="Verify payout"
                               onClick={() => {
                                 setSelectedItem(item);
                                 setActionType("approve");
@@ -504,7 +481,7 @@ export default function OutgoingPaymentsApprovalPage({
                               }}
                               className="h-6 px-1.5 text-[10px] font-semibold bg-[#0B1528] text-white"
                             >
-                              Founder
+                              Verify
                             </Button>
                           )}
                         </div>
@@ -521,16 +498,14 @@ export default function OutgoingPaymentsApprovalPage({
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
-              {actionType === "review"
-                ? "FC approve vendor payout"
-                : actionType === "approve"
-                  ? "Founder verify vendor payout"
-                  : actionType === "view-proof"
+              {actionType === "review" || actionType === "approve"
+                ? "Verify vendor payout"
+                : actionType === "view-proof"
                     ? "Payment proof"
                     : "Upload payment proof"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Two-step vendor approval: Finance Controller reviews, then Founder verifies. Proof stays on this payout even if Departure Hub is unlinked.
+              One person verifies this payout. Proof stays on the bill even if Departure Hub is unlinked.
             </DialogDescription>
           </DialogHeader>
           {selectedItem && (() => {
@@ -608,9 +583,7 @@ export default function OutgoingPaymentsApprovalPage({
               <Button size="sm" disabled={actionLoading} onClick={handleVendorAction} className="bg-[#0B1528] text-white">
                 {actionType === "upload"
                   ? "Save proof"
-                  : actionType === "review"
-                    ? "Confirm FC approve"
-                    : "Confirm Founder verify"}
+                  : "Confirm verify"}
               </Button>
             )}
           </DialogFooter>
