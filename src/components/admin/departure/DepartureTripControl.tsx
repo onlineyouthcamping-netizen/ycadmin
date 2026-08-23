@@ -32,7 +32,7 @@ import { opsService, OpsDayItinerary } from "@/services/ops.service";
 import api from "@/services/api";
 import TripControlRowDrawer, { TripControlRowData } from "./TripControlRowDrawer";
 import { TripControlMealsCell } from "./TripControlMeals";
-import { findHotelForDay } from "@/utils/accommodationCalculator";
+import { pickOpsDayRow } from "@/utils/departure/opsDayItineraryMatch";
 import {
   compactMealSummary,
   formatDayMeals,
@@ -201,6 +201,32 @@ export default function DepartureTripControl({
     } finally {
       setLoadingDbItinerary(false);
     }
+  };
+
+  const mergeSavedDay = (saved: OpsDayItinerary | undefined) => {
+    if (!saved) return;
+    setDbDayItineraries((prev) => {
+      const rest = prev.filter((d) => d.id && saved.id ? d.id !== saved.id : true);
+      return [...rest, saved];
+    });
+  };
+
+  const persistDayRow = async (row: TripControlRowData, patch: Partial<OpsDayItinerary>) => {
+    const saved = await opsService.upsertDayItinerary(
+      tripId,
+      {
+        id: row.itineraryId,
+        date: row.dateStr,
+        dayTitle: row.dayLabel,
+        paxCount: row.paxCount,
+        hotelName: row.hotelName,
+        remarks: row.remark,
+        ...patch,
+      },
+      departureDateStr,
+    );
+    mergeSavedDay(saved);
+    return saved;
   };
 
   useEffect(() => {
@@ -382,7 +408,7 @@ export default function DepartureTripControl({
       const paxCount = totalPax > 0 ? totalPax : 15;
 
       // Find DB saved row if present
-      const dbRow = dbDayItineraries.find((d) => d.dayTitle === dayLabel || (d.date && d.date.includes(dateStr)));
+      const dbRow = pickOpsDayRow(dbDayItineraries, dayLabel, dateStr);
 
       // Match Hotel Assignment for this day using findHotelForDay, opsHotels, and tripVendors
       const stayNorm = stayLocation.toLowerCase().trim();
@@ -540,6 +566,7 @@ export default function DepartureTripControl({
 
       return {
         dayNum,
+        itineraryId: dbRow?.id,
         dateStr,
         dayLabel,
         destination,
@@ -1033,19 +1060,11 @@ export default function DepartureTripControl({
   const handleToggleCheckIn = async (row: TripControlRowData, newStatus: "CHECKED-IN" | "PENDING" | "NOT REQUIRED") => {
     const isCheckedIn = newStatus === "CHECKED-IN";
     try {
-      await opsService.upsertDayItinerary(
-        tripId,
-        {
-          dayTitle: row.dayLabel,
-          checkInDone: isCheckedIn,
-          paxCount: row.paxCount,
-          hotelName: row.hotelName,
-          remarks: row.remark,
-        },
-        departureDateStr
-      );
+      await persistDayRow(row, {
+        checkInDone: isCheckedIn,
+        remarks: row.remark,
+      });
       toast.success(`Check-in for ${row.dayLabel} set to ${newStatus} (Saved to DB)`);
-      loadDbItinerary();
     } catch (err: any) {
       toast.error("Failed to persist check-in to database");
     }
@@ -1058,42 +1077,27 @@ export default function DepartureTripControl({
   // Save operational remark & persist to Database via opsService
   const handleSaveRemark = async (row: TripControlRowData, remark: string) => {
     try {
-      await opsService.upsertDayItinerary(
-        tripId,
-        {
-          dayTitle: row.dayLabel,
-          remarks: remark,
-          checkInDone: row.checkInStatus === "CHECKED-IN",
-          paxCount: row.paxCount,
-          hotelName: row.hotelName,
-        },
-        departureDateStr
+      const saved = await persistDayRow(row, {
+        remarks: remark,
+        checkInDone: row.checkInStatus === "CHECKED-IN",
+      });
+      toast.success(`Saved operational remark for ${row.dayLabel}`);
+      setSelectedRow((prev) =>
+        prev && prev.dayNum === row.dayNum
+          ? { ...prev, remark, remarkDisplay: remark, itineraryId: saved?.id || prev.itineraryId }
+          : prev,
       );
-      toast.success(`Saved operational remark for ${row.dayLabel} (Saved to DB)`);
-      loadDbItinerary();
     } catch (err: any) {
       toast.error("Failed to save remark to database");
-    }
-
-    if (selectedRow && selectedRow.dayNum === row.dayNum) {
-      setSelectedRow({ ...selectedRow, remark });
     }
   };
 
   const handleSaveDayDetail = async (row: TripControlRowData, field: "vehicleType" | "guideDriverDetails", value: string) => {
     try {
-      await opsService.upsertDayItinerary(
-        tripId,
-        {
-          dayTitle: row.dayLabel,
-          [field]: value,
-          paxCount: row.paxCount,
-          hotelName: row.hotelName,
-        },
-        departureDateStr
-      );
+      await persistDayRow(row, {
+        [field]: value,
+      } as Partial<OpsDayItinerary>);
       toast.success(`Saved ${field === "vehicleType" ? "transport" : "guide"} details for ${row.dayLabel}`);
-      loadDbItinerary();
     } catch (err: any) {
       toast.error("Failed to save details to database");
     }
@@ -1142,20 +1146,13 @@ export default function DepartureTripControl({
       const isConfirmed = newStatus === "CONFIRMED" || newStatus === "BOOKED";
       const hotelVal = isNotRequired ? "— (Not Required)" : isCancelled ? "— (Cancelled)" : row.hotelName !== "—" ? row.hotelName : "Contracted Stay";
 
-      await opsService.upsertDayItinerary(
-        tripId,
-        {
-          dayTitle: row.dayLabel,
-          hotelName: hotelVal,
-          hotelVerified: isConfirmed || isCheckedIn,
-          checkInDone: isCheckedIn ? true : isNotRequired || isCancelled ? false : row.checkInStatus === "CHECKED-IN",
-          paxCount: row.paxCount,
-          remarks: row.remark,
-        },
-        departureDateStr
-      );
+      await persistDayRow(row, {
+        hotelName: hotelVal,
+        hotelVerified: isConfirmed || isCheckedIn,
+        checkInDone: isCheckedIn ? true : isNotRequired || isCancelled ? false : row.checkInStatus === "CHECKED-IN",
+        remarks: row.remark,
+      });
       toast.success(`Hotel status for ${row.dayLabel} set to "${formatOpsLabel(newStatus)}"`);
-      await loadDbItinerary();
     } catch (err: any) {
       toast.error("Failed to update hotel status in database");
     }
@@ -1186,19 +1183,11 @@ export default function DepartureTripControl({
       const defaultTrans = leadTransport.name !== "—" ? leadTransport.name : "17 Seater Tempo";
       const vehicleVal = isNotRequired ? "— (Not Required)" : isCancelled ? "— (Cancelled)" : (row.transportName !== "—" ? row.transportName : defaultTrans);
 
-      await opsService.upsertDayItinerary(
-        tripId,
-        {
-          dayTitle: row.dayLabel,
-          vehicleType: vehicleVal,
-          vehicleVerified: newStatus === "BOOKED" || newStatus === "CONFIRMED" || newStatus === "CHECKED-IN",
-          paxCount: row.paxCount,
-          hotelName: row.hotelName,
-        },
-        departureDateStr
-      );
+      await persistDayRow(row, {
+        vehicleType: vehicleVal,
+        vehicleVerified: newStatus === "BOOKED" || newStatus === "CONFIRMED" || newStatus === "CHECKED-IN",
+      });
       toast.success(`Transport status for ${row.dayLabel} set to "${formatOpsLabel(newStatus)}"`);
-      await loadDbItinerary();
     } catch (err: any) {
       toast.error("Failed to update transport status in database");
     }
@@ -1228,19 +1217,11 @@ export default function DepartureTripControl({
       const defaultG = leadGuide.name !== "—" ? leadGuide.name : "Lead Guide";
       const guideVal = isNotRequired ? "— (Not Required)" : (row.guideName !== "—" ? row.guideName : defaultG);
 
-      await opsService.upsertDayItinerary(
-        tripId,
-        {
-          dayTitle: row.dayLabel,
-          guideDriverDetails: guideVal,
-          guideVerified: newStatus === "CHECKED-IN" || newStatus === "BOOKED" || newStatus === "CONFIRMED",
-          paxCount: row.paxCount,
-          hotelName: row.hotelName,
-        },
-        departureDateStr
-      );
+      await persistDayRow(row, {
+        guideDriverDetails: guideVal,
+        guideVerified: newStatus === "CHECKED-IN" || newStatus === "BOOKED" || newStatus === "CONFIRMED",
+      });
       toast.success(`Guide status for ${row.dayLabel} set to "${formatOpsLabel(newStatus)}"`);
-      await loadDbItinerary();
     } catch (err: any) {
       toast.error("Failed to update guide status in database");
     }
@@ -1683,6 +1664,12 @@ export default function DepartureTripControl({
               <div className="pt-1.5 border-t border-[#E8EEF4] min-w-0" onClick={(e) => e.stopPropagation()}>
                 <span className="text-[10px] font-medium text-slate-400 block mb-0.5">Meals</span>
                 <TripControlMealsCell row={row} />
+              </div>
+            )}
+            {(row.remarkDisplay || row.remark) && (
+              <div className="pt-1.5 border-t border-[#E8EEF4] text-xs">
+                <span className="text-[10px] font-medium text-slate-400 block">Remark</span>
+                <span className="text-[#0B1528] whitespace-normal break-words block">{row.remarkDisplay || row.remark}</span>
               </div>
             )}
             <div className="flex items-center justify-end pt-2 border-t border-[#E8EEF4] text-xs">

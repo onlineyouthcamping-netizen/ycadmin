@@ -22,6 +22,7 @@ import { MealsMenuBody } from "./TripControlMeals";
 
 export interface TripControlRowData {
   dayNum: number;
+  itineraryId?: string;
   dateStr: string;
   dayLabel: string;
   destination: string;

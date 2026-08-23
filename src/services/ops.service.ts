@@ -14,6 +14,8 @@ export interface OpsDayItinerary {
   guideDriverDetails?: string;
   guideVerified: boolean;
   checkInDone: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OpsTripExpense {
