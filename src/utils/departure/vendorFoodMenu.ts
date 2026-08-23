@@ -97,6 +97,15 @@ export function parseVendorFoodMenu(vendor: any): VendorMenuSource | null {
   const fromMenu = asArray(vendor.foodMenu || vendor.menu || vendor.menuItems || vendor.dishes)
     .map(fromTariff)
     .filter(Boolean) as VendorMenuItem[];
+  let fromNotes: VendorMenuItem[] = [];
+  if (typeof vendor.notes === "string" && vendor.notes.trim().startsWith("{")) {
+    try {
+      const meta = JSON.parse(vendor.notes);
+      fromNotes = asArray(meta?.foodMenu).map(fromTariff).filter(Boolean) as VendorMenuItem[];
+    } catch {
+      fromNotes = [];
+    }
+  }
   const nested = vendor.vendor ? parseVendorFoodMenu(vendor.vendor) : null;
   const nestedVendorId = vendor.vendorId && typeof vendor.vendorId === "object"
     ? parseVendorFoodMenu(vendor.vendorId)
@@ -109,6 +118,7 @@ export function parseVendorFoodMenu(vendor: any): VendorMenuSource | null {
     ...fromPlans,
     ...fromFoodRates,
     ...fromMenu,
+    ...fromNotes,
     ...(nested?.items || []),
     ...(nestedVendorId?.items || []),
   ].forEach((item) => {

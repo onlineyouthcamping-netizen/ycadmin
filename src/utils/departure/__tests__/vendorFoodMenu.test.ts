@@ -47,6 +47,21 @@ describe("vendorFoodMenu", () => {
     expect(menu?.items[0].inclusions).toContain("buttermilk");
   });
 
+  it("parses foodMenu persisted on vendor notes for hotel profiles", () => {
+    const menu = parseVendorFoodMenu({
+      name: "Barpa Cottage",
+      city: "Manali",
+      mealPlans: "AP",
+      notes: JSON.stringify({
+        foodMenu: [
+          { type: "LUNCH", name: "Lunch", inclusions: "Dal, rice, seasonal sabzi, roti" },
+        ],
+      }),
+    });
+    expect(menu?.mealPlanLabel).toBe("AP");
+    expect(formatDayMeals(menu).groups.find((g) => g.type === "Lunch")?.dishes).toContain("seasonal sabzi");
+  });
+
   it("groups lunch dishes in full rather than meal-type only", () => {
     const menu = parseVendorFoodMenu({
       name: "Hotel Lake View",

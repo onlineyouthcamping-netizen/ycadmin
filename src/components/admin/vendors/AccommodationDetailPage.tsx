@@ -140,6 +140,7 @@ export function AccommodationDetailPage({
       return [
         { id: "overview", label: "Overview", icon: Utensils },
         { id: "contacts", label: "Contacts", icon: Phone },
+        { id: "food_menu", label: "Food Menu", icon: Utensils },
         {
           id: "meal_tariffs",
           label: "Meal Tariffs & Thali Rates",
@@ -166,6 +167,7 @@ export function AccommodationDetailPage({
       { id: "overview", label: "Overview", icon: Hotel },
       { id: "contacts", label: "Contacts", icon: Phone },
       { id: "rooms", label: "Rooms", icon: Bed },
+      { id: "food_menu", label: "Food Menu", icon: Utensils },
       { id: "seasonal_pricing", label: "Seasonal Pricing", icon: Calendar },
       { id: "ledger", label: "Payment Ledger", icon: CreditCard },
       { id: "price_history", label: "Price History", icon: TrendingUp },
@@ -190,6 +192,20 @@ export function AccommodationDetailPage({
     const isRest = type.includes("RESTAURANT") || type.includes("FOOD") || type.includes("MEAL") || type.includes("DINING");
     const isAct = type.includes("ACTIVITIES") || type.includes("ACTIVITY") || type.includes("ADVENTURE") || type.includes("EXPERIENCE");
     const isOth = type.includes("OTHER") || type.includes("MISC") || type.includes("EQUIPMENT") || type.includes("GEAR") || type.includes("PERMIT") || type === "GENERAL";
+
+    const menuItems = Array.isArray(v?.foodMenu)
+      ? v.foodMenu
+      : Array.isArray(meta.foodMenu)
+        ? meta.foodMenu
+        : [];
+    const mealFromMenu = (needle: string) => {
+      const row = menuItems.find((item: any) =>
+        String(item?.type || item?.mealType || item?.name || "")
+          .toUpperCase()
+          .includes(needle),
+      );
+      return String(row?.inclusions || row?.menuDescription || row?.dishes || "").trim();
+    };
 
     return {
       name: v?.name || "",
@@ -229,6 +245,10 @@ export function AccommodationDetailPage({
         meta.description ||
         (v?.notes && !v.notes.startsWith("{") ? v.notes : "") ||
         "",
+      breakfastMenu: mealFromMenu("BREAK"),
+      lunchMenu: mealFromMenu("LUNCH"),
+      dinnerMenu: mealFromMenu("DINNER"),
+      snacksMenu: mealFromMenu("SNACK") || mealFromMenu("TEA"),
       financialDetails:
         v?.financialDetails ||
         v?.bankDetails ||
@@ -1387,8 +1407,22 @@ export function AccommodationDetailPage({
     setIsSavingOverview(true);
     try {
       const payload: any = { ...overviewForm };
+      delete payload.breakfastMenu;
+      delete payload.lunchMenu;
+      delete payload.dinnerMenu;
+      delete payload.snacksMenu;
+      delete payload.financialDetails;
+      if (!isTransport) delete payload.routesCovered;
       if (isRestaurant) {
         delete payload.mealPlans;
+      }
+      if (!isTransport && !isGuide && !isActivity) {
+        payload.foodMenu = [
+          { type: "BREAKFAST", name: "Breakfast", inclusions: String(overviewForm.breakfastMenu || "").trim() },
+          { type: "LUNCH", name: "Lunch", inclusions: String(overviewForm.lunchMenu || "").trim() },
+          { type: "DINNER", name: "Dinner", inclusions: String(overviewForm.dinnerMenu || "").trim() },
+          { type: "SNACKS", name: "Snacks", inclusions: String(overviewForm.snacksMenu || "").trim() },
+        ].filter((item) => item.inclusions);
       }
       const res = await api.patch(`/vendors/directory/${vendor.id}`, payload);
       const updated = res.data?.data || { ...vendor, ...payload };
@@ -2610,6 +2644,68 @@ export function AccommodationDetailPage({
                   </div>
                 )}
 
+                {(!isTransport && !isGuide && !isActivity) && (
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-3.5">
+                    <div className="flex items-center justify-between border-b pb-2 border-slate-200">
+                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Utensils className="w-4 h-4 text-[#FF4D00]" /> Food Menu
+                      </h4>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        Shown on trip control as Breakfast / Lunch / Dinner dishes
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Enter the full dish list for each meal (one item per line or comma-separated). Meal plan codes like AP stay separate above.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">Breakfast</label>
+                        <Textarea
+                          value={overviewForm.breakfastMenu ?? ""}
+                          onChange={(e) =>
+                            setOverviewForm({ ...overviewForm, breakfastMenu: e.target.value })
+                          }
+                          placeholder={"Tea, coffee\nPoha / paratha\nFruit, omelette"}
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[88px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">Lunch</label>
+                        <Textarea
+                          value={overviewForm.lunchMenu ?? ""}
+                          onChange={(e) =>
+                            setOverviewForm({ ...overviewForm, lunchMenu: e.target.value })
+                          }
+                          placeholder={"Dal, rice, seasonal sabzi\nRoti, salad, buttermilk"}
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[88px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">Dinner</label>
+                        <Textarea
+                          value={overviewForm.dinnerMenu ?? ""}
+                          onChange={(e) =>
+                            setOverviewForm({ ...overviewForm, dinnerMenu: e.target.value })
+                          }
+                          placeholder={"Dal fry, jeera rice, roti\nSabzi, sweet"}
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[88px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">Snacks (optional)</label>
+                        <Textarea
+                          value={overviewForm.snacksMenu ?? ""}
+                          onChange={(e) =>
+                            setOverviewForm({ ...overviewForm, snacksMenu: e.target.value })
+                          }
+                          placeholder="Evening tea, pakora, biscuits…"
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[88px]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Financial & Compliance Info Card */}
                 <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-3.5">
                   <div className="flex items-center justify-between border-b pb-2 border-slate-200">
@@ -2806,6 +2902,83 @@ export function AccommodationDetailPage({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "food_menu" && !isTransport && !isGuide && !isActivity && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2 border-b border-slate-100 gap-2">
+                <div>
+                  <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                    Food Menu
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Full breakfast, lunch, and dinner dishes used on Operations trip control. Save with Overview Changes.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleSaveOverview}
+                  disabled={isSavingOverview}
+                  className="h-8.5 text-xs bg-[#FF4D00] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs cursor-pointer"
+                >
+                  {isSavingOverview ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving Changes...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Save Overview Changes
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="font-extrabold text-slate-700 block mb-1">Breakfast</label>
+                  <Textarea
+                    value={overviewForm.breakfastMenu ?? ""}
+                    onChange={(e) =>
+                      setOverviewForm({ ...overviewForm, breakfastMenu: e.target.value })
+                    }
+                    placeholder={"Tea, coffee\nPoha / paratha\nFruit, omelette"}
+                    className="bg-white text-xs border-slate-200 font-medium min-h-[120px]"
+                  />
+                </div>
+                <div>
+                  <label className="font-extrabold text-slate-700 block mb-1">Lunch</label>
+                  <Textarea
+                    value={overviewForm.lunchMenu ?? ""}
+                    onChange={(e) =>
+                      setOverviewForm({ ...overviewForm, lunchMenu: e.target.value })
+                    }
+                    placeholder={"Dal, rice, seasonal sabzi\nRoti, salad, buttermilk"}
+                    className="bg-white text-xs border-slate-200 font-medium min-h-[120px]"
+                  />
+                </div>
+                <div>
+                  <label className="font-extrabold text-slate-700 block mb-1">Dinner</label>
+                  <Textarea
+                    value={overviewForm.dinnerMenu ?? ""}
+                    onChange={(e) =>
+                      setOverviewForm({ ...overviewForm, dinnerMenu: e.target.value })
+                    }
+                    placeholder={"Dal fry, jeera rice, roti\nSabzi, sweet"}
+                    className="bg-white text-xs border-slate-200 font-medium min-h-[120px]"
+                  />
+                </div>
+                <div>
+                  <label className="font-extrabold text-slate-700 block mb-1">Snacks (optional)</label>
+                  <Textarea
+                    value={overviewForm.snacksMenu ?? ""}
+                    onChange={(e) =>
+                      setOverviewForm({ ...overviewForm, snacksMenu: e.target.value })
+                    }
+                    placeholder="Evening tea, pakora, biscuits…"
+                    className="bg-white text-xs border-slate-200 font-medium min-h-[120px]"
+                  />
+                </div>
               </div>
             </div>
           )}
