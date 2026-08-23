@@ -95,13 +95,14 @@ describe("canApproveStationCash", () => {
 });
 
 describe("vendor payout one-step verify", () => {
-  it("lets Finance Controller, Founder, operations, finance, and admin verify", () => {
+  it("lets only Finance Controller and Founder verify", () => {
     expect(canReviewVendorPayout({ role: "finance_controller" })).toBe(true);
     expect(canApproveVendorPayoutFounder({ role: "finance_controller" })).toBe(true);
     expect(canReviewVendorPayout({ role: "founder" })).toBe(true);
-    expect(canReviewVendorPayout({ role: "operations" })).toBe(true);
-    expect(canReviewVendorPayout({ role: "finance" })).toBe(true);
-    expect(canReviewVendorPayout({ role: "admin" })).toBe(true);
+    expect(canReviewVendorPayout({ role: "superadmin" })).toBe(true);
+    expect(canReviewVendorPayout({ role: "operations" })).toBe(false);
+    expect(canReviewVendorPayout({ role: "finance" })).toBe(false);
+    expect(canReviewVendorPayout({ role: "admin" })).toBe(false);
     expect(canReviewVendorPayout({ role: "sales" })).toBe(false);
   });
 });

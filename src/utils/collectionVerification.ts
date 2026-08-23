@@ -77,22 +77,8 @@ export function isEligibleCollectionAssignee(user: CollectionVerifier): boolean 
   return canVerifyCollection(user);
 }
 
-/** Any logged-in finance/ops/admin staff can verify a vendor payout in one step. */
+/** Only Founder or Finance Controller may verify a vendor payout. */
 export function canReviewVendorPayout(user: CollectionVerifier): boolean {
-  if (!user) return false;
-  const role = String(user.role || "").toLowerCase().trim();
-  if (
-    FOUNDER_ROLES.has(role) ||
-    FINANCE_CONTROLLER_ROLES.has(role) ||
-    role === "finance" ||
-    role === "operations" ||
-    role === "ops" ||
-    role === "admin"
-  ) {
-    return true;
-  }
-  if (isProtectedFounderEmail(user.email)) return true;
-  if (user.isSuperuser) return true;
   return canVerifyCollection(user);
 }
 
