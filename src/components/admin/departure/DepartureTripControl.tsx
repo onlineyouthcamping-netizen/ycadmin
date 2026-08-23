@@ -15,7 +15,6 @@ import {
   Search,
   ExternalLink,
   Copy,
-  UtensilsCrossed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +31,7 @@ import * as XLSX from "xlsx";
 import { opsService, OpsDayItinerary } from "@/services/ops.service";
 import api from "@/services/api";
 import TripControlRowDrawer, { TripControlRowData } from "./TripControlRowDrawer";
+import { TripControlMealsCell } from "./TripControlMeals";
 import { findHotelForDay } from "@/utils/accommodationCalculator";
 import {
   compactMealSummary,
@@ -525,7 +525,10 @@ export default function DepartureTripControl({
       const displayRemark = compactTripControlRemarks(String(currentRemark || ""), {
         hotelName: rawHotelName || hotelName,
       });
-      const itineraryMeals = day.meals && day.meals !== "—" ? String(day.meals) : "";
+      const itineraryMeals =
+        day.meals && day.meals !== "—"
+          ? String(day.meals)
+          : String(hotelMatch?.mealPlan || hotelMatch?.mealPlanType || "").trim();
       const mealMenu = isNoStay
         ? null
         : matchMenuToStay(
@@ -1477,7 +1480,7 @@ export default function DepartureTripControl({
                 <th className="py-2.5 px-3.5 w-12 text-center">Pax</th>
                 <th className="py-2.5 px-3.5 w-44">Hotel</th>
                 <th className="py-2.5 px-3.5 w-28">Transport</th>
-                <th className="py-2.5 px-3.5 min-w-[240px]">Meals</th>
+                <th className="py-2.5 px-3.5 w-44">Meals</th>
                 <th className="py-2.5 px-3.5 w-40">Guide</th>
                 <th className="py-2.5 px-3.5">Remarks</th>
               </tr>
@@ -1567,26 +1570,8 @@ export default function DepartureTripControl({
                       </div>
                     </td>
 
-                    <td className="py-2.5 px-3.5 align-top min-w-[240px] max-w-[360px]">
-                      {row.mealGroups && row.mealGroups.length > 0 ? (
-                        <div className="space-y-1.5 min-w-0">
-                          {row.mealGroups.map((g) => (
-                            <div key={`${row.dayNum}-${g.type}`}>
-                              <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                                {g.type}
-                              </div>
-                              <div className="text-[12px] text-[#0B1528] leading-snug whitespace-normal break-words">
-                                {g.dishes}
-                              </div>
-                            </div>
-                          ))}
-                          {row.mealMenu?.vendorName && row.mealSource === "vendor" && (
-                            <div className="text-[10px] text-slate-400">{row.mealMenu.vendorName}</div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-300">—</span>
-                      )}
+                    <td className="py-2.5 px-3.5 align-top w-44 max-w-[200px]">
+                      <TripControlMealsCell row={row} />
                     </td>
 
                     <td className="py-2.5 px-3.5 align-top">
@@ -1599,7 +1584,7 @@ export default function DepartureTripControl({
                     </td>
 
                     <td className="py-2.5 px-3.5 align-top">
-                      <span className="text-slate-500 text-[12px] whitespace-normal break-words block">
+                      <span className="text-slate-500 text-[12px] line-clamp-2 break-words block">
                         {row.remarkDisplay || row.remark || <span className="text-slate-300">No remarks</span>}
                       </span>
                     </td>
@@ -1697,13 +1682,9 @@ export default function DepartureTripControl({
               </div>
             </div>
             {row.mealGroups && row.mealGroups.length > 0 && (
-              <div className="pt-1.5 border-t border-[#E8EEF4] text-xs min-w-0 space-y-1">
-                {row.mealGroups.map((g) => (
-                  <div key={g.type}>
-                    <span className="text-[10px] font-medium text-slate-400 block">{g.type}</span>
-                    <span className="font-medium text-[#0B1528] whitespace-normal break-words block">{g.dishes}</span>
-                  </div>
-                ))}
+              <div className="pt-1.5 border-t border-[#E8EEF4] min-w-0" onClick={(e) => e.stopPropagation()}>
+                <span className="text-[10px] font-medium text-slate-400 block mb-0.5">Meals</span>
+                <TripControlMealsCell row={row} />
               </div>
             )}
             <div className="flex items-center justify-end pt-2 border-t border-[#E8EEF4] text-xs">
@@ -1713,66 +1694,6 @@ export default function DepartureTripControl({
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 sm:p-4 min-w-0 space-y-3">
-        <div className="flex items-center gap-2 border-b border-[#E8EEF4] pb-2.5">
-          <UtensilsCrossed className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-          <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
-            Food menu from vendor directory
-          </h3>
-        </div>
-        {vendorMenus.length === 0 ? (
-          <p className="text-[12px] text-slate-400">
-            No meal tariffs saved on assigned hotels or meal vendors yet. Add them in Vendor Directory (meal tariffs / thali).
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {vendorMenus.map((menu) => (
-              <div
-                key={`${menu.vendorId || menu.vendorName}`}
-                className="border border-[#E8EEF4] rounded-lg p-3 min-w-0"
-              >
-                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#E8EEF4] pb-1.5 mb-2">
-                  <p className="text-[12px] font-medium text-[#0B1528]">
-                    {menu.vendorName}
-                    {menu.city ? (
-                      <span className="font-normal text-slate-400"> · {menu.city}</span>
-                    ) : null}
-                  </p>
-                  {menu.mealPlanLabel ? (
-                    <span className="text-[10px] font-medium text-slate-500">{menu.mealPlanLabel}</span>
-                  ) : null}
-                </div>
-                {menu.items.length === 0 ? (
-                  <p className="text-[12px] text-slate-500">{menu.mealPlanLabel || "Meal plan on file, no dish list."}</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {menu.items.map((item) => (
-                      <div key={item.id || `${item.type}-${item.name}`} className="min-w-0">
-                        <p className="text-[11px] font-semibold text-[#0B1528]">
-                          {item.type}
-                          <span className="font-medium text-slate-500"> · {item.name}</span>
-                          {item.ratePerPerson ? (
-                            <span className="font-medium text-slate-400 tabular-nums">
-                              {" "}
-                              · ₹{item.ratePerPerson.toLocaleString("en-IN")}
-                            </span>
-                          ) : null}
-                        </p>
-                        {item.inclusions ? (
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5 whitespace-pre-wrap">
-                            {item.inclusions}
-                          </p>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Side Action Drawer */}

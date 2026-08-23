@@ -18,6 +18,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { MealsMenuBody } from "./TripControlMeals";
 
 export interface TripControlRowData {
   dayNum: number;
@@ -176,6 +177,19 @@ export default function TripControlRowDrawer({
               <Hotel className="w-3.5 h-3.5 mr-1.5" /> Edit Hotel Assignment
             </Button>
           </div>
+
+          {(rowData.mealGroups || []).length > 0 && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                Food menu
+              </span>
+              <MealsMenuBody
+                groups={rowData.mealGroups || []}
+                vendorName={rowData.mealMenu?.vendorName}
+                source={rowData.mealSource}
+              />
+            </div>
+          )}
 
           {/* SECTION 2: TRANSPORT FLEET */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">

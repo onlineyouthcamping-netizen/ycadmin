@@ -278,6 +278,37 @@ export function tidyMealPlanLabel(raw: string): string {
     .trim();
 }
 
+function joinMealNames(parts: string[]): string {
+  const unique: string[] = [];
+  parts.forEach((p) => {
+    if (!unique.includes(p)) unique.push(p);
+  });
+  if (unique.length === 0) return "";
+  if (unique.length === 1) return unique[0];
+  if (unique.length === 2) return `${unique[0]} & ${unique[1]}`;
+  return `${unique.slice(0, -1).join(", ")} & ${unique[unique.length - 1]}`;
+}
+
+/** Booking/itinerary strings like "Break, LUNCH & dINNER" → "Breakfast, Lunch & Dinner". */
+export function titleCaseMealPlan(raw: string): string {
+  const t = tidyMealPlanLabel(raw);
+  if (!t) return "";
+  const u = t.toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
+  if (u === "EP" || u.includes("ROOM ONLY")) return "Room only";
+  if (u === "AP") return "Breakfast, Lunch & Dinner";
+  if (u === "MAP") return "Breakfast & Dinner";
+  if (u === "CP") return "Breakfast";
+
+  const parts: string[] = [];
+  if (/\bBREAK/.test(u) || /\bBF\b/.test(u)) parts.push("Breakfast");
+  if (/\bLUNCH/.test(u)) parts.push("Lunch");
+  if (/\bDINNER/.test(u)) parts.push("Dinner");
+  if (/\bSNACK/.test(u) || /\bTEA/.test(u)) parts.push("Snacks");
+  const named = joinMealNames(parts);
+  if (named) return named;
+  return t.replace(/\w+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
 function flattenDishes(text: string): string {
   return text
     .split(/[\n;]+/)
@@ -318,11 +349,41 @@ export function formatDayMeals(
 
   if (groups.length > 0) return { groups, source: "vendor" };
 
-  const stub = tidyMealPlanLabel(String(itineraryMeals || menu?.mealPlanLabel || ""));
+  const stub = titleCaseMealPlan(String(itineraryMeals || menu?.mealPlanLabel || ""));
   if (stub && stub !== "—") {
     return { groups: [{ type: "Meals", dishes: stub }], source: "itinerary" };
   }
   return { groups: [], source: "none" };
+}
+
+export function collapseIdenticalMealGroups(groups: DayMealGroup[]): DayMealGroup[] {
+  const byDish = new Map<string, string[]>();
+  groups.forEach((g) => {
+    const key = flattenDishes(g.dishes).toLowerCase();
+    if (!key) return;
+    const types = byDish.get(key) || [];
+    const label = g.type === "Meals" ? titleCaseMealPlan(g.dishes) : g.type;
+    if (!types.includes(label)) types.push(label);
+    byDish.set(key, types);
+  });
+  const out: DayMealGroup[] = [];
+  byDish.forEach((types, key) => {
+    const dishes = groups.find((g) => flattenDishes(g.dishes).toLowerCase() === key)?.dishes || "";
+    out.push({ type: joinMealNames(types), dishes });
+  });
+  return out;
+}
+
+export function mealChipLabel(
+  groups: DayMealGroup[],
+  itineraryMeals?: string,
+  source?: "vendor" | "itinerary" | "none",
+): string {
+  if (source === "vendor") {
+    const types = groups.map((g) => g.type).filter((t) => t && t !== "Meals");
+    if (types.length) return joinMealNames(types);
+  }
+  return titleCaseMealPlan(itineraryMeals || groups[0]?.dishes || "") || groups[0]?.dishes || "";
 }
 
 export function compactMealSummary(menu: VendorMenuSource | null | undefined, itineraryMeals?: string): string {

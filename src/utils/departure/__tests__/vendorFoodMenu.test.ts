@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  collapseIdenticalMealGroups,
   compactMealSummary,
   compactTripControlRemarks,
   formatDayMeals,
   matchMenuToStay,
+  mealChipLabel,
   parseVendorFoodMenu,
+  titleCaseMealPlan,
 } from "../vendorFoodMenu";
 
 describe("vendorFoodMenu", () => {
@@ -96,6 +99,25 @@ describe("vendorFoodMenu", () => {
     const fallback = formatDayMeals(null, "PLAN Breakfast & Dinner");
     expect(fallback.source).toBe("itinerary");
     expect(fallback.groups[0]?.dishes).toBe("Breakfast & Dinner");
+  });
+
+  it("title-cases messy booking meal strings and collapses identical dishes", () => {
+    expect(titleCaseMealPlan("Break, LUNCH & dINNER")).toBe("Breakfast, Lunch & Dinner");
+    const collapsed = collapseIdenticalMealGroups([
+      { type: "Breakfast", dishes: "Dal, Rice, Roti" },
+      { type: "Lunch", dishes: "Dal, Rice, Roti" },
+      { type: "Dinner", dishes: "Dal, Rice, Roti" },
+    ]);
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0].type).toBe("Breakfast, Lunch & Dinner");
+    expect(mealChipLabel(
+      [
+        { type: "Breakfast", dishes: "Dal" },
+        { type: "Dinner", dishes: "Roti" },
+      ],
+      undefined,
+      "vendor",
+    )).toBe("Breakfast & Dinner");
   });
 
   it("matches hotel stay by alias, substring, and city in itinerary hotel text", () => {
