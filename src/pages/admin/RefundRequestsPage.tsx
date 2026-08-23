@@ -1,19 +1,11 @@
 ﻿import React, { useState, useEffect, useCallback } from "react";
 import {
-  RefreshCw,
-  Clock,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Search,
   RotateCw,
   CreditCard,
-  Building2,
-  FileText,
-  DollarSign,
-  User,
-  ArrowRight,
-  ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +21,21 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn, safeFormatDate } from "@/lib/utils";
+import { Link } from "react-router-dom";
 import { financeControllerService } from "@/services/financeController.service";
 import type { RefundTransactionItem } from "@/types";
 
 interface RefundRequestsPageProps {
   hideHeader?: boolean;
+}
+
+const PILL =
+  "inline-flex h-6 shrink-0 items-center rounded px-2 text-[10px] font-semibold whitespace-nowrap transition-colors";
+const PILL_ACTIVE = "bg-[#0B1528] text-white";
+const PILL_IDLE = "border border-[#E8EEF4] bg-white text-slate-600 hover:bg-[#F4F7FB]";
+
+function formatINR(value: number) {
+  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
 }
 
 export default function RefundRequestsPage({ hideHeader = false }: RefundRequestsPageProps) {
@@ -44,10 +46,13 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [activeSubTab, setActiveSubTab] = useState<"refunds" | "credits">("refunds");
 
-  // Action states
-  const [selectedRefund, setSelectedRefund] = useState<RefundTransactionItem | null>(null);
+  const [selectedRefund, setSelectedRefund] = useState<any | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
+  const [selectedCredit, setSelectedCredit] = useState<any | null>(null);
+  const [applyBookingId, setApplyBookingId] = useState("");
+  const [applyAmount, setApplyAmount] = useState("");
   const [refundApprovalRef, setRefundApprovalRef] = useState("");
   const [refundRejectReason, setRefundRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -56,36 +61,55 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
     setLoading(true);
     try {
       const [refundsRes, creditsRes] = await Promise.all([
-        financeControllerService.refunds.list({
-          status: statusFilter === "ALL" ? undefined : statusFilter,
-          search: search.trim() || undefined,
-          limit: 50,
-        }).catch(() => ({ data: [], pagination: {} })),
+        financeControllerService.refunds
+          .list({
+            status: statusFilter === "ALL" ? undefined : statusFilter,
+            limit: 100,
+          })
+          .catch(() => ({ data: [], pagination: {} })),
         financeControllerService.credits.getActive().catch(() => []),
       ]);
       setRefunds(refundsRes?.data || []);
-      setCredits(creditsRes || []);
+      setCredits(Array.isArray(creditsRes) ? creditsRes : creditsRes?.data || []);
     } catch (err: any) {
       toast.error(err?.message || "Failed to load refund requests");
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, search]);
+  }, [statusFilter]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Derived counts
+  const q = search.trim().toLowerCase();
+  const visibleRefunds = refunds.filter((r: any) => {
+    if (!q) return true;
+    return [
+      r.bookingId,
+      r.customerName,
+      r.tripName,
+      r.refundReason,
+      r.refundReference,
+      r.workflow,
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(q);
+  });
+  const visibleCredits = credits.filter((c: any) => {
+    if (!q) return true;
+    return [c.code, c.bookingId, c.customerName, c.tripName].join(" ").toLowerCase().includes(q);
+  });
+
   const pendingRefunds = refunds.filter((r) => r.status === "PENDING_APPROVAL");
-  const approvedRefunds = refunds.filter((r) => r.status === "APPROVED" || r.status === "COMPLETED");
   const totalPendingAmount = pendingRefunds.reduce(
     (sum, r) => sum + (Number(r.refundAmount) || 0) + (Number(r.creditNoteAmount) || 0),
-    0
+    0,
   );
   const totalCreditsBalance = credits.reduce(
     (sum, c) => sum + (Number(c.remainingBalance) || 0),
-    0
+    0,
   );
 
   const handleApprove = async () => {
@@ -95,7 +119,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
       await financeControllerService.refunds.approve(selectedRefund.id, {
         refundReference: refundApprovalRef.trim() || undefined,
       });
-      toast.success("Refund approved successfully");
+      toast.success("Refund posted to booking, Departure Hub, and credit ledger");
       setShowApproveDialog(false);
       setSelectedRefund(null);
       setRefundApprovalRef("");
@@ -128,478 +152,371 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
     }
   };
 
-  return (
-    <div className="space-y-3 font-sans antialiased text-[#162B45]">
-      {/* 1. HEADER (if not embedded) */}
-      {!hideHeader && (
-        <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
-          <div className="space-y-0.5">
-            <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none font-montserrat flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 text-[#FF4D00]" />
-              Refund Requests & Store Credits
-            </h1>
-            <p className="text-[#74839A] text-[12px] font-[500] leading-none">
-              Review and approve customer cancellation refunds and manage store credit notes.
-            </p>
-          </div>
+  const handleApplyCredit = async () => {
+    if (!selectedCredit) return;
+    const amount = Number(applyAmount);
+    if (!applyBookingId.trim()) {
+      toast.error("Enter the target booking ID");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      toast.error("Enter a credit amount");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await financeControllerService.credits.apply(selectedCredit.refundId || selectedCredit.id, {
+        targetBookingId: applyBookingId.trim(),
+        amountToUse: amount,
+      });
+      toast.success(`₹${amount.toLocaleString("en-IN")} credited to ${applyBookingId.trim()}`);
+      setShowApplyDialog(false);
+      setSelectedCredit(null);
+      setApplyBookingId("");
+      setApplyAmount("");
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to apply credit");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
-              <Input
-                placeholder="Search Booking ID, reason, status..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#FF4D00] outline-none"
-              />
-            </div>
-            <Button
-              onClick={loadData}
-              className="h-8.5 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-3 text-[#162B45] text-[11px] font-[600] flex items-center gap-1 shadow-sm transition-all"
-            >
-              <RotateCw className="w-3.5 h-3.5 text-[#74839A]" /> Refresh
-            </Button>
-          </div>
+  return (
+    <div className="flex h-full min-h-0 min-w-0 flex-col font-sans text-[#162B45] antialiased">
+      {!hideHeader && (
+        <div className="flex shrink-0 items-center justify-between border-b border-[#E3EAF2] px-2 py-1.5">
+          <h1 className="text-[13px] font-semibold">Refunds & credits</h1>
+          <Button onClick={loadData} className="h-6 px-2 text-[10px] font-semibold" variant="outline">
+            <RotateCw className="mr-1 h-3 w-3" /> Refresh
+          </Button>
         </div>
       )}
 
-      {/* 2. KPI METRICS CARDS */}
-      <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-xl border border-[#DCE5ED] bg-[#F8FAFC] lg:grid-cols-4 lg:gap-0">
-        {/* KPI 1: Pending Approvals */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Pending Approvals
-            </p>
-            <h3 className="text-[20px] font-extrabold text-[#D97706] leading-none mt-1">
-              {loading ? "..." : pendingRefunds.length}
-            </h3>
-          </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Awaiting finance approval
-          </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-amber-50 flex items-center justify-center text-[#D97706] border border-amber-100 shrink-0">
-            <Clock className="w-3.5 h-3.5" />
-          </div>
+      <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-[#E3EAF2] px-2 py-1">
+        <span className="text-[10px] font-semibold tabular-nums text-amber-700">
+          {loading ? "—" : pendingRefunds.length} pending
+        </span>
+        <span className="text-[10px] font-semibold tabular-nums text-[#B91C1C]">
+          {loading ? "—" : formatINR(totalPendingAmount)} due
+        </span>
+        <span className="text-[10px] font-semibold tabular-nums text-[#15803D]">
+          {loading ? "—" : formatINR(totalCreditsBalance)} credit
+        </span>
+        <span className="hidden h-3 w-px bg-[#E3EAF2] sm:block" />
+        <button
+          onClick={() => setActiveSubTab("refunds")}
+          className={cn(PILL, activeSubTab === "refunds" ? PILL_ACTIVE : PILL_IDLE)}
+        >
+          Refunds
+        </button>
+        <button
+          onClick={() => setActiveSubTab("credits")}
+          className={cn(PILL, activeSubTab === "credits" ? PILL_ACTIVE : PILL_IDLE)}
+        >
+          Credits
+        </button>
+        {activeSubTab === "refunds" &&
+          [
+            { key: "ALL", label: "All" },
+            { key: "PENDING_APPROVAL", label: "Pending" },
+            { key: "COMPLETED", label: "Posted" },
+            { key: "REJECTED", label: "Rejected" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={cn(PILL, statusFilter === tab.key ? PILL_ACTIVE : PILL_IDLE)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        <div className="relative min-w-[160px] flex-1">
+          <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#74839A]" />
+          <Input
+            placeholder="Search booking, guest, trip..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-6 w-full pl-7 text-[11px]"
+          />
         </div>
-
-        {/* KPI 2: Total Pending Refund Value */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Pending Refund Value
-            </p>
-            <h3 className="text-[20px] font-extrabold text-red-600 leading-none mt-1">
-              {loading ? "..." : `₹${totalPendingAmount.toLocaleString("en-IN")}`}
-            </h3>
-          </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Cash & credit claims
-          </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100 shrink-0">
-            <DollarSign className="w-3.5 h-3.5" />
-          </div>
-        </div>
-
-        {/* KPI 3: Store Credits Available */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Active Store Credits
-            </p>
-            <h3 className="text-[20px] font-extrabold text-green-600 leading-none mt-1">
-              {loading ? "..." : `₹${totalCreditsBalance.toLocaleString("en-IN")}`}
-            </h3>
-          </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            {credits.length} credit notes issued
-          </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-green-50 flex items-center justify-center text-green-600 border border-green-100 shrink-0">
-            <CreditCard className="w-3.5 h-3.5" />
-          </div>
-        </div>
-
-        {/* KPI 4: Approved & Processed */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Processed Refunds
-            </p>
-            <h3 className="text-[20px] font-extrabold text-blue-600 leading-none mt-1">
-              {loading ? "..." : approvedRefunds.length}
-            </h3>
-          </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Successfully completed
-          </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shrink-0">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-          </div>
-        </div>
+        {hideHeader && (
+          <Button onClick={loadData} variant="outline" className="h-6 shrink-0 px-2 text-[10px] font-semibold">
+            <RotateCw className={cn("mr-1 h-3 w-3", loading && "animate-spin")} />
+            Refresh
+          </Button>
+        )}
       </div>
 
-      {/* 3. MAIN WORKSPACE CARD */}
-      <div className="bg-white border border-[#E3EAF2] rounded-[8px] shadow-[0_1px_2px_rgba(15,23,42,0.02)] overflow-hidden flex flex-col">
-        {/* Table Header Controls */}
-        <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="inline-flex bg-slate-100 p-1 rounded-lg border border-slate-200/70">
-              <button
-                onClick={() => setActiveSubTab("refunds")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
-                  activeSubTab === "refunds"
-                    ? "bg-white text-[#FF4D00] shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Refund Requests ({refunds.length})
-              </button>
-              <button
-                onClick={() => setActiveSubTab("credits")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
-                  activeSubTab === "credits"
-                    ? "bg-white text-[#FF4D00] shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                Store Credit Ledger ({credits.length})
-              </button>
-            </div>
+      <div className="min-h-0 min-w-0 flex-1 overflow-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#C2410C] border-t-transparent" />
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {activeSubTab === "refunds" && (
-              <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded">
-                {[
-                  { key: "ALL", label: "ALL" },
-                  { key: "PENDING_APPROVAL", label: "PENDING" },
-                  { key: "APPROVED", label: "APPROVED" },
-                  { key: "COMPLETED", label: "COMPLETED" },
-                  { key: "REJECTED", label: "REJECTED" },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setStatusFilter(tab.key)}
-                    className={cn(
-                      "px-2.5 py-1 rounded text-[9.5px] font-extrabold uppercase tracking-wider transition-all",
-                      statusFilter === tab.key
-                        ? "bg-white text-[#162B45] shadow-xs"
-                        : "text-[#74839A] hover:text-[#162B45]"
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
-              <Input
-                placeholder="Search..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-7.5 w-48 pl-8 text-[11px] rounded bg-slate-50 border-[#E3EAF2] focus:border-[#FF4D00] outline-none"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 4. CONTENT TABLE */}
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#FF4D00] border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : activeSubTab === "refunds" ? (
-            refunds.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center h-[200px]">
-                <RefreshCw className="w-8 h-8 text-slate-300 mb-2" />
-                <h4 className="text-[11.5px] font-bold text-[#162B45] uppercase tracking-wider font-montserrat">
-                  No Refund Requests Found
-                </h4>
-                <p className="text-[10px] text-[#74839A] mt-1">
-                  There are no pending customer refund requests in this queue.
-                </p>
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 border-b border-[#E3EAF2] text-[9.5px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-                    <th className="px-4 py-2.5">Booking ID</th>
-                    <th className="px-4 py-2.5">Refund Reason</th>
-                    <th className="px-4 py-2.5">Method</th>
-                    <th className="px-4 py-2.5 text-right">Cash Portion</th>
-                    <th className="px-4 py-2.5 text-right">Credit Note</th>
-                    <th className="px-4 py-2.5">Requested Date</th>
-                    <th className="px-4 py-2.5">Status</th>
-                    <th className="px-4 py-2.5 text-right pr-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E3EAF2] text-[11px] font-semibold text-[#162B45]">
-                  {refunds.map((ref) => (
-                    <tr key={ref.id} className="hover:bg-[#F8FAFD] transition-colors h-[44px]">
-                      <td className="px-4 py-2 font-bold font-mono text-[#FF4D00]">
-                        {ref.bookingId}
-                      </td>
-                      <td className="px-4 py-2 text-slate-700 font-medium capitalize">
-                        {ref.refundReason?.replace(/_/g, " ") || "—"}
-                      </td>
-                      <td className="px-4 py-2">
-                        <Badge variant="outline" className="text-[9px] font-bold bg-slate-50">
-                          {ref.refundMethod}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-slate-900">
-                        {Number(ref.refundAmount || 0) > 0
-                          ? `₹${Number(ref.refundAmount || 0).toLocaleString("en-IN")}`
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-[#FF4D00]">
-                        {Number(ref.creditNoteAmount || 0) > 0
-                          ? `₹${Number(ref.creditNoteAmount || 0).toLocaleString("en-IN")}`
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-2 text-slate-500 font-mono text-[10.5px]">
-                        {safeFormatDate(ref.createdAt)}
-                      </td>
-                      <td className="px-4 py-2">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[9px] font-bold uppercase",
-                            ref.status === "COMPLETED" || ref.status === "APPROVED"
-                              ? "bg-green-50 text-green-700 border-green-200"
-                              : ref.status === "REJECTED"
-                              ? "bg-red-50 text-red-700 border-red-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200"
-                          )}
-                        >
-                          {ref.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2 text-right pr-4">
-                        {ref.status === "PENDING_APPROVAL" ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setSelectedRefund(ref);
-                                setShowApproveDialog(true);
-                              }}
-                              className="h-6.5 text-[9.5px] font-bold bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedRefund(ref);
-                                setShowRejectDialog(true);
-                              }}
-                              className="h-6.5 text-[9.5px] font-bold text-red-600 border-red-200 hover:bg-red-50"
-                            >
-                              Reject
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-slate-400 italic font-medium">
-                            Processed
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
+        ) : activeSubTab === "refunds" ? (
+          visibleRefunds.length === 0 ? (
+            <p className="px-3 py-8 text-center text-[12px] text-slate-500">No refund requests</p>
           ) : (
-            /* STORE CREDITS TABLE */
-            credits.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center h-[200px]">
-                <CreditCard className="w-8 h-8 text-slate-300 mb-2" />
-                <h4 className="text-[11.5px] font-bold text-[#162B45] uppercase tracking-wider font-montserrat">
-                  No Active Store Credits
-                </h4>
-                <p className="text-[10px] text-[#74839A] mt-1">
-                  No unused credit notes are currently recorded in the system.
-                </p>
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 border-b border-[#E3EAF2] text-[9.5px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-                    <th className="px-4 py-2.5">Credit Code</th>
-                    <th className="px-4 py-2.5">Origin Booking</th>
-                    <th className="px-4 py-2.5 text-right">Original Amount</th>
-                    <th className="px-4 py-2.5 text-right">Total Used</th>
-                    <th className="px-4 py-2.5 text-right">Remaining Balance</th>
-                    <th className="px-4 py-2.5">Expiry</th>
-                    <th className="px-4 py-2.5">Status</th>
+            <table className="w-full min-w-[960px] table-fixed border-collapse text-left">
+              <thead className="sticky top-0 z-10">
+                <tr className="border-b border-[#E3EAF2] bg-[#F8FAFC] text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-2 py-1">Booking / guest</th>
+                  <th className="px-2 py-1">Trip</th>
+                  <th className="px-2 py-1">Reason</th>
+                  <th className="px-2 py-1 text-right">Cash</th>
+                  <th className="px-2 py-1 text-right">Credit</th>
+                  <th className="px-2 py-1">ERP</th>
+                  <th className="px-2 py-1">Action</th>
+                </tr>
+              </thead>
+              <tbody className="text-[11px]">
+                {visibleRefunds.map((ref: any) => (
+                  <tr key={ref.id} className="h-8 border-b border-[#EEF2F6] hover:bg-[#F8FAFC]">
+                    <td className="px-2 py-0.5">
+                      <span className="font-mono font-semibold text-[#C2410C]">{ref.bookingId}</span>
+                      {ref.customerName ? (
+                        <span className="text-slate-500"> · {ref.customerName}</span>
+                      ) : null}
+                    </td>
+                    <td className="px-2 py-0.5">
+                      <div className="flex min-w-0 items-center gap-1">
+                        <span className="truncate">
+                          {ref.tripName || "—"}
+                          {ref.departureDate ? (
+                            <span className="text-slate-400"> · {safeFormatDate(ref.departureDate)}</span>
+                          ) : null}
+                        </span>
+                        {ref.departureHref ? (
+                          <Link to={ref.departureHref} title="Open departure" className="shrink-0 text-[#C2410C]">
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="truncate px-2 py-0.5 capitalize text-slate-600">
+                      {String(ref.refundReason || "—").replace(/_/g, " ").toLowerCase()}
+                    </td>
+                    <td className="px-2 py-0.5 text-right font-mono tabular-nums">
+                      {Number(ref.refundAmount) > 0 ? formatINR(ref.refundAmount) : "—"}
+                    </td>
+                    <td className="px-2 py-0.5 text-right font-mono tabular-nums text-[#C2410C]">
+                      {Number(ref.creditNoteAmount) > 0 ? formatINR(ref.creditNoteAmount) : "—"}
+                    </td>
+                    <td className="px-2 py-0.5">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "h-5 px-1.5 text-[9px] font-bold uppercase",
+                          ref.status === "COMPLETED" || ref.status === "APPROVED"
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : ref.status === "REJECTED"
+                              ? "bg-rose-50 text-rose-700 border-rose-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200",
+                        )}
+                      >
+                        {ref.workflow || ref.status}
+                      </Badge>
+                    </td>
+                    <td className="px-2 py-0.5">
+                      {ref.status === "PENDING_APPROVAL" ? (
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            className="h-6 px-1.5 text-[10px] font-semibold bg-green-600 text-white hover:bg-green-700"
+                            onClick={() => {
+                              setSelectedRefund(ref);
+                              setShowApproveDialog(true);
+                            }}
+                          >
+                            Post
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-1.5 text-[10px] font-semibold text-red-600"
+                            onClick={() => {
+                              setSelectedRefund(ref);
+                              setShowRejectDialog(true);
+                            }}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">Synced</span>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E3EAF2] text-[11px] font-semibold text-[#162B45]">
-                  {credits.map((cred) => (
-                    <tr key={cred.id || cred.code} className="hover:bg-[#F8FAFD] transition-colors h-[44px]">
-                      <td className="px-4 py-2 font-mono font-bold text-slate-900">
-                        {cred.code || cred.id}
-                      </td>
-                      <td className="px-4 py-2 font-mono text-[#FF4D00]">
-                        {cred.bookingId || "—"}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono font-medium text-slate-700">
-                        ₹{Number(cred.originalAmount || 0).toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono font-medium text-slate-500">
-                        ₹{Number(cred.totalUsed || 0).toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-green-600">
-                        ₹{Number(cred.remainingBalance || 0).toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-4 py-2 text-slate-500 font-mono text-[10.5px]">
-                        {cred.expiresAt ? safeFormatDate(cred.expiresAt) : "No Expiry"}
-                      </td>
-                      <td className="px-4 py-2">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[9px] font-bold uppercase",
-                            Number(cred.remainingBalance || 0) > 0
-                              ? "bg-green-50 text-green-700 border-green-200"
-                              : "bg-slate-100 text-slate-500 border-slate-200"
-                          )}
-                        >
-                          {Number(cred.remainingBalance || 0) > 0 ? "Active" : "Exhausted"}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
-          )}
-        </div>
+                ))}
+              </tbody>
+            </table>
+          )
+        ) : visibleCredits.length === 0 ? (
+          <p className="px-3 py-8 text-center text-[12px] text-slate-500">No active store credits</p>
+        ) : (
+          <table className="w-full min-w-[860px] table-fixed border-collapse text-left">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-[#E3EAF2] bg-[#F8FAFC] text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                <th className="px-2 py-1">Credit</th>
+                <th className="px-2 py-1">Origin booking</th>
+                <th className="px-2 py-1 text-right">Issued</th>
+                <th className="px-2 py-1 text-right">Used</th>
+                <th className="px-2 py-1 text-right">Left</th>
+                <th className="px-2 py-1">Expiry</th>
+                <th className="px-2 py-1">Action</th>
+              </tr>
+            </thead>
+            <tbody className="text-[11px]">
+              {visibleCredits.map((cred: any) => (
+                <tr key={cred.refundId || cred.id} className="h-8 border-b border-[#EEF2F6] hover:bg-[#F8FAFC]">
+                  <td className="px-2 py-0.5 font-mono font-semibold">
+                    {cred.code || cred.refundId}
+                    {cred.customerName ? <span className="font-sans font-normal text-slate-500"> · {cred.customerName}</span> : null}
+                  </td>
+                  <td className="px-2 py-0.5 font-mono text-[#C2410C]">{cred.bookingId || "—"}</td>
+                  <td className="px-2 py-0.5 text-right font-mono">
+                    {formatINR(cred.originalCreditAmount || cred.originalAmount)}
+                  </td>
+                  <td className="px-2 py-0.5 text-right font-mono text-slate-500">
+                    {formatINR(cred.totalUsed)}
+                  </td>
+                  <td className="px-2 py-0.5 text-right font-mono font-semibold text-green-700">
+                    {formatINR(cred.remainingBalance)}
+                  </td>
+                  <td className="px-2 py-0.5 text-slate-500">
+                    {cred.expiresAt || cred.validityEnd ? safeFormatDate(cred.expiresAt || cred.validityEnd) : "—"}
+                    {cred.isExpiringSoon ? <span className="ml-1 text-amber-700">soon</span> : null}
+                  </td>
+                  <td className="px-2 py-0.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-1.5 text-[10px] font-semibold"
+                      onClick={() => {
+                        setSelectedCredit(cred);
+                        setApplyAmount(String(cred.remainingBalance || ""));
+                        setShowApplyDialog(true);
+                      }}
+                    >
+                      Apply to booking
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────
-          APPROVE REFUND MODAL
-         ───────────────────────────────────────────────────────────── */}
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-green-700 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Approve Customer Refund
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-green-700">
+              <CheckCircle2 className="h-5 w-5" />
+              Post refund to ERP
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Confirm bank disbursement or store credit note issuance.
+              This reduces paid on the origin booking, writes a Departure Hub refund receipt, and activates any store credit.
             </DialogDescription>
           </DialogHeader>
-
           {selectedRefund && (
             <div className="space-y-3 py-2 text-xs">
-              <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
+              <div className="space-y-1 rounded-lg border bg-slate-50 p-3">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Booking ID:</span>
-                  <span className="font-mono font-bold text-slate-900">{selectedRefund.bookingId}</span>
+                  <span className="text-slate-500">Booking</span>
+                  <span className="font-mono font-bold">{selectedRefund.bookingId}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Cash Refund:</span>
-                  <span className="font-mono font-bold text-slate-900">
-                    ₹{Number(selectedRefund.refundAmount || 0).toLocaleString("en-IN")}
-                  </span>
+                  <span className="text-slate-500">Cash out</span>
+                  <span className="font-mono">{formatINR(selectedRefund.refundAmount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Store Credit:</span>
-                  <span className="font-mono font-bold text-[#FF4D00]">
-                    ₹{Number(selectedRefund.creditNoteAmount || 0).toLocaleString("en-IN")}
-                  </span>
+                  <span className="text-slate-500">Store credit</span>
+                  <span className="font-mono text-[#C2410C]">{formatINR(selectedRefund.creditNoteAmount)}</span>
                 </div>
               </div>
-
-              <div>
-                <label className="text-[10px] font-bold uppercase text-slate-500">
-                  Bank UTR / Transaction Reference (Optional)
-                </label>
-                <Input
-                  placeholder="e.g. UTR-HDFC-998877"
-                  value={refundApprovalRef}
-                  onChange={(e) => setRefundApprovalRef(e.target.value)}
-                  className="h-8 text-xs font-mono mt-1"
-                />
-              </div>
+              <Input
+                placeholder="Bank UTR / cash reference (optional)"
+                value={refundApprovalRef}
+                onChange={(e) => setRefundApprovalRef(e.target.value)}
+                className="h-8 font-mono text-xs"
+              />
             </div>
           )}
-
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowApproveDialog(false)}
-              className="h-8 text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowApproveDialog(false)}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              disabled={actionLoading}
-              onClick={handleApprove}
-              className="h-8 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
-            >
-              Confirm Approval
+            <Button size="sm" disabled={actionLoading} onClick={handleApprove} className="bg-green-600 text-white">
+              Confirm post
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ─────────────────────────────────────────────────────────────
-          REJECT REFUND MODAL
-         ───────────────────────────────────────────────────────────── */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-red-700 flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-600" />
-              Reject Refund Request
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-red-700">
+              <XCircle className="h-5 w-5" />
+              Reject refund
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
-              Provide a mandatory reason for rejecting this refund request.
-            </DialogDescription>
+            <DialogDescription className="text-xs text-slate-500">Reason is required.</DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-2 py-2 text-xs">
-            <label className="text-[10px] font-bold uppercase text-red-600">
-              Rejection Reason (Required)
-            </label>
-            <Textarea
-              placeholder="State reason for rejecting refund..."
-              value={refundRejectReason}
-              onChange={(e) => setRefundRejectReason(e.target.value)}
-              className="text-xs resize-none h-20 border-red-300"
-            />
-          </div>
-
+          <Textarea
+            placeholder="Why this refund is rejected..."
+            value={refundRejectReason}
+            onChange={(e) => setRefundRejectReason(e.target.value)}
+            className="h-20 resize-none text-xs"
+          />
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowRejectDialog(false)}
-              className="h-8 text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowRejectDialog(false)}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              disabled={actionLoading}
-              onClick={handleReject}
-              className="h-8 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
-            >
-              Confirm Rejection
+            <Button size="sm" disabled={actionLoading} onClick={handleReject} className="bg-red-600 text-white">
+              Confirm reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+        <DialogContent className="max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold">
+              <CreditCard className="h-5 w-5 text-[#C2410C]" />
+              Apply store credit
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Credits the target booking paid amount and posts a Departure Hub receipt.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedCredit && (
+            <div className="space-y-2 text-xs">
+              <p className="text-slate-500">
+                Left {formatINR(selectedCredit.remainingBalance)} on {selectedCredit.code || selectedCredit.refundId}
+              </p>
+              <Input
+                placeholder="Target booking ID"
+                value={applyBookingId}
+                onChange={(e) => setApplyBookingId(e.target.value)}
+                className="h-8 font-mono text-xs"
+              />
+              <Input
+                type="number"
+                placeholder="Amount"
+                value={applyAmount}
+                onChange={(e) => setApplyAmount(e.target.value)}
+                className="h-8 font-mono text-xs"
+              />
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowApplyDialog(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" disabled={actionLoading} onClick={handleApplyCredit} className="bg-[#0B1528] text-white">
+              Apply credit
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -607,5 +524,3 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
     </div>
   );
 }
-
-

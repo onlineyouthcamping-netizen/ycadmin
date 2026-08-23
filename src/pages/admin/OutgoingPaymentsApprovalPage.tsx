@@ -34,6 +34,7 @@ import {
   formatVendorService,
   sanitizePlainLabel,
 } from "@/utils/vendorDisplayText";
+import { vendorPayoutQueueLabel } from "@/utils/vendorPayoutStatus";
 import type { VendorPaymentRequestItem } from "@/types";
 
 interface OutgoingPaymentsApprovalPageProps {
@@ -51,17 +52,11 @@ function vendorStatusLabel(item: {
   status?: string;
   isOverpaid?: boolean;
 }) {
-  const approval = String(item.approvalStatus || "").toUpperCase();
-  const status = String(item.status || "").toUpperCase();
-  if (approval === "REJECTED" || status === "REJECTED") return "Rejected";
-  if (approval === "APPROVED_FOUNDER" || status === "PAID") return "Settled";
-  if (approval === "REVIEWED_FINANCE_CONTROLLER") return "Reviewed";
-  if (item.isOverpaid) return "Overpaid";
-  return "Pending";
+  return vendorPayoutQueueLabel(item);
 }
 
 const PILL =
-  "inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[11px] font-semibold whitespace-nowrap transition-colors";
+  "inline-flex h-6 shrink-0 items-center rounded px-2 text-[10px] font-semibold whitespace-nowrap transition-colors";
 const PILL_ACTIVE = "bg-[#0B1528] text-white";
 const PILL_IDLE = "border border-[#E8EEF4] bg-white text-slate-600 hover:bg-[#F4F7FB]";
 
@@ -252,149 +247,120 @@ export default function OutgoingPaymentsApprovalPage({
   };
 
   return (
-    <div className="min-w-0 space-y-2 font-sans antialiased text-[#162B45]">
+    <div className="flex h-full min-h-0 min-w-0 flex-col font-sans text-[#162B45] antialiased">
       {!hideHeader && (
-        <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
-          <div className="space-y-0.5">
-            <h1 className="text-[22px] font-semibold text-[#162B45] tracking-tight leading-none">
-              Vendor payments
-            </h1>
-            <p className="text-[#74839A] text-[12px] font-medium">
-              Departure Hub liabilities. Finance Controller reviews, Founder approves when required.
-            </p>
-          </div>
+        <div className="flex shrink-0 items-center justify-between border-b border-[#E3EAF2] px-2 py-1.5">
+          <h1 className="text-[13px] font-semibold tracking-tight text-[#162B45]">
+            Vendor payments
+          </h1>
           <Button
             onClick={loadData}
-            className="h-8 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-3 text-[#162B45] text-[11px] font-semibold"
+            className="h-6 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-2 text-[#162B45] text-[10px] font-semibold"
           >
-            <RotateCw className="w-3.5 h-3.5 text-[#74839A] mr-1" /> Refresh
+            <RotateCw className="w-3 h-3 text-[#74839A] mr-1" /> Refresh
           </Button>
         </div>
       )}
 
-      <dl className="grid grid-cols-3 divide-x divide-[#E3EAF2] overflow-hidden rounded-lg border border-[#E3EAF2] bg-white">
-        <div className="flex min-w-0 flex-col gap-1 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#74839A]">
-            Pending Bills
-          </dt>
-          <dd className="text-[18px] font-bold tabular-nums leading-none text-[#162B45]">
-            {loading ? "—" : pendingBills.length}
-          </dd>
+      <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-[#E3EAF2] px-2 py-1">
+        <span className="text-[10px] font-semibold tabular-nums text-[#162B45]">
+          {loading ? "—" : pendingBills.length} pending
+        </span>
+        <span className="text-[10px] font-semibold tabular-nums text-[#B91C1C]">
+          {loading ? "—" : formatINR(totalOutstanding)} due
+        </span>
+        <span className="text-[10px] font-semibold tabular-nums text-[#15803D]">
+          {loading ? "—" : formatINR(totalPaid)} paid
+        </span>
+        <span className="hidden h-3 w-px bg-[#E3EAF2] sm:block" />
+        {([
+          { key: "all", label: "All" },
+          { key: "Hotels", label: "Hotels" },
+          { key: "Transport", label: "Transport" },
+          { key: "Activities", label: "Activities" },
+          { key: "Guides", label: "Guides" },
+        ] as const).map((cat) => (
+          <button
+            key={cat.key}
+            onClick={() => setActiveCategory(cat.key)}
+            className={cn(PILL, activeCategory === cat.key ? PILL_ACTIVE : PILL_IDLE)}
+          >
+            {cat.label}
+          </button>
+        ))}
+        <span className="hidden h-3 w-px bg-[#E3EAF2] sm:block" />
+        {[
+          { key: "ALL", label: "All" },
+          { key: "PENDING", label: "Pending" },
+          { key: "PAID", label: "Settled" },
+          { key: "REJECTED", label: "Rejected" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatusFilter(tab.key)}
+            className={cn(PILL, statusFilter === tab.key ? PILL_ACTIVE : PILL_IDLE)}
+          >
+            {tab.label}
+          </button>
+        ))}
+        <div className="relative min-w-[160px] flex-1">
+          <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#74839A]" />
+          <Input
+            placeholder="Search vendor, trip, TXN..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-6 w-full pl-7 text-[11px]"
+          />
         </div>
-        <div className="flex min-w-0 flex-col gap-1 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#74839A]">
-            Outstanding
-          </dt>
-          <dd className="whitespace-nowrap text-[18px] font-bold tabular-nums leading-none text-[#B91C1C]">
-            {loading ? "—" : formatINR(totalOutstanding)}
-          </dd>
-        </div>
-        <div className="flex min-w-0 flex-col gap-1 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#74839A]">
-            Paid
-          </dt>
-          <dd className="whitespace-nowrap text-[18px] font-bold tabular-nums leading-none text-[#15803D]">
-            {loading ? "—" : formatINR(totalPaid)}
-          </dd>
-        </div>
-      </dl>
+        {hideHeader && (
+          <Button
+            onClick={loadData}
+            variant="outline"
+            className="h-6 shrink-0 px-2 text-[10px] font-semibold"
+          >
+            <RotateCw className={cn("mr-1 h-3 w-3", loading && "animate-spin")} />
+            Refresh
+          </Button>
+        )}
+      </div>
 
-      <div className="min-w-0 overflow-hidden rounded-lg border border-[#E3EAF2] bg-white">
-        <div className="flex min-w-0 flex-col gap-2 border-b border-[#E3EAF2] px-2.5 py-2 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
-            {([
-              { key: "all", label: "All" },
-              { key: "Hotels", label: "Hotels" },
-              { key: "Transport", label: "Transport" },
-              { key: "Activities", label: "Activities" },
-              { key: "Guides", label: "Guides" },
-            ] as const).map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => setActiveCategory(cat.key)}
-                className={cn(PILL, activeCategory === cat.key ? PILL_ACTIVE : PILL_IDLE)}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex min-w-0 items-center gap-1.5">
-            <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
-              {[
-                { key: "ALL", label: "All" },
-                { key: "PENDING", label: "Pending" },
-                { key: "PAID", label: "Settled" },
-                { key: "REJECTED", label: "Rejected" },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setStatusFilter(tab.key)}
-                  className={cn(PILL, statusFilter === tab.key ? PILL_ACTIVE : PILL_IDLE)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            <div className="relative min-w-0 flex-1 lg:w-52 lg:flex-none">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#74839A]" />
-              <Input
-                placeholder="Search vendor, departure, service..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-7 w-full pl-8 text-[11px]"
-              />
-            </div>
-            {hideHeader && (
-              <Button
-                onClick={loadData}
-                variant="outline"
-                className="h-7 shrink-0 px-2.5 text-[10px] font-semibold"
-              >
-                <RotateCw className={cn("mr-1 h-3.5 w-3.5", loading && "animate-spin")} />
-                Refresh
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="min-w-0 overflow-x-auto">
+      <div className="min-h-0 min-w-0 flex-1 overflow-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#C2410C] border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center py-10">
+              <div className="w-5 h-5 border-2 border-[#C2410C] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : aggregatedItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Building2 className="w-8 h-8 text-slate-300 mb-2" />
-              <h4 className="text-[12px] font-semibold text-[#162B45]">No vendor bills</h4>
-              <p className="text-[11px] text-[#74839A] mt-1">Departure Hub has no open liabilities for this filter.</p>
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Building2 className="w-6 h-6 text-slate-300 mb-1" />
+              <p className="text-[12px] font-semibold text-[#162B45]">No vendor bills</p>
             </div>
           ) : (
-            <table className="w-max min-w-[1100px] table-fixed border-collapse text-left">
+            <table className="w-full min-w-[980px] table-fixed border-collapse text-left">
               <colgroup>
-                <col className="w-[88px]" />
-                <col className="w-[168px]" />
+                <col className="w-[72px]" />
+                <col className="w-[150px]" />
+                <col className="w-[190px]" />
                 <col className="w-[200px]" />
-                <col className="w-[176px]" />
-                <col className="w-[104px]" />
-                <col className="w-[104px]" />
-                <col className="w-[120px]" />
                 <col className="w-[88px]" />
-                <col className="w-[220px]" />
+                <col className="w-[88px]" />
+                <col className="w-[100px]" />
+                <col className="w-[76px]" />
+                <col className="w-[168px]" />
               </colgroup>
-              <thead>
+              <thead className="sticky top-0 z-10">
                 <tr className="border-b border-[#E3EAF2] bg-[#F8FAFC] text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="px-2.5 py-2">Category</th>
-                  <th className="px-2.5 py-2">Vendor</th>
-                  <th className="px-2.5 py-2">Departure / Trip</th>
-                  <th className="px-2.5 py-2">Service</th>
-                  <th className="px-2.5 py-2 text-right">Total</th>
-                  <th className="px-2.5 py-2 text-right">Paid</th>
-                  <th className="px-2.5 py-2 text-right">Outstanding</th>
-                  <th className="px-2.5 py-2">Status</th>
-                  <th className="px-2.5 py-2">Action</th>
+                  <th className="px-2 py-1">Category</th>
+                  <th className="px-2 py-1">Vendor</th>
+                  <th className="px-2 py-1">Departure / Trip</th>
+                  <th className="px-2 py-1">Service</th>
+                  <th className="px-2 py-1 text-right">Total</th>
+                  <th className="px-2 py-1 text-right">Paid</th>
+                  <th className="px-2 py-1 text-right">Due</th>
+                  <th className="px-2 py-1">Status</th>
+                  <th className="px-2 py-1">Action</th>
                 </tr>
               </thead>
-              <tbody className="text-[12px]">
+              <tbody className="text-[11px]">
                 {aggregatedItems.map((item) => {
                   const label = vendorStatusLabel(item);
                   const service = formatVendorService(item);
@@ -403,79 +369,70 @@ export default function OutgoingPaymentsApprovalPage({
                   const settled = label === "Settled";
                   const proofUrl = item.proofUrl;
                   return (
-                    <tr key={item.id} className="border-b border-[#EEF2F6] last:border-b-0 hover:bg-[#F8FAFC]">
-                      <td className="px-2.5 py-1.5 align-middle">
-                        <div className="flex min-w-0 items-center gap-1.5">
+                    <tr key={item.id} className="h-8 border-b border-[#EEF2F6] last:border-b-0 hover:bg-[#F8FAFC]">
+                      <td className="px-2 py-0.5 align-middle">
+                        <div className="flex min-w-0 items-center gap-1" title={item.category}>
                           {getCategoryIcon(item.category)}
-                          <span className="truncate text-[11px] font-semibold">{item.category}</span>
+                          <span className="truncate text-[10px] font-semibold">{item.category}</span>
                         </div>
                       </td>
-                      <td className="px-2.5 py-1.5 align-middle font-semibold">
+                      <td className="px-2 py-0.5 align-middle font-semibold">
                         <span className="block truncate" title={item.vendorName}>
                           {item.vendorName}
                         </span>
                       </td>
-                      <td className="px-2.5 py-1.5 align-middle text-slate-600">
-                        <div className="min-w-0">
-                          <p className="truncate leading-tight" title={item.tripName}>
+                      <td className="px-2 py-0.5 align-middle text-slate-600">
+                        <div className="flex min-w-0 items-center gap-1">
+                          <span className="truncate" title={item.tripName}>
                             <span className="font-medium text-[#162B45]">{item.tripName}</span>
                             {item.departureDate && (
-                              <span className="text-[11px] font-normal text-slate-400">
-                                {" "}
-                                · {safeFormatDate(item.departureDate)}
-                              </span>
+                              <span className="text-slate-400"> · {safeFormatDate(item.departureDate)}</span>
                             )}
-                          </p>
+                          </span>
                           {item.operationalLinked && item.departureHref ? (
                             <Link
                               to={item.departureHref}
-                              className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#C2410C] hover:underline"
+                              title="Open departure"
+                              className="shrink-0 text-[#C2410C]"
                             >
-                              View Departure
-                              <ExternalLink className="h-2.5 w-2.5" />
+                              <ExternalLink className="h-3 w-3" />
                             </Link>
-                          ) : (
-                            <span className="mt-0.5 inline-flex rounded bg-slate-100 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-                              Unavailable
-                            </span>
-                          )}
+                          ) : null}
                         </div>
                       </td>
-                      <td className="px-2.5 py-1.5 align-middle text-slate-600">
-                        <div className="min-w-0" title={service.tooltip}>
-                          <p className="truncate leading-tight text-[#162B45]">{service.primary}</p>
-                          {service.secondary && (
-                            <p className="truncate text-[10px] leading-tight text-slate-400">
-                              {service.secondary}
-                            </p>
-                          )}
-                        </div>
+                      <td className="px-2 py-0.5 align-middle text-slate-600">
+                        <span className="block truncate" title={service.tooltip}>
+                          {service.primary}
+                          {service.secondary ? (
+                            <span className="text-slate-400"> · {service.secondary}</span>
+                          ) : null}
+                        </span>
                       </td>
-                      <td className="px-2.5 py-1.5 align-middle text-right font-mono text-[12px] tabular-nums whitespace-nowrap">
+                      <td className="px-2 py-0.5 align-middle text-right font-mono text-[11px] tabular-nums whitespace-nowrap">
                         {formatINR(item.totalCost)}
                       </td>
                       <td
                         className={cn(
-                          "px-2.5 py-1.5 align-middle text-right font-mono text-[12px] tabular-nums whitespace-nowrap",
+                          "px-2 py-0.5 align-middle text-right font-mono text-[11px] tabular-nums whitespace-nowrap",
                           settled ? "font-semibold text-[#15803D]" : "text-slate-600",
                         )}
                       >
                         {formatINR(item.paidAmount)}
                       </td>
-                      <td className="px-2.5 py-1.5 align-middle text-right font-mono text-[12px] font-semibold tabular-nums whitespace-nowrap">
+                      <td className="px-2 py-0.5 align-middle text-right font-mono text-[11px] font-semibold tabular-nums whitespace-nowrap">
                         {item.isOverpaid ? (
-                          <span className="text-amber-700">Overpaid {formatINR(item.overpaidAmount)}</span>
+                          <span className="text-amber-700">+{formatINR(item.overpaidAmount)}</span>
                         ) : (
                           <span className={item.outstandingAmount > 0 ? "text-[#B91C1C]" : "text-slate-400"}>
                             {formatINR(Math.max(0, item.outstandingAmount))}
                           </span>
                         )}
                       </td>
-                      <td className="px-2.5 py-1.5 align-middle">
+                      <td className="px-2 py-0.5 align-middle">
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-[9px] font-bold uppercase",
+                            "h-5 px-1.5 text-[9px] font-bold uppercase",
                             settled
                               ? "bg-green-50 text-green-700 border-green-200"
                               : label === "Rejected"
@@ -490,8 +447,8 @@ export default function OutgoingPaymentsApprovalPage({
                           {label}
                         </Badge>
                       </td>
-                      <td className="px-2.5 py-1.5 align-middle">
-                        <div className="flex flex-wrap items-center gap-1">
+                      <td className="px-2 py-0.5 align-middle">
+                        <div className="flex flex-nowrap items-center gap-1">
                           {proofUrl ? (
                             <Button
                               size="sm"
@@ -501,10 +458,10 @@ export default function OutgoingPaymentsApprovalPage({
                                 setActionType("view-proof");
                                 setProofUrlInput(proofUrl);
                               }}
-                              className="h-7 px-2 text-[10px] font-semibold"
+                              className="h-6 px-1.5 text-[10px] font-semibold"
                             >
-                              <Eye className="mr-1 h-3 w-3" />
-                              View proof
+                              <Eye className="mr-0.5 h-3 w-3" />
+                              Proof
                             </Button>
                           ) : (
                             <Button
@@ -515,49 +472,40 @@ export default function OutgoingPaymentsApprovalPage({
                                 setActionType("upload");
                                 setProofUrlInput("");
                               }}
-                              className="h-7 px-2 text-[10px] font-semibold border-amber-300 bg-amber-50 text-amber-800"
+                              className="h-6 px-1.5 text-[10px] font-semibold border-amber-300 bg-amber-50 text-amber-800"
                             >
-                              <Upload className="mr-1 h-3 w-3" />
-                              Upload proof
+                              <Upload className="mr-0.5 h-3 w-3" />
+                              Proof
                             </Button>
                           )}
-                          {settled ? (
-                            <span className="text-[10px] italic text-slate-400">Settled</span>
-                          ) : (
-                            <>
-                              {showFcApprove && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSelectedItem(item);
-                                    setActionType("review");
-                                    setProofUrlInput(proofUrl || "");
-                                  }}
-                                  className="h-7 px-2 text-[10px] font-semibold"
-                                >
-                                  FC Approve
-                                </Button>
-                              )}
-                              {showFounderVerify && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedItem(item);
-                                    setActionType("approve");
-                                    setProofUrlInput(proofUrl || "");
-                                  }}
-                                  className="h-7 px-2 text-[10px] font-semibold bg-[#0B1528] text-white"
-                                >
-                                  Founder Verify
-                                </Button>
-                              )}
-                              {!showFcApprove && !showFounderVerify && (
-                                <span className="text-[10px] italic text-slate-400">
-                                  {label === "Reviewed" ? "Awaiting Founder" : "Awaiting review"}
-                                </span>
-                              )}
-                            </>
+                          {showFcApprove && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="FC Approve"
+                              onClick={() => {
+                                setSelectedItem(item);
+                                setActionType("review");
+                                setProofUrlInput(proofUrl || "");
+                              }}
+                              className="h-6 px-1.5 text-[10px] font-semibold"
+                            >
+                              FC
+                            </Button>
+                          )}
+                          {showFounderVerify && (
+                            <Button
+                              size="sm"
+                              title="Founder verify"
+                              onClick={() => {
+                                setSelectedItem(item);
+                                setActionType("approve");
+                                setProofUrlInput(proofUrl || "");
+                              }}
+                              className="h-6 px-1.5 text-[10px] font-semibold bg-[#0B1528] text-white"
+                            >
+                              Founder
+                            </Button>
                           )}
                         </div>
                       </td>
@@ -567,7 +515,6 @@ export default function OutgoingPaymentsApprovalPage({
               </tbody>
             </table>
           )}
-        </div>
       </div>
 
       <Dialog open={Boolean(actionType)} onOpenChange={(open) => { if (!open) closeAction(); }}>

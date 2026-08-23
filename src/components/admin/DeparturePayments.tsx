@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { combineVendorPayableTotals } from "@/utils/departure/vendorPayableMerge";
 import { opsService } from "@/services/ops.service";
 import { trainTicketService } from "@/services/trainTicket.service";
 import {
@@ -104,6 +105,29 @@ interface DeparturePaymentsProps {
   departureDateStr: string;
   tripDetails: any;
   tripVendors: any[];
+}
+
+function operationalSourcePayload(row: any, category?: string) {
+  if (!row) return {};
+  if (row.sourceType && row.sourceId) {
+    return { sourceType: row.sourceType, sourceId: row.sourceId };
+  }
+  const rawId = row.rawAssignment?.id;
+  const cat = String(category || row.category || row.vendorType || "").toLowerCase();
+  if (!rawId) return {};
+  if (cat.includes("hotel")) {
+    return { sourceType: "OPS_HOTEL_BOOKING", sourceId: rawId, hotelBookingId: rawId };
+  }
+  if (cat.includes("transport") || cat.includes("fleet")) {
+    return { sourceType: "OPS_TRANSPORT_FLEET", sourceId: rawId, fleetBookingId: rawId };
+  }
+  if (cat.includes("guide")) {
+    return { sourceType: "OPS_GUIDE_PAYMENT", sourceId: rawId, guideId: rawId };
+  }
+  if (cat.includes("activ")) {
+    return { sourceType: "OPS_ACTIVITY", sourceId: rawId, activityId: rawId };
+  }
+  return {};
 }
 
 export default function DeparturePayments({
@@ -578,19 +602,27 @@ export default function DeparturePayments({
               );
               return {
                 ...b,
-                history: bookingReceipts.map((r: any) => ({
+                history: bookingReceipts.map((r: any) => {
+                  const remarks = String(r.remarks || "");
+                  const isRefund =
+                    String(r.status || "").toUpperCase().includes("REFUND") ||
+                    remarks.includes("TYPE:REFUND");
+                  const isCredit = remarks.includes("TYPE:CREDIT");
+                  return {
                   id: r.id,
                   date: r.paymentDate ? r.paymentDate.substring(0, 10) : "N/A",
-                  amount: r.amount,
+                  amount: isRefund ? -Math.abs(Number(r.amount) || 0) : r.amount,
                   method: r.paymentMode,
                   txnId: r.transactionId || "N/A",
+                  type: isRefund ? "REFUND" : isCredit ? "CREDIT" : "RECEIPT",
                   status: r.status,
                   verifiedBy: r.collectedBy || "System",
                   remarks: r.remarks || "",
                   proofUrl: r.proofUrl || "",
                   collectionAccount: r.collectionAccount,
                   accountName: r.collectionAccount?.accountName || "",
-                })),
+                  };
+                }),
               };
             })
           : [];
@@ -665,14 +697,13 @@ export default function DeparturePayments({
             (tv.id && mergedVendors[existingIdx].id === tv.id) ||
             (tv.rawAssignment?.id && mergedVendors[existingIdx].rawAssignment?.id === tv.rawAssignment.id);
 
-          if (isSameRecord) {
-            mergedVendors[existingIdx].agreedAmount = Math.max(mergedVendors[existingIdx].agreedAmount || 0, agreed);
-            mergedVendors[existingIdx].advancePaid = Math.max(mergedVendors[existingIdx].advancePaid || 0, paid);
-          } else {
-            // Multi-day stay for the same hotel/vendor (e.g. 2 days stay in Kaza at Korlam Homestay Kaza)
-            mergedVendors[existingIdx].agreedAmount = (mergedVendors[existingIdx].agreedAmount || 0) + agreed;
-            mergedVendors[existingIdx].advancePaid = (mergedVendors[existingIdx].advancePaid || 0) + paid;
-          }
+          const combined = combineVendorPayableTotals(
+            mergedVendors[existingIdx],
+            { agreed, paid },
+            isSameRecord,
+          );
+          mergedVendors[existingIdx].agreedAmount = combined.agreedAmount;
+          mergedVendors[existingIdx].advancePaid = combined.advancePaid;
           mergedVendors[existingIdx].balanceAmount = Math.max(0, mergedVendors[existingIdx].agreedAmount - mergedVendors[existingIdx].advancePaid);
           const totalAgreed = mergedVendors[existingIdx].agreedAmount;
           const totalPaid = mergedVendors[existingIdx].advancePaid;
@@ -1520,6 +1551,7 @@ export default function DeparturePayments({
       try {
         await opsService.updateVendorPayment(tripId, editingVendorPayment.id, {
           ...vendorPaymentForm,
+          ...operationalSourcePayload(editingVendorPayment, vendorPaymentForm.category),
           departureDate: departureDateStr,
           advancePaid: newTotalPaid,
           remainingPayable: remaining,
@@ -1627,6 +1659,7 @@ export default function DeparturePayments({
       try {
         await opsService.createVendorPayment(tripId, {
           ...newVnd,
+          ...operationalSourcePayload(editingVendorPayment, vendorPaymentForm.category),
           departureDate: departureDateStr,
         });
         toast.success(
@@ -3080,7 +3113,7 @@ export default function DeparturePayments({
                                       serviceDescription:
                                         v.serviceDescription || "",
                                       agreedAmount: String(v.agreedAmount),
-                                      advancePaid: String(balance > 0 ? balance : 0),
+                                      advancePaid: "",
                                       paymentDate: new Date().toISOString().substring(0, 10),
                                       paymentMode: "BANK_TRANSFER",
                                       collectionAccountId:
