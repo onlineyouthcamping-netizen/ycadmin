@@ -117,6 +117,39 @@ function partnerDisplayName(row: any): string {
   );
 }
 
+function escapeVoucherText(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function resolveVendorProofs(vendor: any, history?: any) {
+  const invoice =
+    [
+      history?.invoiceFileUrl,
+      vendor?.invoiceFileUrl,
+      history?.invoiceProof,
+      vendor?.invoiceProof,
+    ].find((url) => typeof url === "string" && url.trim()) || "";
+  const payment =
+    [
+      history?.paymentProofUrl,
+      vendor?.paymentProofUrl,
+      vendor?.advanceProofUrl,
+      history?.proofUrl,
+      vendor?.proofUrl,
+      vendor?.settlementProofUrl,
+    ].find((url) => typeof url === "string" && url.trim()) || "";
+  const urls = [...new Set([invoice, payment].filter(Boolean))];
+  return {
+    invoice: urls[0] || "",
+    payment: urls[1] || urls[0] || "",
+    shared: urls.length === 1 && Boolean(urls[0]),
+  };
+}
+
 interface DeparturePaymentsProps {
   tripId: string;
   departureDateStr: string;
@@ -259,6 +292,8 @@ export default function DeparturePayments({
     title: string;
     subtitle?: string;
     imageUrl: string;
+    invoiceUrl?: string;
+    paymentUrl?: string;
     amount?: number;
     method?: string;
     date?: string;
@@ -309,11 +344,27 @@ export default function DeparturePayments({
       return;
     }
 
-    const txnId = historyItem?.txnId || v.transactionId || `VND-INV-${v.id || '001'}`;
+    const txnId = historyItem?.txnId || v.transactionId || `VND-INV-${v.id || "001"}`;
+    const invoiceNo = String(v.invoiceNumber || "").trim() && v.invoiceNumber !== "—"
+      ? v.invoiceNumber
+      : txnId;
     const payDate = historyItem?.date || v.paymentDate || new Date().toISOString().substring(0, 10);
     const amount = historyItem?.amount || v.advancePaid || v.agreedAmount || 0;
     const payMethod = historyItem?.method || v.paymentMode || "Bank Transfer";
     const payType = historyItem?.type || (v.advancePaid >= v.agreedAmount ? "FINAL SETTLEMENT" : "ADVANCE PAYMENT");
+    const vendorLabel = escapeVoucherText(formatVendorName(v.vendorName));
+    const serviceLabel = escapeVoucherText(
+      refineServiceAgainstVendor(v.serviceDescription, v.vendorName) || v.category || "Service",
+    );
+    const tripLabel = escapeVoucherText(tripDetails?.title || "YouthCamping Departure");
+    const proofs = resolveVendorProofs(v, historyItem);
+    const proofImgs = [...new Set([proofs.invoice, proofs.payment].filter(Boolean))]
+      .filter((url) => !/\.pdf($|\?)/i.test(url))
+      .map(
+        (url) =>
+          `<img src="${escapeVoucherText(url)}" alt="Proof" style="max-width: 260px; max-height: 220px; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff;" />`,
+      )
+      .join("");
 
     const html = `
       <!DOCTYPE html>
@@ -369,13 +420,14 @@ export default function DeparturePayments({
           <div class="grid">
             <div class="card">
               <div class="card-title">Vendor Partner Details</div>
-              <div class="card-row"><span>Vendor Name:</span> <strong>${v.vendorName}</strong></div>
-              <div class="card-row"><span>Category:</span> <strong>${v.category || 'Vendor'}</strong></div>
-              <div class="card-row"><span>Invoice No:</span> <strong>${v.invoiceNumber || '—'}</strong></div>
+              <div class="card-row"><span>Vendor Name:</span> <strong>${vendorLabel}</strong></div>
+              <div class="card-row"><span>Category:</span> <strong>${escapeVoucherText(v.category || "Vendor")}</strong></div>
+              <div class="card-row"><span>Invoice / TXN:</span> <strong>${escapeVoucherText(invoiceNo)}</strong></div>
             </div>
             <div class="card">
               <div class="card-title">Trip / Departure Context</div>
-              <div class="card-row"><span>Trip Context:</span> <strong>${tripDetails?.title || 'YouthCamping Departure'}</strong></div>
+              <div class="card-row"><span>Trip Context:</span> <strong>${tripLabel}</strong></div>
+              <div class="card-row"><span>Departure:</span> <strong>${escapeVoucherText(departureDateStr)}</strong></div>
               <div class="card-row"><span>Payment Status:</span> <span class="badge ${v.balanceAmount <= 0 ? 'badge-success' : 'badge-orange'}">${v.status || 'PAID'}</span></div>
               <div class="card-row"><span>Voucher Type:</span> <strong>${payType}</strong></div>
             </div>
@@ -393,7 +445,7 @@ export default function DeparturePayments({
             <tbody>
               <tr>
                 <td>
-                  <strong>${v.serviceDescription || (v.category + ' Services')}</strong>
+                  <strong>${serviceLabel}</strong>
                   <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Payment logged for departure ops</div>
                 </td>
                 <td>${payMethod}</td>
@@ -408,6 +460,10 @@ export default function DeparturePayments({
             <div class="total-row"><span>This Payment:</span> <span style="color: #10b981; font-weight: bold;">₹${Number(amount).toLocaleString('en-IN')}</span></div>
             <div class="total-row final"><span>Balance Due:</span> <span>₹${(Math.max(0, (v.agreedAmount || amount) - (v.advancePaid || amount))).toLocaleString('en-IN')}</span></div>
           </div>
+
+          ${proofImgs
+            ? `<div style="margin-bottom: 24px;"><div class="card-title">Attached proofs</div><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">${proofImgs}</div></div>`
+            : ""}
 
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
@@ -805,19 +861,22 @@ export default function DeparturePayments({
               : mergedVendors[existingIdx].advancePaid > 0
                 ? "Advance Paid"
                 : "Pending";
-          if (!mergedVendors[existingIdx].serviceDescription || mergedVendors[existingIdx].serviceDescription === "hotel services") {
-            mergedVendors[existingIdx].serviceDescription = hotelServiceLine({
-              ...h,
-              hotelName: hName,
-              serviceDescription: mergedVendors[existingIdx].serviceDescription,
-            });
+          if (!mergedVendors[existingIdx].invoiceNumber) {
+            mergedVendors[existingIdx].invoiceNumber =
+              h.transactionId || mergedVendors[existingIdx].transactionId || mergedVendors[existingIdx].history?.[0]?.txnId;
           }
+          mergedVendors[existingIdx].serviceDescription = hotelServiceLine({
+            ...h,
+            hotelName: hName,
+            serviceDescription: mergedVendors[existingIdx].serviceDescription,
+          });
         } else {
           mergedVendors.push({
             id: h.id || `hotel-${hName}`,
             vendorName: hName,
             category: "Hotels",
             serviceDescription: hotelServiceLine({ ...h, hotelName: hName }),
+            invoiceNumber: h.transactionId || "",
             agreedAmount: agreed,
             advancePaid: paid,
             balanceAmount: balance,
@@ -3103,7 +3162,7 @@ export default function DeparturePayments({
                               </span>
                             </td>
                             <td className="p-3 border-r border-slate-100 font-bold text-slate-700">
-                              {v.invoiceNumber || "—"}
+                              {v.invoiceNumber || v.transactionId || v.history?.[0]?.txnId || "—"}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
                               {formatCurrency(v.agreedAmount)}
@@ -3279,22 +3338,40 @@ export default function DeparturePayments({
 
                                             <div className="flex flex-wrap items-center gap-2">
                                               {/* Payment Proof View or Upload Action */}
-                                              {h.invoiceProof ||
-                                              h.proofUrl ||
-                                              v.invoiceProof ||
-                                              v.proofUrl ? (
+                                              {(() => {
+                                                const proofs = resolveVendorProofs(v, h);
+                                                if (!proofs.invoice && !proofs.payment) {
+                                                  return (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setQuickProofTarget({
+                                                      vendorId: v.id,
+                                                      historyIndex: idx,
+                                                      vendorName: v.vendorName,
+                                                      amount: h.amount,
+                                                      proofUrl: "",
+                                                    });
+                                                    setQuickProofModalOpen(true);
+                                                  }}
+                                                  className="h-7 px-2.5 text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-md inline-flex items-center gap-1 transition-colors"
+                                                >
+                                                  <Upload className="w-3.5 h-3.5" />
+                                                  Add Proof
+                                                </button>
+                                                  );
+                                                }
+                                                return (
                                                 <button
                                                   type="button"
                                                   onClick={() =>
                                                     setProofPreviewModal({
                                                       open: true,
-                                                      title: `Payment Proof — ${v.vendorName}`,
-                                                      subtitle: `Trip Expense · ${v.category || "Vendor"} · ${departureDateStr}`,
-                                                      imageUrl:
-                                                        h.invoiceProof ||
-                                                        h.proofUrl ||
-                                                        v.invoiceProof ||
-                                                        v.proofUrl,
+                                                      title: `Proofs — ${formatVendorName(v.vendorName)}`,
+                                                      subtitle: `${v.category || "Vendor"} · ${departureDateStr}`,
+                                                      imageUrl: proofs.payment || proofs.invoice,
+                                                      invoiceUrl: proofs.invoice,
+                                                      paymentUrl: proofs.payment,
                                                       amount: h.amount,
                                                       method: h.method,
                                                       date: h.date,
@@ -3311,27 +3388,10 @@ export default function DeparturePayments({
                                                   className="h-7 px-2.5 text-[11px] font-bold bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-md inline-flex items-center gap-1 transition-colors cursor-pointer"
                                                 >
                                                   <Eye className="w-3.5 h-3.5" />
-                                                  View Payment Proof
+                                                  View proofs
                                                 </button>
-                                              ) : (
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setQuickProofTarget({
-                                                      vendorId: v.id,
-                                                      historyIndex: idx,
-                                                      vendorName: v.vendorName,
-                                                      amount: h.amount,
-                                                      proofUrl: "",
-                                                    });
-                                                    setQuickProofModalOpen(true);
-                                                  }}
-                                                  className="h-7 px-2.5 text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-md inline-flex items-center gap-1 transition-colors"
-                                                >
-                                                  <Upload className="w-3.5 h-3.5" />
-                                                  Upload Payment Proof
-                                                </button>
-                                              )}
+                                                );
+                                              })()}
 
                                               {/* Verification & Approval Status / Action */}
                                               {isApproved ? (
@@ -3388,12 +3448,17 @@ export default function DeparturePayments({
                                               <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() =>
-                                                  generateVendorInvoicePDF(v, h)
-                                                }
+                                                onClick={() => {
+                                                  const proofs = resolveVendorProofs(v, h);
+                                                  if (proofs.invoice && /\.pdf($|\?)/i.test(proofs.invoice)) {
+                                                    window.open(proofs.invoice, "_blank", "noopener,noreferrer");
+                                                    return;
+                                                  }
+                                                  generateVendorInvoicePDF(v, h);
+                                                }}
                                                 className="h-7 text-[11px] font-bold bg-[#FF4D00]/5 hover:bg-[#FF4D00]/10 text-[#C2410C] border-[#FF4D00]/30"
                                               >
-                                                Download Invoice PDF
+                                                Download voucher PDF
                                               </Button>
                                             </div>
                                           </div>
@@ -5639,18 +5704,31 @@ export default function DeparturePayments({
           )}
 
           {/* Image Canvas / Preview Container */}
-          <div className="bg-slate-950 flex items-center justify-center p-4 min-h-[380px] max-h-[75vh] overflow-auto">
-            {proofPreviewModal?.imageUrl ? (
-              <img
-                src={proofPreviewModal.imageUrl}
-                alt="Payment Proof Screenshot"
-                className="max-h-[68vh] w-auto max-w-full object-contain rounded-lg shadow-lg border border-slate-800"
-              />
+          <div className="bg-slate-950 p-4 min-h-[380px] max-h-[75vh] overflow-auto">
+            {proofPreviewModal?.invoiceUrl || proofPreviewModal?.paymentUrl || proofPreviewModal?.imageUrl ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Invoice</p>
+                  {proofPreviewModal.invoiceUrl && !/\.pdf($|\?)/i.test(proofPreviewModal.invoiceUrl) ? (
+                    <img src={proofPreviewModal.invoiceUrl} alt="Invoice" className="max-h-[60vh] w-full rounded-lg object-contain" />
+                  ) : proofPreviewModal.invoiceUrl ? (
+                    <a href={proofPreviewModal.invoiceUrl} target="_blank" rel="noreferrer" className="text-xs text-[#FF4D00] underline">Open invoice PDF</a>
+                  ) : (
+                    <p className="text-xs text-slate-500">No invoice uploaded</p>
+                  )}
+                </div>
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Payment proof</p>
+                  {(proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl) && !/\.pdf($|\?)/i.test(proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl || "") ? (
+                    <img src={proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl} alt="Payment proof" className="max-h-[60vh] w-full rounded-lg object-contain" />
+                  ) : (
+                    <p className="text-xs text-slate-500">No payment screenshot uploaded</p>
+                  )}
+                </div>
+              </div>
             ) : (
               <div className="text-center py-12 text-slate-400">
-                <p className="text-xs font-semibold">
-                  No image preview available
-                </p>
+                <p className="text-xs font-semibold">No image preview available</p>
               </div>
             )}
           </div>
