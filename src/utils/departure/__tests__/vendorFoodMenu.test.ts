@@ -4,8 +4,10 @@ import {
   compactMealSummary,
   compactTripControlRemarks,
   formatDayMeals,
+  isAutoFedItineraryRemark,
   matchMenuToStay,
   mealChipLabel,
+  opsOnlyRemark,
   parseVendorFoodMenu,
   titleCaseMealPlan,
   isPlausibleDishText,
@@ -164,5 +166,17 @@ describe("vendorFoodMenu", () => {
     expect(compact.toLowerCase()).not.toContain("meals:");
     expect(compact.toLowerCase()).not.toContain("hotel/stay");
     expect(compact).toContain("Reporting time");
+  });
+
+  it("treats itinerary dumps as empty so operational remarks stay ops-typed", () => {
+    const dump = [
+      "Starting location: Manali",
+      "Destination: Chandigarh/Jalandhar",
+      "Transport details: Board the return train.",
+    ].join("\n");
+    expect(isAutoFedItineraryRemark(dump)).toBe(true);
+    expect(opsOnlyRemark(dump, dump)).toBe("");
+    expect(opsOnlyRemark("Late pickup 7:30 at Reckong Peo", dump)).toBe("Late pickup 7:30 at Reckong Peo");
+    expect(opsOnlyRemark(undefined, dump)).toBe("");
   });
 });

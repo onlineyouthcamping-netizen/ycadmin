@@ -385,7 +385,7 @@ export default function TripControlRowDrawer({
               rows={3}
               value={remarkInput}
               onChange={(e) => setRemarkInput(e.target.value)}
-              placeholder="e.g. Guest arriving late, room upgrade requested..."
+              placeholder="Ops note for this day only — e.g. late train, room upgrade, guest arriving separately"
               className="w-full text-xs p-3 border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[#FF4D00] text-slate-800"
             />
             <Button

@@ -35,9 +35,9 @@ import { TripControlMealsCell } from "./TripControlMeals";
 import { findHotelForDay } from "@/utils/accommodationCalculator";
 import {
   compactMealSummary,
-  compactTripControlRemarks,
   formatDayMeals,
   matchMenuToStay,
+  opsOnlyRemark,
   parseVendorFoodMenu,
   VendorMenuSource,
 } from "@/utils/departure/vendorFoodMenu";
@@ -521,10 +521,8 @@ export default function DepartureTripControl({
           ? (dbRow.checkInDone ? "CHECKED-IN" : "PENDING")
           : defaultCheckIn);
 
-      const currentRemark = dbRow?.remarks !== undefined ? dbRow.remarks : (day.sub || "");
-      const displayRemark = compactTripControlRemarks(String(currentRemark || ""), {
-        hotelName: rawHotelName || hotelName,
-      });
+      const currentRemark = opsOnlyRemark(dbRow?.remarks, day.sub);
+      const displayRemark = currentRemark;
       const itineraryMeals =
         day.meals && day.meals !== "—"
           ? String(day.meals)

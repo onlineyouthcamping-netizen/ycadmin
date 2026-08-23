@@ -569,3 +569,27 @@ export function compactTripControlRemarks(
   if (compact.length > 280) return `${compact.slice(0, 260).trim()}…`;
   return compact;
 }
+
+export function isAutoFedItineraryRemark(raw: string): boolean {
+  const t = String(raw || "");
+  if (!t.trim()) return false;
+  const hits = [
+    /starting location\s*:/i,
+    /destination\s*:/i,
+    /transport details\s*:/i,
+    /activities and sightseeing\s*:/i,
+    /hotel\/?\s*stay\s*:/i,
+    /meals?\s*:/i,
+  ].filter((re) => re.test(t)).length;
+  return hits >= 2;
+}
+
+/** Ops-typed remarks only — never the package itinerary dump. */
+export function opsOnlyRemark(dbRemarks?: string | null, itinerarySub?: string): string {
+  const saved = String(dbRemarks ?? "").trim();
+  if (!saved) return "";
+  const itinerary = String(itinerarySub ?? "").trim();
+  if (itinerary && saved === itinerary) return "";
+  if (isAutoFedItineraryRemark(saved)) return "";
+  return saved;
+}
