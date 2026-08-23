@@ -823,6 +823,12 @@ export interface VendorPaymentRequestItem {
   proofUrl?: string | null;
   invoiceProof?: string | null;
   invoiceFileUrl?: string | null;
+  invoiceProofUrl?: string | null;
+  paymentProofUrl?: string | null;
+  proofUrls?: string[];
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  paidBy?: string | null;
 }
 
 export interface TicketFinanceAuditItem {

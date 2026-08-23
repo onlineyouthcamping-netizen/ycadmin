@@ -155,7 +155,12 @@ export const financeApprovalsService = {
 
   uploadVendorPaymentProof: async (
     paymentId: string,
-    payload: { proofFileUrl: string; proofFileName?: string; proofFileType?: string }
+    payload: {
+      proofFileUrl: string;
+      paymentProofUrl?: string;
+      proofFileName?: string;
+      proofFileType?: string;
+    }
   ) => {
     const res = await api.post(`/finance/vendor-payments/${paymentId}/upload-proof`, payload);
     if (!res.data?.success) {

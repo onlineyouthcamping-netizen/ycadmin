@@ -6,7 +6,6 @@ import {
   User,
   Search,
   RotateCw,
-  ExternalLink,
   Eye,
   Upload,
 } from "lucide-react";
@@ -60,6 +59,45 @@ const PILL =
 const PILL_ACTIVE = "bg-[#0B1528] text-white";
 const PILL_IDLE = "border border-[#E8EEF4] bg-white text-slate-600 hover:bg-[#F4F7FB]";
 
+function tripDateLabel(dateVal: string | null | undefined) {
+  return dateVal ? safeFormatDate(dateVal, { day: "2-digit", month: "short", year: "numeric" }) : "";
+}
+
+function vendorProofSlots(item: any) {
+  const invoice =
+    item?.invoiceProofUrl ||
+    item?.invoiceFileUrl ||
+    item?.invoiceProof ||
+    item?.proofUrl ||
+    null;
+  const paymentRaw = item?.paymentProofUrl || item?.advanceProofUrl || item?.settlementProofUrl || null;
+  const payment = paymentRaw && paymentRaw !== invoice ? paymentRaw : null;
+  return { invoice: invoice || "", payment: payment || "", urls: [invoice, payment].filter(Boolean) };
+}
+
+function ProofPreview({ url, label }: { url: string; label: string }) {
+  if (!url) {
+    return (
+      <div className="flex h-28 items-center justify-center rounded border border-dashed border-slate-200 bg-slate-50 text-[10px] text-slate-400">
+        {label} not uploaded
+      </div>
+    );
+  }
+  if (/\.pdf($|\?)/i.test(url)) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-blue-700 underline">
+        {label}: Open PDF
+      </a>
+    );
+  }
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-semibold text-slate-600">{label}</p>
+      <img src={url} alt={label} className="max-h-40 w-full rounded border bg-white object-contain" />
+    </div>
+  );
+}
+
 export default function OutgoingPaymentsApprovalPage({
   hideHeader = false,
 }: OutgoingPaymentsApprovalPageProps) {
@@ -75,6 +113,7 @@ export default function OutgoingPaymentsApprovalPage({
   const [actionType, setActionType] = useState<"review" | "approve" | "upload" | "view-proof" | null>(null);
   const [payoutNotes, setPayoutNotes] = useState("");
   const [proofUrlInput, setProofUrlInput] = useState("");
+  const [paymentProofUrlInput, setPaymentProofUrlInput] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -131,6 +170,10 @@ export default function OutgoingPaymentsApprovalPage({
           (v as any).advanceProofUrl ||
           (v as any).settlementProofUrl ||
           null,
+        invoiceProofUrl: (v as any).invoiceProofUrl || (v as any).invoiceFileUrl || (v as any).invoiceProof || null,
+        paymentProofUrl: (v as any).paymentProofUrl || null,
+        approvedByName: (v as any).approvedByName || null,
+        approvedAt: (v as any).approvedAt || null,
         raw: v,
       };
     })
@@ -149,7 +192,8 @@ export default function OutgoingPaymentsApprovalPage({
           item.category.toLowerCase().includes(q) ||
           service.primary.toLowerCase().includes(q) ||
           service.secondary.toLowerCase().includes(q) ||
-          item.billReference.toLowerCase().includes(q)
+          item.billReference.toLowerCase().includes(q) ||
+          String(item.approvedByName || "").toLowerCase().includes(q)
         );
       }
       return true;
@@ -170,18 +214,22 @@ export default function OutgoingPaymentsApprovalPage({
     setSelectedItem(null);
     setPayoutNotes("");
     setProofUrlInput("");
+    setPaymentProofUrlInput("");
   };
 
   const persistProofIfNeeded = async (item: any) => {
-    const next = (proofUrlInput || item.proofUrl || "").trim();
-    if (!next) return null;
-    if (next !== item.proofUrl) {
+    const invoice = (proofUrlInput || item.invoiceProofUrl || item.proofUrl || "").trim();
+    const payment = (paymentProofUrlInput || item.paymentProofUrl || "").trim();
+    if (!invoice && !payment) return null;
+    const prev = vendorProofSlots(item);
+    if (invoice !== prev.invoice || payment !== prev.payment) {
       await financeApprovalsService.uploadVendorPaymentProof(item.id, {
-        proofFileUrl: next,
+        proofFileUrl: invoice || payment,
+        paymentProofUrl: payment || undefined,
         proofFileName: "vendor_payout_proof",
       });
     }
-    return next;
+    return invoice || payment;
   };
 
   const handleVendorAction = async () => {
@@ -189,12 +237,13 @@ export default function OutgoingPaymentsApprovalPage({
     setActionLoading(true);
     try {
       if (actionType === "upload") {
-        if (!proofUrlInput.trim()) {
+        if (!proofUrlInput.trim() && !paymentProofUrlInput.trim()) {
           toast.error("Upload a receipt, screenshot, or PDF first");
           return;
         }
         await financeApprovalsService.uploadVendorPaymentProof(selectedItem.id, {
-          proofFileUrl: proofUrlInput.trim(),
+          proofFileUrl: proofUrlInput.trim() || paymentProofUrlInput.trim(),
+          paymentProofUrl: paymentProofUrlInput.trim() || undefined,
           proofFileName: "vendor_payout_proof",
         });
         toast.success("Payment proof attached to this payout");
@@ -328,16 +377,17 @@ export default function OutgoingPaymentsApprovalPage({
               <p className="text-[12px] font-semibold text-[#162B45]">No vendor bills</p>
             </div>
           ) : (
-            <table className="w-full min-w-[980px] table-fixed border-collapse text-left">
+            <table className="w-full min-w-[1120px] table-fixed border-collapse text-left">
               <colgroup>
                 <col className="w-[72px]" />
-                <col className="w-[150px]" />
-                <col className="w-[190px]" />
+                <col className="w-[140px]" />
                 <col className="w-[200px]" />
+                <col className="w-[170px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
                 <col className="w-[88px]" />
-                <col className="w-[88px]" />
-                <col className="w-[100px]" />
                 <col className="w-[76px]" />
+                <col className="w-[110px]" />
                 <col className="w-[168px]" />
               </colgroup>
               <thead className="sticky top-0 z-10">
@@ -350,6 +400,7 @@ export default function OutgoingPaymentsApprovalPage({
                   <th className="px-2 py-1 text-right">Paid</th>
                   <th className="px-2 py-1 text-right">Due</th>
                   <th className="px-2 py-1">Status</th>
+                  <th className="px-2 py-1">Approved by</th>
                   <th className="px-2 py-1">Action</th>
                 </tr>
               </thead>
@@ -359,7 +410,16 @@ export default function OutgoingPaymentsApprovalPage({
                   const service = formatVendorService(item);
                   const showVerify = canReview && (label === "Pending" || label === "Reviewed");
                   const settled = label === "Settled";
-                  const proofUrl = item.proofUrl;
+                  const proofs = vendorProofSlots(item);
+                  const tripDate = tripDateLabel(item.departureDate);
+                  const tripInner = (
+                    <>
+                      <span className="block truncate font-medium text-[#162B45]">{item.tripName}</span>
+                      {tripDate ? (
+                        <span className="block whitespace-nowrap text-[10px] text-slate-500">{tripDate}</span>
+                      ) : null}
+                    </>
+                  );
                   return (
                     <tr key={item.id} className="h-8 border-b border-[#EEF2F6] last:border-b-0 hover:bg-[#F8FAFC]">
                       <td className="px-2 py-0.5 align-middle">
@@ -374,23 +434,17 @@ export default function OutgoingPaymentsApprovalPage({
                         </span>
                       </td>
                       <td className="px-2 py-0.5 align-middle text-slate-600">
-                        <div className="flex min-w-0 items-center gap-1">
-                          <span className="truncate" title={item.tripName}>
-                            <span className="font-medium text-[#162B45]">{item.tripName}</span>
-                            {item.departureDate && (
-                              <span className="text-slate-400"> · {safeFormatDate(item.departureDate)}</span>
-                            )}
-                          </span>
-                          {item.operationalLinked && item.departureHref ? (
-                            <Link
-                              to={item.departureHref}
-                              title="Open departure"
-                              className="shrink-0 text-[#C2410C]"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          ) : null}
-                        </div>
+                        {item.departureHref ? (
+                          <Link
+                            to={item.departureHref}
+                            title="Open departure"
+                            className="block min-w-0 hover:underline"
+                          >
+                            {tripInner}
+                          </Link>
+                        ) : (
+                          <div className="min-w-0">{tripInner}</div>
+                        )}
                       </td>
                       <td className="px-2 py-0.5 align-middle text-slate-600">
                         <span className="block truncate" title={service.tooltip}>
@@ -439,21 +493,27 @@ export default function OutgoingPaymentsApprovalPage({
                           {label}
                         </Badge>
                       </td>
+                      <td className="px-2 py-0.5 align-middle text-slate-600">
+                        <span className="block truncate" title={item.approvedByName || undefined}>
+                          {item.approvedByName || "—"}
+                        </span>
+                      </td>
                       <td className="px-2 py-0.5 align-middle">
                         <div className="flex flex-nowrap items-center gap-1">
-                          {proofUrl ? (
+                          {proofs.urls.length ? (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => {
                                 setSelectedItem(item);
                                 setActionType("view-proof");
-                                setProofUrlInput(proofUrl);
+                                setProofUrlInput(proofs.invoice);
+                                setPaymentProofUrlInput(proofs.payment);
                               }}
                               className="h-6 px-1.5 text-[10px] font-semibold"
                             >
                               <Eye className="mr-0.5 h-3 w-3" />
-                              Proof
+                              Proof{proofs.urls.length > 1 ? ` (${proofs.urls.length})` : ""}
                             </Button>
                           ) : (
                             <Button
@@ -463,6 +523,7 @@ export default function OutgoingPaymentsApprovalPage({
                                 setSelectedItem(item);
                                 setActionType("upload");
                                 setProofUrlInput("");
+                                setPaymentProofUrlInput("");
                               }}
                               className="h-6 px-1.5 text-[10px] font-semibold border-amber-300 bg-amber-50 text-amber-800"
                             >
@@ -477,7 +538,8 @@ export default function OutgoingPaymentsApprovalPage({
                               onClick={() => {
                                 setSelectedItem(item);
                                 setActionType("approve");
-                                setProofUrlInput(proofUrl || "");
+                                setProofUrlInput(proofs.invoice);
+                                setPaymentProofUrlInput(proofs.payment);
                               }}
                               className="h-6 px-1.5 text-[10px] font-semibold bg-[#0B1528] text-white"
                             >
@@ -495,7 +557,7 @@ export default function OutgoingPaymentsApprovalPage({
       </div>
 
       <Dialog open={Boolean(actionType)} onOpenChange={(open) => { if (!open) closeAction(); }}>
-        <DialogContent className="max-w-md bg-white">
+        <DialogContent className="max-w-lg bg-white">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
               {actionType === "review" || actionType === "approve"
@@ -505,12 +567,12 @@ export default function OutgoingPaymentsApprovalPage({
                     : "Upload payment proof"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              One person verifies this payout. Proof stays on the bill even if Departure Hub is unlinked.
+              One person verifies this payout. Invoice proof and payment screenshot are stored separately on the bill.
             </DialogDescription>
           </DialogHeader>
           {selectedItem && (() => {
             const service = formatVendorService(selectedItem);
-            const previewUrl = proofUrlInput || selectedItem.proofUrl;
+            const tripDate = tripDateLabel(selectedItem.departureDate);
             return (
             <div className="space-y-3 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
@@ -521,8 +583,28 @@ export default function OutgoingPaymentsApprovalPage({
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="text-slate-500">Departure / Trip</span>
-                  <span className="truncate text-right" title={selectedItem.tripName}>{selectedItem.tripName}</span>
+                  <span className="shrink-0 text-slate-500">Departure / Trip</span>
+                  {selectedItem.departureHref ? (
+                    <Link
+                      to={selectedItem.departureHref}
+                      className="max-w-[240px] text-right text-[#C2410C] hover:underline"
+                      onClick={closeAction}
+                    >
+                      <span className="block truncate font-semibold text-[#162B45]">{selectedItem.tripName}</span>
+                      {tripDate ? <span className="block text-[10px] text-slate-500">{tripDate}</span> : null}
+                    </Link>
+                  ) : (
+                    <span className="max-w-[240px] truncate text-right" title={selectedItem.tripName}>
+                      {selectedItem.tripName}
+                      {tripDate ? ` · ${tripDate}` : ""}
+                    </span>
+                  )}
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-500">Approved by</span>
+                  <span className="truncate text-right font-medium">
+                    {selectedItem.approvedByName || "Not verified yet"}
+                  </span>
                 </div>
                 {!selectedItem.operationalLinked && (
                   <p className="text-[10px] text-slate-400">Operational record unavailable — proof is stored on this payout.</p>
@@ -541,27 +623,33 @@ export default function OutgoingPaymentsApprovalPage({
                   </span>
                 </div>
               </div>
-              {previewUrl && (actionType === "view-proof" || actionType === "review" || actionType === "approve") && (
-                <div className="space-y-2">
-                  {/\.pdf($|\?)/i.test(previewUrl) ? (
-                    <a href={previewUrl} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-blue-700 underline">
-                      Open PDF proof
-                    </a>
-                  ) : (
-                    <img src={previewUrl} alt="Vendor payout proof" className="max-h-56 w-full rounded border object-contain bg-white" />
-                  )}
+              {actionType === "view-proof" ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <ProofPreview url={proofUrlInput || selectedItem.invoiceProofUrl || selectedItem.proofUrl} label="Invoice / bill" />
+                  <ProofPreview url={paymentProofUrlInput || selectedItem.paymentProofUrl} label="Payment screenshot" />
                 </div>
-              )}
-              {actionType !== "view-proof" && (
-                <div className="space-y-2">
-                  <label className="font-semibold text-slate-700">Payment proof (image or PDF)</label>
-                  <ImageUpload
-                    label="Upload receipt / screenshot"
-                    value={proofUrlInput}
-                    onUpload={(url) => setProofUrlInput(url)}
-                    compact
-                    accept="image/*,.pdf,application/pdf"
-                  />
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700">Invoice / bill</label>
+                    <ImageUpload
+                      label="Invoice or bill"
+                      value={proofUrlInput}
+                      onUpload={(url) => setProofUrlInput(url)}
+                      compact
+                      accept="image/*,.pdf,application/pdf"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700">Payment screenshot</label>
+                    <ImageUpload
+                      label="UPI / bank screenshot"
+                      value={paymentProofUrlInput}
+                      onUpload={(url) => setPaymentProofUrlInput(url)}
+                      compact
+                      accept="image/*,.pdf,application/pdf"
+                    />
+                  </div>
                 </div>
               )}
               {(actionType === "review" || actionType === "approve") && (
