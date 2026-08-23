@@ -35,6 +35,7 @@ import TripControlRowDrawer, { TripControlRowData } from "./TripControlRowDrawer
 import { findHotelForDay } from "@/utils/accommodationCalculator";
 import {
   compactMealSummary,
+  formatDayMeals,
   matchMenuToStay,
   parseVendorFoodMenu,
   VendorMenuSource,
@@ -84,6 +85,64 @@ function statusTone(status: string) {
   return "bg-white text-slate-500";
 }
 
+function OpsStatusMenu({
+  heading,
+  value,
+  onPick,
+}: {
+  heading: string;
+  value: string;
+  onPick: (status: string) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer hover:shadow-xs",
+            statusTone(value),
+            value === "BOOKED" || value === "CONFIRMED"
+              ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+              : value === "CANCELLED"
+                ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                : value === "NOT REQUIRED"
+                  ? "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
+          )}
+        >
+          <span>{formatOpsLabel(value)}</span>
+          <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-36 text-xs bg-white shadow-lg border border-slate-200 rounded-lg p-1 z-50">
+        <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">
+          {heading}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onPick("BOOKED")} className="text-green-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-green-50 text-xs">
+          Booked
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onPick("CONFIRMED")} className="text-blue-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-blue-50 text-xs">
+          Confirmed
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onPick("CHECKED-IN")} className="text-purple-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-purple-50 text-xs">
+          Checked in
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onPick("PENDING")} className="text-amber-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-amber-50 text-xs">
+          Pending
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onPick("NOT REQUIRED")} className="text-slate-600 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-slate-100 text-xs">
+          Not required
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onPick("CANCELLED")} className="text-red-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-red-50 text-xs">
+          Cancelled
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function DepartureTripControl({
   tripId,
   departureDateStr,
@@ -105,6 +164,7 @@ export default function DepartureTripControl({
   // Live database day itinerary items (persisted check-ins, remarks, pax)
   const [dbDayItineraries, setDbDayItineraries] = useState<OpsDayItinerary[]>([]);
   const [directoryVendors, setDirectoryVendors] = useState<any[]>([]);
+  const [hotelVendors, setHotelVendors] = useState<any[]>([]);
 
   // User-selected status overrides for each day (persisted in DB and LocalStorage)
   const [statusOverrides, setStatusOverrides] = useState<
@@ -165,6 +225,35 @@ export default function DepartureTripControl({
     };
   }, [tripId]);
 
+  useEffect(() => {
+    const ids = [
+      ...new Set(
+        (opsHotels || [])
+          .map((h: any) => h.vendorId || h.vendor?.id)
+          .filter(Boolean)
+          .map(String),
+      ),
+    ];
+    if (ids.length === 0) {
+      setHotelVendors([]);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      ids.map((id) =>
+        api
+          .get(`/vendors/directory/${id}`)
+          .then((res) => res.data?.data)
+          .catch(() => null),
+      ),
+    ).then((rows) => {
+      if (!cancelled) setHotelVendors(rows.filter(Boolean));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [opsHotels]);
+
   const vendorMenus = useMemo<VendorMenuSource[]>(() => {
     const list: VendorMenuSource[] = [];
     const seen = new Set<string>();
@@ -180,6 +269,7 @@ export default function DepartureTripControl({
       pushMenu(h);
       pushMenu(h.vendor);
     });
+    (hotelVendors || []).forEach((v: any) => pushMenu(v));
     (tripVendors || []).forEach((v: any) => pushMenu(v));
     (directoryVendors || []).forEach((v: any) => {
       const t = String(v.type || "").toUpperCase();
@@ -197,7 +287,7 @@ export default function DepartureTripControl({
       }
     });
     return list;
-  }, [opsHotels, tripVendors, directoryVendors]);
+  }, [opsHotels, tripVendors, directoryVendors, hotelVendors]);
 
   // Lead guide info
   const leadGuide = useMemo(() => {
@@ -232,20 +322,25 @@ export default function DepartureTripControl({
           f.driverName ||
           `${f.capacity || 14} Seater ${f.vehicleType || "Tempo"} #${idx + 1}`;
         const num = f.vehicleNumber || f.registrationNumber || "";
-        return num ? `${name} · ${num}` : name;
+        const title = num ? `${name} · ${num}` : name;
+        return {
+          short: `Tempo ${idx + 1}`,
+          title,
+        };
       });
       return {
-        name: lines.join(" + "),
-        lines,
+        name: lines.map((l) => l.short).join(" + "),
+        lines: lines.map((l) => l.short),
+        shortLines: lines,
         phone: allocFleet[0].driverPhone || allocFleet[0].phone || "",
       };
     }
     const tr = tripVendors?.find((v) => v.vendorType === "transport");
     if (tr) {
       const name = tr.name || tr.vendorName || "14 Seater Tempo";
-      return { name, lines: [name], phone: tr.phone || "" };
+      return { name: "Tempo 1", lines: ["Tempo 1"], shortLines: [{ short: "Tempo 1", title: name }], phone: tr.phone || "" };
     }
-    return { name: "14 Seater Tempo", lines: ["14 Seater Tempo"], phone: "" };
+    return { name: "Tempo 1", lines: ["Tempo 1"], shortLines: [{ short: "Tempo 1", title: "14 Seater Tempo" }], phone: "" };
   }, [tripVendors, allocFleet]);
 
   // Build unified live table rows per itinerary day
@@ -376,12 +471,14 @@ export default function DepartureTripControl({
         }
       }
 
-      const transportLines =
+      const transportShortLines =
         transportName === "—" || transportStatus === "NOT REQUIRED"
           ? []
-          : leadTransport.lines && leadTransport.lines.length > 0
-            ? leadTransport.lines
-            : [transportName];
+          : leadTransport.shortLines && leadTransport.shortLines.length > 0
+            ? leadTransport.shortLines
+            : [{ short: "Tempo 1", title: transportName }];
+
+      const transportLines = transportShortLines.map((l: any) => l.short);
 
       // Match Guide
       let guideName = "—";
@@ -427,7 +524,13 @@ export default function DepartureTripControl({
       const itineraryMeals = day.meals && day.meals !== "—" ? String(day.meals) : "";
       const mealMenu = isNoStay
         ? null
-        : matchMenuToStay(vendorMenus, rawHotelName || hotelName, stayLocation);
+        : matchMenuToStay(
+            vendorMenus,
+            rawHotelName || hotelName,
+            stayLocation,
+            hotelMatch?.vendorId || hotelMatch?.vendor?.id,
+          );
+      const dayMeals = formatDayMeals(mealMenu, itineraryMeals);
       const mealSummary = compactMealSummary(mealMenu, itineraryMeals);
 
       return {
@@ -442,8 +545,9 @@ export default function DepartureTripControl({
         hotelPhone,
         hotelStatus,
         hotelBookingRef: hotelMatch,
-        transportName,
+        transportName: transportShortLines.map((l: any) => l.short).join(" + ") || transportName,
         transportLines,
+        transportShortLines,
         transportPhone: leadTransport.phone || "",
         transportStatus,
         guideName,
@@ -453,6 +557,8 @@ export default function DepartureTripControl({
         remark: currentRemark,
         mealSummary,
         mealMenu,
+        mealGroups: dayMeals.groups,
+        mealSource: dayMeals.source,
       };
     });
   }, [computedItinerary, opsHotels, tripVendors, totalPax, leadTransport, leadGuide, dbDayItineraries, statusOverrides, departureDateStr, vendorMenus]);
@@ -1361,15 +1467,13 @@ export default function DepartureTripControl({
             <thead>
               <tr className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                 <th className="py-2.5 px-3.5 w-28">Date</th>
-                <th className="py-2.5 px-3.5 w-48">Stay / destination</th>
-                <th className="py-2.5 px-3.5 w-16 text-center">Pax</th>
-                <th className="py-2.5 px-3.5 w-48">Hotel</th>
-                <th className="py-2.5 px-3.5 w-28 text-center">Hotel status</th>
-                <th className="py-2.5 px-3.5 min-w-[180px]">Tempo / fleet</th>
-                <th className="py-2.5 px-3.5 w-28 text-center">Tempo status</th>
-                <th className="py-2.5 px-3.5 w-40">Guide / driver</th>
-                <th className="py-2.5 px-3.5 min-w-[160px]">Meals / food</th>
-                <th className="py-2.5 px-3.5">Remark</th>
+                <th className="py-2.5 px-3.5 w-36">Stay</th>
+                <th className="py-2.5 px-3.5 w-12 text-center">Pax</th>
+                <th className="py-2.5 px-3.5 w-44">Hotel</th>
+                <th className="py-2.5 px-3.5 w-28">Transport</th>
+                <th className="py-2.5 px-3.5 min-w-[240px]">Meals</th>
+                <th className="py-2.5 px-3.5 w-40">Guide</th>
+                <th className="py-2.5 px-3.5">Remarks</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E8EEF4] text-slate-700">
@@ -1417,8 +1521,8 @@ export default function DepartureTripControl({
                       </span>
                     </td>
 
-                    <td className="py-2.5 px-3.5">
-                      <div className="font-medium text-[#0B1528] truncate max-w-[180px]">
+                    <td className="py-2.5 px-3.5 align-top">
+                      <div className="font-medium text-[#0B1528] leading-snug whitespace-normal break-words">
                         {row.hotelName}
                       </div>
                       {row.hotelPhone && (
@@ -1426,119 +1530,57 @@ export default function DepartureTripControl({
                           <Phone className="w-2.5 h-2.5 text-slate-400" /> {row.hotelPhone}
                         </div>
                       )}
-                    </td>
-
-                    <td className="py-2.5 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer hover:shadow-xs",
-                              statusTone(row.hotelStatus),
-                              row.hotelStatus === "BOOKED" || row.hotelStatus === "CONFIRMED"
-                                ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                                : row.hotelStatus === "CANCELLED"
-                                  ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                                  : row.hotelStatus === "NOT REQUIRED"
-                                    ? "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
-                                    : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                            )}
-                          >
-                            <span>{formatOpsLabel(row.hotelStatus)}</span>
-                            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="center" className="w-36 text-xs bg-white shadow-lg border border-slate-200 rounded-lg p-1 z-50">
-                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">Hotel Status</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "BOOKED")} className="text-green-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-green-50 text-xs">
-                            🟢 Booked
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "CONFIRMED")} className="text-blue-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-blue-50 text-xs">
-                            🔵 Confirmed
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "CHECKED-IN")} className="text-purple-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-purple-50 text-xs">
-                            🟣 Checked in
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "PENDING")} className="text-amber-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-amber-50 text-xs">
-                            🟡 Pending
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "NOT REQUIRED")} className="text-slate-600 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-slate-100 text-xs">
-                            ⚪ Not required
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "CANCELLED")} className="text-red-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-red-50 text-xs">
-                            🔴 Cancelled
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-
-                    <td className="py-2.5 px-3.5 align-top min-w-[180px] max-w-[240px]">
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        {(row.transportLines && row.transportLines.length > 0
-                          ? row.transportLines
-                          : [row.transportName]
-                        ).map((line, li) => (
-                          <span
-                            key={`${row.dayNum}-fleet-${li}`}
-                            className="font-medium text-[#0B1528] leading-snug whitespace-normal break-words"
-                          >
-                            {line}
-                          </span>
-                        ))}
-                        {row.transportPhone && (
-                          <span className="text-[10px] text-slate-400 tabular-nums flex items-center gap-1 mt-0.5">
-                            <Phone className="w-2.5 h-2.5 text-slate-400" /> {row.transportPhone}
-                          </span>
-                        )}
+                      <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+                        <OpsStatusMenu heading="Hotel" value={row.hotelStatus} onPick={(s) => handleUpdateHotelStatus(row, s)} />
                       </div>
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer hover:shadow-xs",
-                              statusTone(row.transportStatus),
-                              row.transportStatus === "BOOKED" || row.transportStatus === "CONFIRMED"
-                                ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                                : row.transportStatus === "CANCELLED"
-                                  ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                                  : row.transportStatus === "NOT REQUIRED"
-                                    ? "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
-                                    : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                            )}
-                          >
-                            <span>{formatOpsLabel(row.transportStatus)}</span>
-                            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="center" className="w-36 text-xs bg-white shadow-lg border border-slate-200 rounded-lg p-1 z-50">
-                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">Tempo / Vehicle</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "BOOKED")} className="text-green-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-green-50 text-xs">
-                            🟢 Booked
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "CONFIRMED")} className="text-blue-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-blue-50 text-xs">
-                            🔵 Confirmed
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "CHECKED-IN")} className="text-purple-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-purple-50 text-xs">
-                            🟣 Checked in
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "PENDING")} className="text-amber-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-amber-50 text-xs">
-                            🟡 Pending
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "NOT REQUIRED")} className="text-slate-600 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-slate-100 text-xs">
-                            ⚪ Not required
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "CANCELLED")} className="text-red-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-red-50 text-xs">
-                            🔴 Cancelled
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <td className="py-2.5 px-3.5 align-top">
+                      {row.transportStatus === "NOT REQUIRED" || !row.transportShortLines?.length ? (
+                        <span className="text-slate-300">—</span>
+                      ) : (
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          {row.transportShortLines.map((line) => (
+                            <span
+                              key={`${row.dayNum}-${line.short}`}
+                              title={line.title}
+                              className="font-medium text-[#0B1528] leading-snug"
+                            >
+                              {line.short}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {row.transportPhone && row.transportStatus !== "NOT REQUIRED" && (
+                        <div className="text-[10px] text-slate-400 tabular-nums flex items-center gap-1 mt-0.5">
+                          <Phone className="w-2.5 h-2.5 text-slate-400" /> {row.transportPhone}
+                        </div>
+                      )}
+                      <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+                        <OpsStatusMenu heading="Tempo" value={row.transportStatus} onPick={(s) => handleUpdateTransportStatus(row, s)} />
+                      </div>
+                    </td>
+
+                    <td className="py-2.5 px-3.5 align-top min-w-[240px] max-w-[360px]">
+                      {row.mealGroups && row.mealGroups.length > 0 ? (
+                        <div className="space-y-1.5 min-w-0">
+                          {row.mealGroups.map((g) => (
+                            <div key={`${row.dayNum}-${g.type}`}>
+                              <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                                {g.type}
+                              </div>
+                              <div className="text-[12px] text-[#0B1528] leading-snug whitespace-normal break-words">
+                                {g.dishes}
+                              </div>
+                            </div>
+                          ))}
+                          {row.mealMenu?.vendorName && row.mealSource === "vendor" && (
+                            <div className="text-[10px] text-slate-400">{row.mealMenu.vendorName}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
                     </td>
 
                     <td className="py-2.5 px-3.5 align-top">
@@ -1550,28 +1592,8 @@ export default function DepartureTripControl({
                       )}
                     </td>
 
-                    <td className="py-2.5 px-3.5 align-top min-w-[160px] max-w-[220px]">
-                      {row.mealSummary ? (
-                        <div className="min-w-0">
-                          <div className="font-medium text-[#0B1528] leading-snug whitespace-normal break-words">
-                            {row.mealSummary}
-                          </div>
-                          {row.mealMenu?.items?.[0]?.inclusions && (
-                            <div className="text-[10px] text-slate-400 leading-snug mt-0.5 whitespace-normal">
-                              {row.mealMenu.items[0].inclusions}
-                              {row.mealMenu.items.length > 1
-                                ? ` · +${row.mealMenu.items.length - 1} more`
-                                : ""}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-300">—</span>
-                      )}
-                    </td>
-
-                    <td className="py-2.5 px-3.5">
-                      <span className="text-slate-500 text-[12px] truncate max-w-[160px] block">
+                    <td className="py-2.5 px-3.5 align-top">
+                      <span className="text-slate-500 text-[12px] whitespace-normal break-words block">
                         {row.remark || <span className="text-slate-300">No remarks</span>}
                       </span>
                     </td>
@@ -1579,7 +1601,7 @@ export default function DepartureTripControl({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center bg-[#F8FAFC]">
+                  <td colSpan={8} className="py-12 text-center bg-[#F8FAFC]">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <AlertCircle className="w-6 h-6 text-slate-300" />
                       <p className="font-medium text-[#0B1528] text-sm">No days match this filter</p>
@@ -1642,40 +1664,47 @@ export default function DepartureTripControl({
 
             <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
               <div className="min-w-0">
+                <span className="text-[10px] font-medium text-slate-400 block">Stay</span>
+                <span className="font-medium text-[#0B1528] whitespace-normal break-words block">{row.destination}</span>
+              </div>
+              <div className="min-w-0">
                 <span className="text-[10px] font-medium text-slate-400 block">Hotel</span>
-                <span className="font-medium text-[#0B1528] truncate block">{row.hotelName}</span>
+                <span className="font-medium text-[#0B1528] whitespace-normal break-words block">{row.hotelName}</span>
                 <span className={cn("inline-flex mt-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]", statusTone(row.hotelStatus))}>
                   {formatOpsLabel(row.hotelStatus)}
                 </span>
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] font-medium text-slate-400 block">Transport</span>
-                <span className="font-medium text-[#0B1528] whitespace-normal break-words block">
-                  {row.transportName}
-                </span>
-                <span className={cn("inline-flex mt-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]", statusTone(row.transportStatus))}>
-                  {formatOpsLabel(row.transportStatus)}
-                </span>
+                {(row.transportShortLines || []).map((line) => (
+                  <span key={line.short} title={line.title} className="font-medium text-[#0B1528] block">
+                    {line.short}
+                  </span>
+                ))}
+                {(!row.transportShortLines || row.transportShortLines.length === 0) && (
+                  <span className="text-slate-300">—</span>
+                )}
               </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E8EEF4] text-xs min-w-0">
               <div className="min-w-0">
                 <span className="text-[10px] font-medium text-slate-400 block">Guide</span>
-                <span className="font-medium text-[#0B1528] truncate block">{row.guideName}</span>
+                <span className="font-medium text-[#0B1528] whitespace-normal break-words block">{row.guideName}</span>
               </div>
+            </div>
+            {row.mealGroups && row.mealGroups.length > 0 && (
+              <div className="pt-1.5 border-t border-[#E8EEF4] text-xs min-w-0 space-y-1">
+                {row.mealGroups.map((g) => (
+                  <div key={g.type}>
+                    <span className="text-[10px] font-medium text-slate-400 block">{g.type}</span>
+                    <span className="font-medium text-[#0B1528] whitespace-normal break-words block">{g.dishes}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center justify-end pt-2 border-t border-[#E8EEF4] text-xs">
               <span className="inline-flex items-center text-[11px] font-medium text-[#FF4D00] shrink-0">
                 Open <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </div>
-            {row.mealSummary && (
-              <div className="pt-1.5 border-t border-[#E8EEF4] text-xs min-w-0">
-                <span className="text-[10px] font-medium text-slate-400 block">Meals</span>
-                <span className="font-medium text-[#0B1528] whitespace-normal break-words block">
-                  {row.mealSummary}
-                </span>
-              </div>
-            )}
           </div>
         ))}
       </div>

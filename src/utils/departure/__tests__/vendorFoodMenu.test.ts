@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { compactMealSummary, parseVendorFoodMenu } from "../vendorFoodMenu";
+import {
+  compactMealSummary,
+  formatDayMeals,
+  parseVendorFoodMenu,
+} from "../vendorFoodMenu";
 
 describe("vendorFoodMenu", () => {
   it("parses mealPlans JSON tariffs from vendor directory", () => {
@@ -27,7 +31,9 @@ describe("vendorFoodMenu", () => {
     });
     expect(menu?.items).toHaveLength(2);
     expect(menu?.items[0].inclusions).toContain("Paratha");
-    expect(compactMealSummary(menu)).toBe("Breakfast · Dinner");
+    expect(compactMealSummary(menu)).toContain("Tea, Paratha, Puri Bhaji");
+    expect(compactMealSummary(menu)).toContain("Dal, Rice");
+    expect(compactMealSummary(menu, "Breakfast & Dinner")).toContain("Paratha");
   });
 
   it("parses DirectoryVendorFoodRate rows", () => {
@@ -39,5 +45,19 @@ describe("vendorFoodMenu", () => {
     });
     expect(menu?.items[0].type).toBe("Lunch");
     expect(menu?.items[0].inclusions).toContain("buttermilk");
+  });
+
+  it("groups lunch dishes in full rather than meal-type only", () => {
+    const menu = parseVendorFoodMenu({
+      name: "Hotel Lake View",
+      mealTariffs: [
+        { type: "LUNCH", name: "Packed Lunch", inclusions: "Veg pulav, pickle, banana, buttermilk" },
+        { type: "DINNER", name: "Dinner Thali", inclusions: "Dal fry, jeera rice, roti, gulab jamun" },
+      ],
+    });
+    const day = formatDayMeals(menu, "Breakfast & Dinner");
+    expect(day.source).toBe("vendor");
+    expect(day.groups.find((g) => g.type === "Lunch")?.dishes).toContain("Veg pulav");
+    expect(day.groups.find((g) => g.type === "Dinner")?.dishes).toContain("gulab jamun");
   });
 });

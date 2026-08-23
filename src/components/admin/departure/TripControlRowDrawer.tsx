@@ -33,6 +33,7 @@ export interface TripControlRowData {
   hotelBookingRef?: any;
   transportName: string;
   transportLines?: string[];
+  transportShortLines?: Array<{ short: string; title: string }>;
   transportPhone?: string;
   transportStatus: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED";
   guideName: string;
@@ -41,6 +42,8 @@ export interface TripControlRowData {
   checkInStatus: "CHECKED-IN" | "PENDING" | "NOT REQUIRED";
   remark: string;
   mealSummary?: string;
+  mealGroups?: Array<{ type: string; dishes: string }>;
+  mealSource?: "vendor" | "itinerary" | "none";
   mealMenu?: {
     vendorName: string;
     mealPlanLabel?: string;
