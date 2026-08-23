@@ -69,28 +69,20 @@ function collectProofUrls(item: any): string[] {
   return [
     ...new Set(
       [
-        item?.invoiceProofUrl,
-        item?.invoiceFileUrl,
-        item?.invoiceProof,
-        item?.proofUrl,
         item?.paymentProofUrl,
         item?.advanceProofUrl,
         item?.settlementProofUrl,
+        item?.proofUrl,
+        item?.invoiceProofUrl,
+        item?.invoiceFileUrl,
+        item?.invoiceProof,
       ].filter((url): url is string => typeof url === "string" && Boolean(url.trim())),
     ),
   ];
 }
 
-function vendorProofSlots(item: any) {
-  const urls = collectProofUrls(item);
-  const invoice = urls[0] || "";
-  const payment = urls[1] || urls[0] || "";
-  return {
-    invoice,
-    payment,
-    urls,
-    shared: urls.length === 1 && Boolean(urls[0]),
-  };
+function vendorProofUrl(item: any) {
+  return collectProofUrls(item)[0] || "";
 }
 
 function ProofPreview({ url, label }: { url: string; label: string }) {
@@ -127,7 +119,6 @@ export default function OutgoingPaymentsApprovalPage({
   const [actionType, setActionType] = useState<"review" | "approve" | "upload" | "view-proof" | null>(null);
   const [payoutNotes, setPayoutNotes] = useState("");
   const [proofUrlInput, setProofUrlInput] = useState("");
-  const [paymentProofUrlInput, setPaymentProofUrlInput] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -177,14 +168,7 @@ export default function OutgoingPaymentsApprovalPage({
         approvalStatus: (v as any).approvalStatus || "PENDING",
         status: v.paymentStatus || (v as any).status || "PENDING",
         requiresFounderApproval: Boolean((v as any).requiresFounderApproval),
-        proofUrl:
-          (v as any).proofUrl ||
-          (v as any).invoiceFileUrl ||
-          (v as any).invoiceProof ||
-          (v as any).advanceProofUrl ||
-          (v as any).settlementProofUrl ||
-          null,
-        invoiceProofUrl: (v as any).invoiceProofUrl || (v as any).invoiceFileUrl || (v as any).invoiceProof || null,
+        proofUrl: vendorProofUrl(v) || null,
         paymentProofUrl: (v as any).paymentProofUrl || null,
         approvedByName: (v as any).approvedByName || null,
         approvedAt: (v as any).approvedAt || null,
@@ -228,22 +212,18 @@ export default function OutgoingPaymentsApprovalPage({
     setSelectedItem(null);
     setPayoutNotes("");
     setProofUrlInput("");
-    setPaymentProofUrlInput("");
   };
 
   const persistProofIfNeeded = async (item: any) => {
-    const invoice = (proofUrlInput || item.invoiceProofUrl || item.proofUrl || "").trim();
-    const payment = (paymentProofUrlInput || item.paymentProofUrl || "").trim();
-    if (!invoice && !payment) return null;
-    const prev = vendorProofSlots(item);
-    if (invoice !== prev.invoice || payment !== prev.payment) {
+    const next = (proofUrlInput || vendorProofUrl(item) || "").trim();
+    if (!next) return null;
+    if (next !== vendorProofUrl(item)) {
       await financeApprovalsService.uploadVendorPaymentProof(item.id, {
-        proofFileUrl: invoice || payment,
-        paymentProofUrl: payment || undefined,
+        proofFileUrl: next,
         proofFileName: "vendor_payout_proof",
       });
     }
-    return invoice || payment;
+    return next;
   };
 
   const handleVendorAction = async () => {
@@ -251,13 +231,12 @@ export default function OutgoingPaymentsApprovalPage({
     setActionLoading(true);
     try {
       if (actionType === "upload") {
-        if (!proofUrlInput.trim() && !paymentProofUrlInput.trim()) {
-          toast.error("Upload a receipt, screenshot, or PDF first");
+        if (!proofUrlInput.trim()) {
+          toast.error("Upload a payment screenshot or PDF first");
           return;
         }
         await financeApprovalsService.uploadVendorPaymentProof(selectedItem.id, {
-          proofFileUrl: proofUrlInput.trim() || paymentProofUrlInput.trim(),
-          paymentProofUrl: paymentProofUrlInput.trim() || undefined,
+          proofFileUrl: proofUrlInput.trim(),
           proofFileName: "vendor_payout_proof",
         });
         toast.success("Payment proof attached to this payout");
@@ -424,7 +403,7 @@ export default function OutgoingPaymentsApprovalPage({
                   const service = formatVendorService(item);
                   const showVerify = canReview && (label === "Pending" || label === "Reviewed");
                   const settled = label === "Settled";
-                  const proofs = vendorProofSlots(item);
+                  const proofUrl = vendorProofUrl(item);
                   const tripDate = tripDateLabel(item.departureDate);
                   const tripInner = (
                     <>
@@ -514,20 +493,19 @@ export default function OutgoingPaymentsApprovalPage({
                       </td>
                       <td className="px-2 py-0.5 align-middle">
                         <div className="flex flex-nowrap items-center gap-1">
-                          {proofs.urls.length ? (
+                          {proofUrl ? (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => {
                                 setSelectedItem(item);
                                 setActionType("view-proof");
-                                setProofUrlInput(proofs.invoice);
-                                setPaymentProofUrlInput(proofs.payment);
+                                setProofUrlInput(proofUrl);
                               }}
                               className="h-6 px-1.5 text-[10px] font-semibold"
                             >
                               <Eye className="mr-0.5 h-3 w-3" />
-                              Proof{proofs.urls.length > 1 ? ` (${proofs.urls.length})` : ""}
+                              Proof
                             </Button>
                           ) : (
                             <Button
@@ -537,7 +515,6 @@ export default function OutgoingPaymentsApprovalPage({
                                 setSelectedItem(item);
                                 setActionType("upload");
                                 setProofUrlInput("");
-                                setPaymentProofUrlInput("");
                               }}
                               className="h-6 px-1.5 text-[10px] font-semibold border-amber-300 bg-amber-50 text-amber-800"
                             >
@@ -552,8 +529,7 @@ export default function OutgoingPaymentsApprovalPage({
                               onClick={() => {
                                 setSelectedItem(item);
                                 setActionType("approve");
-                                setProofUrlInput(proofs.invoice);
-                                setPaymentProofUrlInput(proofs.payment);
+                                setProofUrlInput(proofUrl);
                               }}
                               className="h-6 px-1.5 text-[10px] font-semibold bg-[#0B1528] text-white"
                             >
@@ -581,18 +557,14 @@ export default function OutgoingPaymentsApprovalPage({
                     : "Upload payment proof"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Founder or Finance Controller verifies. Invoice and payment screenshot are stored separately.
+              Founder or Finance Controller verifies. One UPI or bank screenshot is enough as payment proof.
             </DialogDescription>
           </DialogHeader>
           {selectedItem && (() => {
             const service = formatVendorService(selectedItem);
             const tripDate = tripDateLabel(selectedItem.departureDate);
             const vendorLabel = formatVendorName(selectedItem.vendorName);
-            const proofs = vendorProofSlots({
-              ...selectedItem,
-              invoiceProofUrl: proofUrlInput || selectedItem.invoiceProofUrl,
-              paymentProofUrl: paymentProofUrlInput || selectedItem.paymentProofUrl,
-            });
+            const proofUrl = proofUrlInput || vendorProofUrl(selectedItem);
             return (
             <div className="space-y-3 text-[12px]">
               <dl className="grid grid-cols-[6.75rem_1fr] gap-x-3 gap-y-2 rounded-lg border border-[#E3EAF2] bg-[#F8FAFC] px-3 py-2.5">
@@ -633,39 +605,17 @@ export default function OutgoingPaymentsApprovalPage({
                 <p className="text-[10px] text-slate-400">Operational record unavailable — proof is stored on this payout.</p>
               )}
               {actionType === "view-proof" ? (
-                <div className="space-y-1">
-                  <div className="grid grid-cols-2 gap-2">
-                    <ProofPreview url={proofs.invoice} label="Invoice / bill" />
-                    <ProofPreview url={proofs.payment} label="Payment screenshot" />
-                  </div>
-                  {proofs.shared ? (
-                    <p className="text-[10px] text-slate-500">
-                      One file was saved on this bill. It shows in both slots until a second screenshot is uploaded.
-                    </p>
-                  ) : null}
-                </div>
+                <ProofPreview url={proofUrl} label="Payment screenshot" />
               ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="font-semibold text-slate-700">Invoice / bill</label>
-                    <ImageUpload
-                      label="Invoice or bill"
-                      value={proofUrlInput}
-                      onUpload={(url) => setProofUrlInput(url)}
-                      compact
-                      accept="image/*,.pdf,application/pdf"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-semibold text-slate-700">Payment screenshot</label>
-                    <ImageUpload
-                      label="UPI / bank screenshot"
-                      value={paymentProofUrlInput || proofs.payment}
-                      onUpload={(url) => setPaymentProofUrlInput(url)}
-                      compact
-                      accept="image/*,.pdf,application/pdf"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <label className="font-semibold text-slate-700">Payment proof</label>
+                  <ImageUpload
+                    label="UPI / bank screenshot"
+                    value={proofUrlInput || proofUrl}
+                    onUpload={(url) => setProofUrlInput(url)}
+                    compact
+                    accept="image/*,.pdf,application/pdf"
+                  />
                 </div>
               )}
               {(actionType === "review" || actionType === "approve") && (

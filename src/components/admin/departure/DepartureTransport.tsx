@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { normalizeGenderCode } from "@/utils/passengerUtils";
 import { isPassengerCancelled } from "@/utils/departure/passengerStatus";
+import { isAllocOnFleet, withSequentialSeats } from "@/utils/departure/vehicleSeatAlloc";
 
 const outlineBtn =
   "h-8 w-full sm:w-auto min-w-0 text-[12px] font-medium rounded-md border border-[#E8EEF4] bg-white text-[#0B1528] hover:bg-[#F4F7FB] px-3 inline-flex items-center justify-center gap-1.5 shadow-none transition-colors disabled:opacity-50";
@@ -779,61 +780,6 @@ export default function DepartureTransport({
                 const fleetId = fleetItem.id || `tempo-${fleetIdx + 1}`;
                 const fleetName = fleetItem.name || `Tempo ${fleetIdx + 1}`;
 
-                const isAssignedToThisVehicle = (alloc?: any) => {
-                  if (!alloc) return false;
-                  const allocVehicle = alloc.vehicle;
-                  const allocFleetId = alloc.fleetId;
-                  if (!allocVehicle || allocVehicle === "—" || allocVehicle === "Unassigned") {
-                    return false;
-                  }
-                  if (effectiveFleet.length === 1) {
-                    return true;
-                  }
-
-                  // 1. Direct fleetId match (highest accuracy)
-                  if (allocFleetId) {
-                    if (allocFleetId === fleetId || allocFleetId === fleetItem.id) {
-                      return true;
-                    }
-                    // If alloc has a specific fleetId that points to another fleet item, do not bleed
-                    const otherFleetMatch = effectiveFleet.some(
-                      (ef) => ef.id !== fleetId && (ef.id === allocFleetId || (allocFleetId.startsWith("tempo-") && ef.id === allocFleetId))
-                    );
-                    if (otherFleetMatch) {
-                      return false;
-                    }
-                  }
-
-                  const vNorm = String(allocVehicle).trim().toLowerCase();
-                  const fName = String(fleetName).trim().toLowerCase();
-                  const fId = String(fleetId).trim().toLowerCase();
-
-                  // 2. Direct exact match (name or id)
-                  if (vNorm === fName || vNorm === fId) {
-                    return true;
-                  }
-
-                  // 3. Instance hash match (e.g. "... #1" vs "... #2")
-                  const vNumMatch = String(allocVehicle).match(/#(\d+)/);
-                  const fNumMatch = String(fleetName).match(/#(\d+)/);
-                  if (vNumMatch && fNumMatch) {
-                    return vNumMatch[1] === fNumMatch[1];
-                  }
-                  if (vNumMatch && !fNumMatch) {
-                    return parseInt(vNumMatch[1], 10) === fleetIdx + 1;
-                  }
-
-                  // 4. Generic tempo index match (e.g. "tempo 1", "tempo-1", "tempo #1", "tempo1")
-                  const tempoIdxPattern = /^(?:tempo|vehicle)[-\s#]*(\d+)$/i;
-                  const vTempoMatch = String(allocVehicle).trim().match(tempoIdxPattern);
-                  if (vTempoMatch) {
-                    const targetIdx = parseInt(vTempoMatch[1], 10);
-                    return targetIdx === fleetIdx + 1;
-                  }
-
-                  return false;
-                };
-
                 const travelers = allPassengers
                   .filter((p: any) => {
                     if (isPassengerCancelled(p)) return false;
@@ -841,7 +787,7 @@ export default function DepartureTransport({
                       passengerAllocations[p.id] ||
                       passengerAllocations[p.name] ||
                       passengerAllocations[(p.name || "").trim().toLowerCase()];
-                    return isAssignedToThisVehicle(alloc);
+                    return isAllocOnFleet(alloc, fleetItem, fleetIdx, effectiveFleet);
                   })
                   .map((p: any) => {
                     const alloc =
@@ -859,8 +805,9 @@ export default function DepartureTransport({
                       rawGender: isFemale ? "Female" : "Male",
                     };
                   });
+                const seatedTravelers = withSequentialSeats(travelers);
                 const capacity = Number(fleetItem.capacity) || 14;
-                const isOverCapacity = travelers.length > capacity;
+                const isOverCapacity = seatedTravelers.length > capacity;
 
                 return (
                   <div
@@ -890,7 +837,7 @@ export default function DepartureTransport({
                             vehicle: "—",
                             seat: "—",
                           };
-                        const nextSeat = String(travelers.length + 1);
+                        const nextSeat = String(seatedTravelers.length + 1);
                         const entry = {
                           ...current,
                           vehicle: fleetName,
@@ -926,45 +873,26 @@ export default function DepartureTransport({
                             : "bg-[#F8FAFC] border-[#E8EEF4] text-slate-600",
                         )}
                       >
-                        {travelers.length} / {capacity} seats
+                        {seatedTravelers.length} / {capacity} seats
                       </span>
                     </p>
 
-                    {travelers.length === 0 ? (
+                    {seatedTravelers.length === 0 ? (
                       <div className="mt-2.5 py-6 border border-dashed border-slate-200 rounded-md text-center text-[11px] text-slate-400">
                         0 passengers assigned · Drag and drop passengers here to move to this tempo
                       </div>
                     ) : (
                       <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 min-h-[40px]">
-                        {travelers
-                          .slice()
-                          .sort((a: any, b: any) => {
-                            const sA =
-                              parseInt(
-                                String(a.seatNumber || "").replace(/\D/g, ""),
-                              ) || 0;
-                            const sB =
-                              parseInt(
-                                String(b.seatNumber || "").replace(/\D/g, ""),
-                              ) || 0;
-                            if (sA !== sB) return sA - sB;
-                            return (a.travelerName || "").localeCompare(
-                              b.travelerName || "",
-                            );
-                          })
-                          .map((t: any, i: number) => {
+                        {seatedTravelers.map((t: any) => {
                             const isFemale =
                               normalizeGenderCode(t.rawGender, t.travelerName) === "F";
                             const theme = isFemale
                               ? "text-pink-600 bg-pink-50 border-pink-100"
                               : "text-blue-600 bg-blue-50 border-blue-100";
-                            const seatDisplay =
-                              t.seatNumber && t.seatNumber !== "—"
-                                ? t.seatNumber
-                                : i + 1;
+                            const seatDisplay = t.displaySeat;
                             return (
                               <div
-                                key={i}
+                                key={t.passengerId || `${t.travelerName}-${t.displaySeat}`}
                                 draggable
                                 onDragStart={(e) => {
                                   e.dataTransfer.setData(

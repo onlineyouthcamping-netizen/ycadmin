@@ -32,12 +32,26 @@ export interface TripControlRowData {
   hotelStatus: "BOOKED" | "PENDING" | "CANCELLED" | "NOT REQUIRED";
   hotelBookingRef?: any;
   transportName: string;
+  transportLines?: string[];
+  transportPhone?: string;
   transportStatus: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED";
   guideName: string;
   guidePhone: string;
   guideStatus?: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED";
   checkInStatus: "CHECKED-IN" | "PENDING" | "NOT REQUIRED";
   remark: string;
+  mealSummary?: string;
+  mealMenu?: {
+    vendorName: string;
+    mealPlanLabel?: string;
+    items: Array<{
+      name: string;
+      type: string;
+      inclusions: string;
+      ratePerPerson?: number;
+      isVeg?: boolean;
+    }>;
+  } | null;
 }
 
 interface TripControlRowDrawerProps {

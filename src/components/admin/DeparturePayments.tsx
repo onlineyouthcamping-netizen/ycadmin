@@ -126,28 +126,23 @@ function escapeVoucherText(value: unknown) {
 }
 
 function resolveVendorProofs(vendor: any, history?: any) {
-  const invoice =
-    [
-      history?.invoiceFileUrl,
-      vendor?.invoiceFileUrl,
-      history?.invoiceProof,
-      vendor?.invoiceProof,
-    ].find((url) => typeof url === "string" && url.trim()) || "";
-  const payment =
-    [
-      history?.paymentProofUrl,
-      vendor?.paymentProofUrl,
-      vendor?.advanceProofUrl,
-      history?.proofUrl,
-      vendor?.proofUrl,
-      vendor?.settlementProofUrl,
-    ].find((url) => typeof url === "string" && url.trim()) || "";
-  const urls = [...new Set([invoice, payment].filter(Boolean))];
-  return {
-    invoice: urls[0] || "",
-    payment: urls[1] || urls[0] || "",
-    shared: urls.length === 1 && Boolean(urls[0]),
-  };
+  const urls = [
+    ...new Set(
+      [
+        history?.paymentProofUrl,
+        vendor?.paymentProofUrl,
+        vendor?.advanceProofUrl,
+        vendor?.settlementProofUrl,
+        history?.proofUrl,
+        vendor?.proofUrl,
+        history?.invoiceFileUrl,
+        vendor?.invoiceFileUrl,
+        history?.invoiceProof,
+        vendor?.invoiceProof,
+      ].filter((url) => typeof url === "string" && url.trim()),
+    ),
+  ];
+  return { payment: urls[0] || "" };
 }
 
 interface DeparturePaymentsProps {
@@ -292,7 +287,6 @@ export default function DeparturePayments({
     title: string;
     subtitle?: string;
     imageUrl: string;
-    invoiceUrl?: string;
     paymentUrl?: string;
     amount?: number;
     method?: string;
@@ -358,7 +352,8 @@ export default function DeparturePayments({
     );
     const tripLabel = escapeVoucherText(tripDetails?.title || "YouthCamping Departure");
     const proofs = resolveVendorProofs(v, historyItem);
-    const proofImgs = [...new Set([proofs.invoice, proofs.payment].filter(Boolean))]
+    const proofImgs = [proofs.payment]
+      .filter(Boolean)
       .filter((url) => !/\.pdf($|\?)/i.test(url))
       .map(
         (url) =>
@@ -1583,7 +1578,7 @@ export default function DeparturePayments({
 
     if (editingVendorPayment) {
       if (inputAmount > 0 && !vendorPaymentForm.invoiceProof && !vendorPaymentForm.paymentProof) {
-        toast.error("Upload invoice or payment screenshot before recording this payout");
+        toast.error("Upload a payment screenshot before recording this payout");
         return;
       }
       const prevPaid = Number(editingVendorPayment.advancePaid) || 0;
@@ -1680,7 +1675,7 @@ export default function DeparturePayments({
       );
     } else {
       if (inputAmount > 0 && !vendorPaymentForm.invoiceProof && !vendorPaymentForm.paymentProof) {
-        toast.error("Upload invoice or payment screenshot before recording this payout");
+        toast.error("Upload a payment screenshot before recording this payout");
         return;
       }
       const remaining = Math.max(0, agreedNum - inputAmount);
@@ -3340,7 +3335,7 @@ export default function DeparturePayments({
                                               {/* Payment Proof View or Upload Action */}
                                               {(() => {
                                                 const proofs = resolveVendorProofs(v, h);
-                                                if (!proofs.invoice && !proofs.payment) {
+                                                if (!proofs.payment) {
                                                   return (
                                                 <button
                                                   type="button"
@@ -3367,10 +3362,9 @@ export default function DeparturePayments({
                                                   onClick={() =>
                                                     setProofPreviewModal({
                                                       open: true,
-                                                      title: `Proofs — ${formatVendorName(v.vendorName)}`,
+                                                      title: `Payment proof — ${formatVendorName(v.vendorName)}`,
                                                       subtitle: `${v.category || "Vendor"} · ${departureDateStr}`,
-                                                      imageUrl: proofs.payment || proofs.invoice,
-                                                      invoiceUrl: proofs.invoice,
+                                                      imageUrl: proofs.payment,
                                                       paymentUrl: proofs.payment,
                                                       amount: h.amount,
                                                       method: h.method,
@@ -3388,7 +3382,7 @@ export default function DeparturePayments({
                                                   className="h-7 px-2.5 text-[11px] font-bold bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-md inline-flex items-center gap-1 transition-colors cursor-pointer"
                                                 >
                                                   <Eye className="w-3.5 h-3.5" />
-                                                  View proofs
+                                                  View payment proof
                                                 </button>
                                                 );
                                               })()}
@@ -3450,8 +3444,8 @@ export default function DeparturePayments({
                                                 variant="outline"
                                                 onClick={() => {
                                                   const proofs = resolveVendorProofs(v, h);
-                                                  if (proofs.invoice && /\.pdf($|\?)/i.test(proofs.invoice)) {
-                                                    window.open(proofs.invoice, "_blank", "noopener,noreferrer");
+                                                  if (proofs.payment && /\.pdf($|\?)/i.test(proofs.payment)) {
+                                                    window.open(proofs.payment, "_blank", "noopener,noreferrer");
                                                     return;
                                                   }
                                                   generateVendorInvoicePDF(v, h);
@@ -4814,44 +4808,23 @@ export default function DeparturePayments({
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold text-slate-700 mb-2">
-                Proofs <span className="text-red-600">*</span>
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2">
-                  <label className="text-[11px] font-semibold text-[#162B45] block mb-1">
-                    Invoice
-                  </label>
-                  <p className="text-[10px] text-slate-500 mb-1.5">Hotel bill or invoice PDF</p>
-                  <ImageUpload
-                    label="Add invoice"
-                    value={vendorPaymentForm.invoiceProof}
-                    onUpload={(url) =>
-                      setVendorPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
-                    }
-                    compact
-                    accept="image/*,.pdf,application/pdf"
-                  />
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2">
-                  <label className="text-[11px] font-semibold text-[#162B45] block mb-1">
-                    Payment proof
-                  </label>
-                  <p className="text-[10px] text-slate-500 mb-1.5">UPI / bank screenshot</p>
-                  <ImageUpload
-                    label="Add payment screenshot"
-                    value={vendorPaymentForm.paymentProof}
-                    onUpload={(url) =>
-                      setVendorPaymentForm((prev) => ({ ...prev, paymentProof: url }))
-                    }
-                    compact
-                    accept="image/*,.pdf,application/pdf"
-                  />
-                </div>
-              </div>
-              <p className="mt-2 text-[10px] text-slate-500">
-                Upload invoice and payment screenshot separately. Founder or Finance Controller verifies after you record.
-              </p>
+              <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                Payment proof <span className="text-red-600">*</span>
+              </label>
+              <p className="text-[10px] text-slate-500 mb-1.5">UPI or bank screenshot</p>
+              <ImageUpload
+                label="Add payment screenshot"
+                value={vendorPaymentForm.invoiceProof || vendorPaymentForm.paymentProof}
+                onUpload={(url) =>
+                  setVendorPaymentForm((prev) => ({
+                    ...prev,
+                    invoiceProof: url,
+                    paymentProof: url,
+                  }))
+                }
+                compact
+                accept="image/*,.pdf,application/pdf"
+              />
             </div>
 
             <div>
@@ -5704,31 +5677,27 @@ export default function DeparturePayments({
           )}
 
           {/* Image Canvas / Preview Container */}
-          <div className="bg-slate-950 p-4 min-h-[380px] max-h-[75vh] overflow-auto">
-            {proofPreviewModal?.invoiceUrl || proofPreviewModal?.paymentUrl || proofPreviewModal?.imageUrl ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Invoice</p>
-                  {proofPreviewModal.invoiceUrl && !/\.pdf($|\?)/i.test(proofPreviewModal.invoiceUrl) ? (
-                    <img src={proofPreviewModal.invoiceUrl} alt="Invoice" className="max-h-[60vh] w-full rounded-lg object-contain" />
-                  ) : proofPreviewModal.invoiceUrl ? (
-                    <a href={proofPreviewModal.invoiceUrl} target="_blank" rel="noreferrer" className="text-xs text-[#FF4D00] underline">Open invoice PDF</a>
-                  ) : (
-                    <p className="text-xs text-slate-500">No invoice uploaded</p>
-                  )}
-                </div>
-                <div>
-                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Payment proof</p>
-                  {(proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl) && !/\.pdf($|\?)/i.test(proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl || "") ? (
-                    <img src={proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl} alt="Payment proof" className="max-h-[60vh] w-full rounded-lg object-contain" />
-                  ) : (
-                    <p className="text-xs text-slate-500">No payment screenshot uploaded</p>
-                  )}
-                </div>
-              </div>
+          <div className="bg-slate-950 flex items-center justify-center p-4 min-h-[380px] max-h-[75vh] overflow-auto">
+            {proofPreviewModal?.paymentUrl || proofPreviewModal?.imageUrl ? (
+              !/\.pdf($|\?)/i.test(proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl || "") ? (
+                <img
+                  src={proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl}
+                  alt="Payment proof"
+                  className="max-h-[68vh] w-auto max-w-full rounded-lg object-contain"
+                />
+              ) : (
+                <a
+                  href={proofPreviewModal.paymentUrl || proofPreviewModal.imageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-[#FF4D00] underline"
+                >
+                  Open payment proof PDF
+                </a>
+              )
             ) : (
               <div className="text-center py-12 text-slate-400">
-                <p className="text-xs font-semibold">No image preview available</p>
+                <p className="text-xs font-semibold">No payment proof uploaded</p>
               </div>
             )}
           </div>

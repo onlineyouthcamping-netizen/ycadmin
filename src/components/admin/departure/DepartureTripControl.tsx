@@ -15,6 +15,7 @@ import {
   Search,
   ExternalLink,
   Copy,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,8 +30,15 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { opsService, OpsDayItinerary } from "@/services/ops.service";
+import api from "@/services/api";
 import TripControlRowDrawer, { TripControlRowData } from "./TripControlRowDrawer";
 import { findHotelForDay } from "@/utils/accommodationCalculator";
+import {
+  compactMealSummary,
+  matchMenuToStay,
+  parseVendorFoodMenu,
+  VendorMenuSource,
+} from "@/utils/departure/vendorFoodMenu";
 
 interface DepartureTripControlProps {
   tripId: string;
@@ -96,6 +104,7 @@ export default function DepartureTripControl({
 
   // Live database day itinerary items (persisted check-ins, remarks, pax)
   const [dbDayItineraries, setDbDayItineraries] = useState<OpsDayItinerary[]>([]);
+  const [directoryVendors, setDirectoryVendors] = useState<any[]>([]);
 
   // User-selected status overrides for each day (persisted in DB and LocalStorage)
   const [statusOverrides, setStatusOverrides] = useState<
@@ -139,6 +148,57 @@ export default function DepartureTripControl({
     }
   }, [tripId, departureDateStr]);
 
+  useEffect(() => {
+    if (!tripId) return;
+    let cancelled = false;
+    api
+      .get(`/vendors/directory?tripId=${encodeURIComponent(tripId)}&limit=200`)
+      .then((res) => {
+        if (cancelled) return;
+        setDirectoryVendors(res.data?.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setDirectoryVendors([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tripId]);
+
+  const vendorMenus = useMemo<VendorMenuSource[]>(() => {
+    const list: VendorMenuSource[] = [];
+    const seen = new Set<string>();
+    const pushMenu = (src: any) => {
+      const menu = parseVendorFoodMenu(src);
+      if (!menu) return;
+      const key = `${menu.vendorId || menu.vendorName}|${menu.items.map((i) => i.name).join(",")}|${menu.mealPlanLabel || ""}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      list.push(menu);
+    };
+    (opsHotels || []).forEach((h: any) => {
+      pushMenu(h);
+      pushMenu(h.vendor);
+    });
+    (tripVendors || []).forEach((v: any) => pushMenu(v));
+    (directoryVendors || []).forEach((v: any) => {
+      const t = String(v.type || "").toUpperCase();
+      if (
+        t.includes("HOTEL") ||
+        t.includes("HOMESTAY") ||
+        t.includes("CAMP") ||
+        t.includes("RESTAURANT") ||
+        t.includes("FOOD") ||
+        t.includes("MEAL") ||
+        t.includes("RESORT") ||
+        t.includes("GUEST")
+      ) {
+        pushMenu(v);
+      }
+    });
+    return list;
+  }, [opsHotels, tripVendors, directoryVendors]);
+
   // Lead guide info
   const leadGuide = useMemo(() => {
     // Departure-specific assignments take precedence
@@ -165,17 +225,27 @@ export default function DepartureTripControl({
 
   // Lead transport info
   const leadTransport = useMemo(() => {
-    // Departure-specific fleet allocations take precedence
     if (allocFleet && allocFleet.length > 0) {
-      const summary = allocFleet
-        .map((f: any, idx: number) => f.name || f.driverName || `${f.capacity || 14} Seater ${f.vehicleType || "Tempo"} #${idx + 1}`)
-        .join(" + ");
-      return { name: summary, phone: allocFleet[0].driverPhone || "" };
+      const lines = allocFleet.map((f: any, idx: number) => {
+        const name =
+          f.name ||
+          f.driverName ||
+          `${f.capacity || 14} Seater ${f.vehicleType || "Tempo"} #${idx + 1}`;
+        const num = f.vehicleNumber || f.registrationNumber || "";
+        return num ? `${name} · ${num}` : name;
+      });
+      return {
+        name: lines.join(" + "),
+        lines,
+        phone: allocFleet[0].driverPhone || allocFleet[0].phone || "",
+      };
     }
-    // Fallback to trip-level vendors
     const tr = tripVendors?.find((v) => v.vendorType === "transport");
-    if (tr) return { name: tr.name || tr.vendorName || "14 Seater Tempo", phone: tr.phone || "" };
-    return { name: "14 Seater Tempo", phone: "" };
+    if (tr) {
+      const name = tr.name || tr.vendorName || "14 Seater Tempo";
+      return { name, lines: [name], phone: tr.phone || "" };
+    }
+    return { name: "14 Seater Tempo", lines: ["14 Seater Tempo"], phone: "" };
   }, [tripVendors, allocFleet]);
 
   // Build unified live table rows per itinerary day
@@ -306,6 +376,13 @@ export default function DepartureTripControl({
         }
       }
 
+      const transportLines =
+        transportName === "—" || transportStatus === "NOT REQUIRED"
+          ? []
+          : leadTransport.lines && leadTransport.lines.length > 0
+            ? leadTransport.lines
+            : [transportName];
+
       // Match Guide
       let guideName = "—";
       let guidePhone = "";
@@ -347,6 +424,11 @@ export default function DepartureTripControl({
           : defaultCheckIn);
 
       const currentRemark = dbRow?.remarks !== undefined ? dbRow.remarks : (day.sub || "");
+      const itineraryMeals = day.meals && day.meals !== "—" ? String(day.meals) : "";
+      const mealMenu = isNoStay
+        ? null
+        : matchMenuToStay(vendorMenus, rawHotelName || hotelName, stayLocation);
+      const mealSummary = compactMealSummary(mealMenu, itineraryMeals);
 
       return {
         dayNum,
@@ -361,15 +443,19 @@ export default function DepartureTripControl({
         hotelStatus,
         hotelBookingRef: hotelMatch,
         transportName,
+        transportLines,
+        transportPhone: leadTransport.phone || "",
         transportStatus,
         guideName,
         guidePhone,
         guideStatus,
         checkInStatus: currentCheckIn,
         remark: currentRemark,
+        mealSummary,
+        mealMenu,
       };
     });
-  }, [computedItinerary, opsHotels, tripVendors, totalPax, leadTransport, leadGuide, dbDayItineraries, statusOverrides, departureDateStr]);
+  }, [computedItinerary, opsHotels, tripVendors, totalPax, leadTransport, leadGuide, dbDayItineraries, statusOverrides, departureDateStr, vendorMenus]);
 
   // Unified Payment Rows Extractor for all Export Formats (Excel, PDF, CSV, Google Sheets)
   const getPaymentRowsForExport = () => {
@@ -1050,7 +1136,7 @@ export default function DepartureTripControl({
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "HOTEL_PENDING" | "CHECKIN_PENDING" | "CHECKED_IN">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "HOTEL_PENDING" | "CHECKIN_PENDING" | "CHECKED_IN" | "TEMPO_PENDING">("ALL");
 
   // Summary Counters
   const summaryStats = useMemo(() => {
@@ -1064,11 +1150,16 @@ export default function DepartureTripControl({
       if (r.hotelStatus === "PENDING") pendingHotel++;
     });
 
+    const pendingTempo = controlRows.filter(
+      (r) => r.transportStatus === "PENDING" || r.transportStatus === "NOT ASSIGNED",
+    ).length;
+
     return {
       total: controlRows.length,
       checkedIn,
       pendingHotel,
       pendingCheckIn,
+      pendingTempo,
     };
   }, [controlRows]);
 
@@ -1083,11 +1174,14 @@ export default function DepartureTripControl({
         r.hotelName.toLowerCase().includes(q) ||
         r.transportName.toLowerCase().includes(q) ||
         r.guideName.toLowerCase().includes(q) ||
+        (r.mealSummary && r.mealSummary.toLowerCase().includes(q)) ||
         (r.remark && r.remark.toLowerCase().includes(q));
 
       if (!matchSearch) return false;
 
       if (statusFilter === "HOTEL_PENDING") return r.hotelStatus === "PENDING";
+      if (statusFilter === "TEMPO_PENDING")
+        return r.transportStatus === "PENDING" || r.transportStatus === "NOT ASSIGNED";
       if (statusFilter === "CHECKIN_PENDING") return r.checkInStatus === "PENDING";
       if (statusFilter === "CHECKED_IN") return r.checkInStatus === "CHECKED-IN";
 
@@ -1271,9 +1365,10 @@ export default function DepartureTripControl({
                 <th className="py-2.5 px-3.5 w-16 text-center">Pax</th>
                 <th className="py-2.5 px-3.5 w-48">Hotel</th>
                 <th className="py-2.5 px-3.5 w-28 text-center">Hotel status</th>
-                <th className="py-2.5 px-3.5 w-40">Tempo / fleet</th>
+                <th className="py-2.5 px-3.5 min-w-[180px]">Tempo / fleet</th>
                 <th className="py-2.5 px-3.5 w-28 text-center">Tempo status</th>
                 <th className="py-2.5 px-3.5 w-40">Guide / driver</th>
+                <th className="py-2.5 px-3.5 min-w-[160px]">Meals / food</th>
                 <th className="py-2.5 px-3.5">Remark</th>
               </tr>
             </thead>
@@ -1379,8 +1474,25 @@ export default function DepartureTripControl({
                       </DropdownMenu>
                     </td>
 
-                    <td className="py-2.5 px-3.5 font-medium text-[#0B1528] truncate max-w-[150px]">
-                      {row.transportName}
+                    <td className="py-2.5 px-3.5 align-top min-w-[180px] max-w-[240px]">
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        {(row.transportLines && row.transportLines.length > 0
+                          ? row.transportLines
+                          : [row.transportName]
+                        ).map((line, li) => (
+                          <span
+                            key={`${row.dayNum}-fleet-${li}`}
+                            className="font-medium text-[#0B1528] leading-snug whitespace-normal break-words"
+                          >
+                            {line}
+                          </span>
+                        ))}
+                        {row.transportPhone && (
+                          <span className="text-[10px] text-slate-400 tabular-nums flex items-center gap-1 mt-0.5">
+                            <Phone className="w-2.5 h-2.5 text-slate-400" /> {row.transportPhone}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="py-2.5 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -1429,12 +1541,32 @@ export default function DepartureTripControl({
                       </DropdownMenu>
                     </td>
 
-                    <td className="py-2.5 px-3.5">
+                    <td className="py-2.5 px-3.5 align-top">
                       <div className="font-medium text-[#0B1528]">{row.guideName}</div>
                       {row.guidePhone && (
                         <div className="text-[10px] text-slate-400 tabular-nums flex items-center gap-1 mt-0.5">
                           <Phone className="w-2.5 h-2.5 text-slate-400" /> {row.guidePhone}
                         </div>
+                      )}
+                    </td>
+
+                    <td className="py-2.5 px-3.5 align-top min-w-[160px] max-w-[220px]">
+                      {row.mealSummary ? (
+                        <div className="min-w-0">
+                          <div className="font-medium text-[#0B1528] leading-snug whitespace-normal break-words">
+                            {row.mealSummary}
+                          </div>
+                          {row.mealMenu?.items?.[0]?.inclusions && (
+                            <div className="text-[10px] text-slate-400 leading-snug mt-0.5 whitespace-normal">
+                              {row.mealMenu.items[0].inclusions}
+                              {row.mealMenu.items.length > 1
+                                ? ` · +${row.mealMenu.items.length - 1} more`
+                                : ""}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-300">—</span>
                       )}
                     </td>
 
@@ -1447,7 +1579,7 @@ export default function DepartureTripControl({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center bg-[#F8FAFC]">
+                  <td colSpan={10} className="py-12 text-center bg-[#F8FAFC]">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <AlertCircle className="w-6 h-6 text-slate-300" />
                       <p className="font-medium text-[#0B1528] text-sm">No days match this filter</p>
@@ -1518,7 +1650,9 @@ export default function DepartureTripControl({
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] font-medium text-slate-400 block">Transport</span>
-                <span className="font-medium text-[#0B1528] truncate block">{row.transportName}</span>
+                <span className="font-medium text-[#0B1528] whitespace-normal break-words block">
+                  {row.transportName}
+                </span>
                 <span className={cn("inline-flex mt-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]", statusTone(row.transportStatus))}>
                   {formatOpsLabel(row.transportStatus)}
                 </span>
@@ -1534,8 +1668,76 @@ export default function DepartureTripControl({
                 Open <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </div>
+            {row.mealSummary && (
+              <div className="pt-1.5 border-t border-[#E8EEF4] text-xs min-w-0">
+                <span className="text-[10px] font-medium text-slate-400 block">Meals</span>
+                <span className="font-medium text-[#0B1528] whitespace-normal break-words block">
+                  {row.mealSummary}
+                </span>
+              </div>
+            )}
           </div>
         ))}
+      </div>
+
+      <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 sm:p-4 min-w-0 space-y-3">
+        <div className="flex items-center gap-2 border-b border-[#E8EEF4] pb-2.5">
+          <UtensilsCrossed className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+          <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+            Food menu from vendor directory
+          </h3>
+        </div>
+        {vendorMenus.length === 0 ? (
+          <p className="text-[12px] text-slate-400">
+            No meal tariffs saved on assigned hotels or meal vendors yet. Add them in Vendor Directory (meal tariffs / thali).
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {vendorMenus.map((menu) => (
+              <div
+                key={`${menu.vendorId || menu.vendorName}`}
+                className="border border-[#E8EEF4] rounded-lg p-3 min-w-0"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#E8EEF4] pb-1.5 mb-2">
+                  <p className="text-[12px] font-medium text-[#0B1528]">
+                    {menu.vendorName}
+                    {menu.city ? (
+                      <span className="font-normal text-slate-400"> · {menu.city}</span>
+                    ) : null}
+                  </p>
+                  {menu.mealPlanLabel ? (
+                    <span className="text-[10px] font-medium text-slate-500">{menu.mealPlanLabel}</span>
+                  ) : null}
+                </div>
+                {menu.items.length === 0 ? (
+                  <p className="text-[12px] text-slate-500">{menu.mealPlanLabel || "Meal plan on file, no dish list."}</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {menu.items.map((item) => (
+                      <div key={item.id || `${item.type}-${item.name}`} className="min-w-0">
+                        <p className="text-[11px] font-semibold text-[#0B1528]">
+                          {item.type}
+                          <span className="font-medium text-slate-500"> · {item.name}</span>
+                          {item.ratePerPerson ? (
+                            <span className="font-medium text-slate-400 tabular-nums">
+                              {" "}
+                              · ₹{item.ratePerPerson.toLocaleString("en-IN")}
+                            </span>
+                          ) : null}
+                        </p>
+                        {item.inclusions ? (
+                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5 whitespace-pre-wrap">
+                            {item.inclusions}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Side Action Drawer */}

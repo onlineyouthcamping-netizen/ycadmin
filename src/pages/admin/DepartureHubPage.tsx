@@ -10,6 +10,7 @@ import {
 } from "@/utils/departureDate";
 import { isPassengerCancelled, filterActivePassengers } from "@/utils/departure/passengerStatus";
 import { getBookingGroupKey, groupPassengersByBooking } from "@/utils/departure/passengerAllocation";
+import { isAllocOnFleet, renumberVehicleAllocations } from "@/utils/departure/vehicleSeatAlloc";
 import { calculateBookingFinancialStatus, safeNumber } from "@/utils/departure/paymentCalculator";
 import { calculateRoomOccupancy } from "@/utils/departure/accommodationCalculator";
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -699,21 +700,17 @@ export default function DepartureHubPage() {
           alloc.vehicle !== "—" &&
           alloc.vehicle !== "Unassigned"
         ) {
-          const fleet = allocFleet.find(
-            (f) =>
-              (alloc.fleetId && f.id === alloc.fleetId) ||
-              f.id === alloc.vehicle ||
-              f.name === alloc.vehicle ||
-              f.vehicleType === alloc.vehicle ||
-              (f.name && alloc.vehicle && f.name.toLowerCase().trim() === alloc.vehicle.toLowerCase().trim()),
-          ) || allocFleet[0];
+          const fleetIdx = allocFleet.findIndex((f, idx) =>
+            isAllocOnFleet(alloc, f, idx, allocFleet),
+          );
+          const fleet = fleetIdx >= 0 ? allocFleet[fleetIdx] : allocFleet[0];
           vehicleAllocations.push({
             fleetId: fleet?.id || alloc.fleetId || "tempo-1",
             bookingId: bookingId,
             travelerName: p.name,
             seatNumber:
               alloc.seat && alloc.seat !== "—"
-                ? parseInt(alloc.seat)
+                ? parseInt(String(alloc.seat).replace(/\D/g, ""), 10) || undefined
                 : undefined,
           });
         }
@@ -746,6 +743,12 @@ export default function DepartureHubPage() {
         });
       }
 
+      if ((target === "all" || target === "vehicles") && vehicleAllocations.length > 0) {
+        const sequential = renumberVehicleAllocations(vehicleAllocations);
+        vehicleAllocations.length = 0;
+        sequential.forEach((row) => vehicleAllocations.push(row));
+      }
+
       // Update local state immediately with vehicle allocations
       if (vehicleAllocations.length > 0) {
         setPassengerAllocations((prev: any) => {
@@ -759,6 +762,7 @@ export default function DepartureHubPage() {
             const entry = {
               ...existing,
               vehicle: vName,
+              fleetId: v.fleetId,
               seat: v.seatNumber ? String(v.seatNumber) : "—",
             };
             if (nameKey) next[nameKey] = entry;
@@ -1075,14 +1079,18 @@ export default function DepartureHubPage() {
 
   const handleCopyTempoList = () => {
     let txt = "*Tempo List (for WhatsApp Group)*\n\n";
-    const groups: Record<string, string[]> = {};
-    computedVehicleAllocations.forEach((v) => {
-      const vName = v.vehicleType || "Tempo 1";
+    const groups: Record<string, Array<{ name: string; seat: string }>> = {};
+    computedVehicleAllocations.forEach((v: any) => {
+      const vName = v.vehicleName || v.vehicle || v.vehicleType || "Tempo 1";
       if (!groups[vName]) groups[vName] = [];
-      groups[vName].push(v.travelerName);
+      groups[vName].push({ name: v.travelerName, seat: String(v.seatNumber || "") });
     });
-    Object.entries(groups).forEach(([vName, names]) => {
-      txt += `🚌 *${vName}* — ${names.join(", ")} [${names.length} names]\n`;
+    Object.entries(groups).forEach(([vName, people]) => {
+      txt += `🚌 *${vName}* [${people.length}]\n`;
+      people.forEach((p, i) => {
+        txt += `${i + 1}. ${p.name}\n`;
+      });
+      txt += "\n";
     });
     navigator.clipboard.writeText(txt);
     toast.success("WhatsApp Tempo List copied to clipboard!");
@@ -1383,6 +1391,9 @@ export default function DepartureHubPage() {
           id: t.id || `tempo-${idx + 1}`,
           name: displayName,
           vehicleType: t.vehicleType || "14 Seater Tempo Traveller",
+          vehicleNumber: t.vehicleNumber || t.registrationNumber || "",
+          driverName: t.driverName || "",
+          driverPhone: t.driverPhone || t.phone || "",
           capacity: Number(t.capacity) || 14,
           cost: Number(t.totalAmount) || 0,
           vendor: t.vendor?.name || t.notes || "Self-driven",
@@ -1672,6 +1683,9 @@ export default function DepartureHubPage() {
                     id: t.id,
                     name: t.driverName || (t.vendor?.name ? `${t.vendor.name} (${t.vehicleType})` : `Tempo ${idx + 1}`),
                     vehicleType: t.vehicleType || "Tempo Traveller",
+                    vehicleNumber: t.vehicleNumber || t.registrationNumber || "",
+                    driverName: t.driverName || "",
+                    driverPhone: t.driverPhone || t.phone || "",
                     capacity: Number(t.capacity) || 17,
                     cost: Number(t.totalAmount) || 0,
                     vendor: t.vendor?.name || t.notes || "Lead Transport",
@@ -1757,6 +1771,9 @@ useEffect(() => {
               ? `${t.vendor.name} (${t.vehicleType || "Tempo"})`
               : `Tempo ${idx + 1}`),
           vehicleType: t.vehicleType || "14 Seater Tempo Traveller",
+          vehicleNumber: t.vehicleNumber || t.registrationNumber || "",
+          driverName: t.driverName || "",
+          driverPhone: t.driverPhone || t.phone || "",
           capacity: Number(t.capacity) || 14,
           cost: Number(t.totalAmount) || 0,
           vendor: t.vendor?.name || t.notes || "Self-driven",
@@ -4488,14 +4505,10 @@ useEffect(() => {
         alloc.vehicle !== "Unassigned" &&
         alloc.vehicle !== "—"
       ) {
-        const fleetItem =
-          allocFleet.find(
-            (f) =>
-              f.name === alloc.vehicle ||
-              f.id === alloc.vehicle ||
-              f.vehicleType === alloc.vehicle ||
-              (f.name && alloc.vehicle && f.name.toLowerCase().trim() === alloc.vehicle.toLowerCase().trim()),
-          ) || allocFleet[0];
+        const fleetIdx = allocFleet.findIndex((f, idx) =>
+          isAllocOnFleet(alloc, f, idx, allocFleet),
+        );
+        const fleetItem = fleetIdx >= 0 ? allocFleet[fleetIdx] : allocFleet[0];
         const isFemale = normalizeGenderCode(pObj.gender, pObj.name) === "F";
         list.push({
           fleetId: fleetItem?.id || alloc.vehicle || "tempo-1",
