@@ -65,16 +65,32 @@ function tripDateLabel(dateVal: string | null | undefined) {
   return dateVal ? safeFormatDate(dateVal, { day: "2-digit", month: "short", year: "numeric" }) : "";
 }
 
+function collectProofUrls(item: any): string[] {
+  return [
+    ...new Set(
+      [
+        item?.invoiceProofUrl,
+        item?.invoiceFileUrl,
+        item?.invoiceProof,
+        item?.proofUrl,
+        item?.paymentProofUrl,
+        item?.advanceProofUrl,
+        item?.settlementProofUrl,
+      ].filter((url): url is string => typeof url === "string" && Boolean(url.trim())),
+    ),
+  ];
+}
+
 function vendorProofSlots(item: any) {
-  const invoice =
-    item?.invoiceProofUrl ||
-    item?.invoiceFileUrl ||
-    item?.invoiceProof ||
-    item?.proofUrl ||
-    null;
-  const paymentRaw = item?.paymentProofUrl || item?.advanceProofUrl || item?.settlementProofUrl || null;
-  const payment = paymentRaw && paymentRaw !== invoice ? paymentRaw : null;
-  return { invoice: invoice || "", payment: payment || "", urls: [invoice, payment].filter(Boolean) };
+  const urls = collectProofUrls(item);
+  const invoice = urls[0] || "";
+  const payment = urls[1] || urls[0] || "";
+  return {
+    invoice,
+    payment,
+    urls,
+    shared: urls.length === 1 && Boolean(urls[0]),
+  };
 }
 
 function ProofPreview({ url, label }: { url: string; label: string }) {
@@ -572,6 +588,11 @@ export default function OutgoingPaymentsApprovalPage({
             const service = formatVendorService(selectedItem);
             const tripDate = tripDateLabel(selectedItem.departureDate);
             const vendorLabel = formatVendorName(selectedItem.vendorName);
+            const proofs = vendorProofSlots({
+              ...selectedItem,
+              invoiceProofUrl: proofUrlInput || selectedItem.invoiceProofUrl,
+              paymentProofUrl: paymentProofUrlInput || selectedItem.paymentProofUrl,
+            });
             return (
             <div className="space-y-3 text-[12px]">
               <dl className="grid grid-cols-[6.75rem_1fr] gap-x-3 gap-y-2 rounded-lg border border-[#E3EAF2] bg-[#F8FAFC] px-3 py-2.5">
@@ -612,9 +633,16 @@ export default function OutgoingPaymentsApprovalPage({
                 <p className="text-[10px] text-slate-400">Operational record unavailable — proof is stored on this payout.</p>
               )}
               {actionType === "view-proof" ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <ProofPreview url={proofUrlInput || selectedItem.invoiceProofUrl || selectedItem.proofUrl} label="Invoice / bill" />
-                  <ProofPreview url={paymentProofUrlInput || selectedItem.paymentProofUrl} label="Payment screenshot" />
+                <div className="space-y-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <ProofPreview url={proofs.invoice} label="Invoice / bill" />
+                    <ProofPreview url={proofs.payment} label="Payment screenshot" />
+                  </div>
+                  {proofs.shared ? (
+                    <p className="text-[10px] text-slate-500">
+                      One file was saved on this bill. It shows in both slots until a second screenshot is uploaded.
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
@@ -632,7 +660,7 @@ export default function OutgoingPaymentsApprovalPage({
                     <label className="font-semibold text-slate-700">Payment screenshot</label>
                     <ImageUpload
                       label="UPI / bank screenshot"
-                      value={paymentProofUrlInput}
+                      value={paymentProofUrlInput || proofs.payment}
                       onUpload={(url) => setPaymentProofUrlInput(url)}
                       compact
                       accept="image/*,.pdf,application/pdf"

@@ -42,6 +42,7 @@ import {
   CollectionAccount,
 } from "@/services/collectionAccounts.service";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import api from "@/services/api";
 import { useAuthStore } from "@/store/auth.store";
 import { canViewProfit } from "@/config/permissions.config";
 import {
@@ -4748,12 +4749,17 @@ export default function DeparturePayments({
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold text-slate-600 mb-2">Proofs</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] font-medium text-slate-500 block mb-1">Invoice / bill</label>
+              <p className="text-[11px] font-semibold text-slate-700 mb-2">
+                Proofs <span className="text-red-600">*</span>
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2">
+                  <label className="text-[11px] font-semibold text-[#162B45] block mb-1">
+                    Invoice
+                  </label>
+                  <p className="text-[10px] text-slate-500 mb-1.5">Hotel bill or invoice PDF</p>
                   <ImageUpload
-                    label="Invoice or bill"
+                    label="Add invoice"
                     value={vendorPaymentForm.invoiceProof}
                     onUpload={(url) =>
                       setVendorPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
@@ -4762,10 +4768,13 @@ export default function DeparturePayments({
                     accept="image/*,.pdf,application/pdf"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] font-medium text-slate-500 block mb-1">Payment screenshot</label>
+                <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2">
+                  <label className="text-[11px] font-semibold text-[#162B45] block mb-1">
+                    Payment proof
+                  </label>
+                  <p className="text-[10px] text-slate-500 mb-1.5">UPI / bank screenshot</p>
                   <ImageUpload
-                    label="UPI / bank screenshot"
+                    label="Add payment screenshot"
                     value={vendorPaymentForm.paymentProof}
                     onUpload={(url) =>
                       setVendorPaymentForm((prev) => ({ ...prev, paymentProof: url }))
@@ -4776,7 +4785,7 @@ export default function DeparturePayments({
                 </div>
               </div>
               <p className="mt-2 text-[10px] text-slate-500">
-                Founder or Finance Controller verifies this payout. You are recording it.
+                Upload invoice and payment screenshot separately. Founder or Finance Controller verifies after you record.
               </p>
             </div>
 
