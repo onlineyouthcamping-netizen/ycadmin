@@ -140,7 +140,7 @@ export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({
     loading={loading}
     value={kpiMoney(stats?.pendingVendorsCost)}
     caption={`${loading ? "…" : kpiCount(stats?.pendingVendorsCount)} vendors`}
-    onClick={() => navigate("/admin/finance?tab=expenses")}
+    onClick={() => navigate("/admin/approvals-hub?tab=vendor-bills")}
   />
 );
 

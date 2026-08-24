@@ -253,7 +253,7 @@ export default function OutgoingPaymentsApprovalPage({
       }
 
       if (actionType === "review" || actionType === "approve") {
-        await financeApprovalsService.approveVendorPaymentFounder(selectedItem.id, {
+        await financeApprovalsService.reviewVendorPaymentFC(selectedItem.id, {
           reason: payoutNotes.trim() || undefined,
           invoiceFileUrl: proof,
         });
