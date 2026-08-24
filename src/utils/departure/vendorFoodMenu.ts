@@ -17,6 +17,7 @@ export type FoodMenuIncluded = {
 export type VendorMenuSource = {
   vendorName: string;
   vendorId?: string;
+  vendorCode?: string;
   city?: string;
   aliases?: string[];
   items: VendorMenuItem[];
@@ -244,6 +245,7 @@ export function parseVendorFoodMenu(vendor: any): VendorMenuSource | null {
     (typeof vendor.vendorId === "string" && vendor.vendorId) ||
     vendor.vendor?.id ||
     vendor.id;
+  const vendorCode = String(vendor.vendorCode || vendor.vendor?.vendorCode || "").trim() || undefined;
 
   const meta = parseNotesMeta(vendor.notes);
   const dedicatedMenu = [
@@ -298,6 +300,7 @@ export function parseVendorFoodMenu(vendor: any): VendorMenuSource | null {
   return {
     vendorName: vendorName || nested?.vendorName || "Vendor",
     vendorId,
+    vendorCode: vendorCode || nested?.vendorCode,
     city: city || nested?.city,
     aliases: aliases.length ? aliases : undefined,
     items,
@@ -418,11 +421,13 @@ export function mealChipLabel(
   itineraryMeals?: string,
   source?: "vendor" | "itinerary" | "none",
 ): string {
+  const fromItinerary = titleCaseMealPlan(itineraryMeals || "");
+  if (fromItinerary) return fromItinerary;
   if (source === "vendor") {
     const types = groups.map((g) => g.type).filter((t) => t && t !== "Meals");
     if (types.length) return joinMealNames(types);
   }
-  return titleCaseMealPlan(itineraryMeals || groups[0]?.dishes || "") || groups[0]?.dishes || "";
+  return titleCaseMealPlan(groups[0]?.dishes || "") || groups[0]?.dishes || "";
 }
 
 export function compactMealSummary(menu: VendorMenuSource | null | undefined, itineraryMeals?: string): string {
@@ -501,6 +506,16 @@ function pickPreferred(candidates: VendorMenuSource[]): VendorMenuSource | null 
   return withDishes || candidates[0];
 }
 
+function idsEqual(a?: string, b?: string): boolean {
+  const x = String(a || "").trim();
+  const y = String(b || "").trim();
+  return !!x && !!y && x === y;
+}
+
+function menuMatchesVendorId(menu: VendorMenuSource, vendorId: string): boolean {
+  return idsEqual(menu.vendorId, vendorId) || idsEqual(menu.vendorCode, vendorId);
+}
+
 export function matchMenuToStay(
   menus: VendorMenuSource[],
   hotelName: string,
@@ -508,7 +523,7 @@ export function matchMenuToStay(
   vendorId?: string,
 ): VendorMenuSource | null {
   if (vendorId) {
-    const byId = menus.filter((m) => m.vendorId && String(m.vendorId) === String(vendorId));
+    const byId = menus.filter((m) => menuMatchesVendorId(m, String(vendorId)));
     const picked = pickPreferred(byId);
     if (picked) return picked;
   }
@@ -519,17 +534,10 @@ export function matchMenuToStay(
     !hotel.toUpperCase().includes("PENDING") &&
     !hotel.includes("Night Journey");
   if (usableHotel) {
-    const byHotel = menus.filter((m) => menuMatchesHotel(m, hotel));
-    const picked = pickPreferred(byHotel);
-    if (picked) return picked;
-    const byHotelCity = menus.filter((m) => menuMatchesCity(m, hotel));
-    const cityPick = pickPreferred(byHotelCity);
-    if (cityPick) return cityPick;
+    // Only the assigned property — never another hotel in the same city.
+    return pickPreferred(menus.filter((m) => menuMatchesHotel(m, hotel)));
   }
-  const stay = String(stayLocation || "").trim();
-  if (!stay) return null;
-  const byStay = menus.filter((m) => menuMatchesCity(m, stay) || menuMatchesHotel(m, stay));
-  return pickPreferred(byStay);
+  return null;
 }
 
 const MEALS_LINE = /^\s*(meals?|meal plan|food|breakfast|lunch|dinner)\s*[:\-–]/i;

@@ -12,6 +12,7 @@ type MealsRow = {
   mealGroups?: Array<{ type: string; dishes: string }>;
   mealSource?: "vendor" | "itinerary" | "none";
   mealMenu?: { vendorName?: string } | null;
+  mealPlanLabel?: string;
 };
 
 export function MealsMenuBody({
@@ -47,7 +48,7 @@ export function TripControlMealsCell({ row }: { row: MealsRow }) {
   if (groups.length === 0) {
     return <span className="text-slate-300">—</span>;
   }
-  const chip = mealChipLabel(groups, undefined, row.mealSource);
+  const chip = mealChipLabel(groups, row.mealPlanLabel, row.mealSource);
   const hasDishes = row.mealSource === "vendor";
   return (
     <DropdownMenu>

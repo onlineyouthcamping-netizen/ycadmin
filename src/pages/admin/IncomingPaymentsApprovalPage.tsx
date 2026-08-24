@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   CreditCard,
   Clock,
@@ -82,7 +83,8 @@ export default function IncomingPaymentsApprovalPage({
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => (searchParams.get("q") || "").trim());
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [paymentType, setPaymentType] = useState<"all" | "booking_cash" | "booking_online" | "station_collection" | "station_datewise">("all");
   const [assigneeFilter, setAssigneeFilter] = useState<string>("ALL");

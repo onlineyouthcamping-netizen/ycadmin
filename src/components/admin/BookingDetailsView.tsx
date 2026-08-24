@@ -6,6 +6,10 @@ import ENV from "@/config/environment";
 import {
   getPaymentReceivedColorClass,
   getPaymentReceivedColorHex,
+  classifyReceiptStatus,
+  displayPaymentRef,
+  isClearedReceipt,
+  sumReceipts,
 } from "@/utils/paymentUtils";
 import {
   normalizePassenger,
@@ -973,6 +977,32 @@ export default function BookingDetailsView({
     }
   };
 
+  const successfulPayments = useMemo(
+    () => (paymentsList || []).filter((p) => isClearedReceipt(p)),
+    [paymentsList],
+  );
+  const pendingPayments = useMemo(
+    () =>
+      (paymentsList || []).filter(
+        (p) => classifyReceiptStatus(p.status) === "pending" && !isClearedReceipt(p),
+      ),
+    [paymentsList],
+  );
+  const failedPayments = useMemo(
+    () =>
+      (paymentsList || []).filter((p) => classifyReceiptStatus(p.status) === "failed"),
+    [paymentsList],
+  );
+  const clearedPaid = useMemo(
+    () => sumReceipts(paymentsList, "success"),
+    [paymentsList],
+  );
+  const pendingPaid = useMemo(
+    () => sumReceipts(paymentsList, "pending"),
+    [paymentsList],
+  );
+  const financeDue = Math.max(0, Number(booking.totalAmount || 0) - clearedPaid);
+
   const handleAttachPaymentProof = async (
     paymentId: string,
     file: File | undefined,
@@ -1571,7 +1601,9 @@ export default function BookingDetailsView({
       );
       const totalPaymentsPaid = (
         Array.isArray(paymentsList) ? paymentsList : []
-      ).reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0);
+      )
+        .filter((p: any) => isClearedReceipt(p))
+        .reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0);
       const remainingAmount = totalAmount - totalPaymentsPaid;
 
       const meta = getSafeMeta(booking);
@@ -2153,7 +2185,9 @@ export default function BookingDetailsView({
         0,
         calculatedBase + calculatedGst - calculatedDiscount,
       );
-      const totalPaymentsPaid = paymentsList.reduce(
+      const totalPaymentsPaid = paymentsList
+        .filter((p) => isClearedReceipt(p))
+        .reduce(
         (sum, p) => sum + (Number(p.amount) || 0),
         0,
       );
@@ -3275,7 +3309,7 @@ export default function BookingDetailsView({
       {/* ─── KPI Strip — one divided panel, not sticky (avoids overlapping panels below) ─── */}
       <div className="workspace-kpi-strip">
         {(() => {
-          const dueAmount = booking.remainingAmount || 0;
+          const dueAmount = financeDue;
           const isOverdue = dueAmount > 0 && daysToGo <= 7;
           return (
             <button
@@ -3309,6 +3343,11 @@ export default function BookingDetailsView({
                   {dueAmount > 0
                     ? `Due ₹${dueAmount.toLocaleString("en-IN")}`
                     : "Fully collected"}
+                  {pendingPaid > 0 && dueAmount > 0 ? (
+                    <span className="block font-medium text-slate-500">
+                      ₹{pendingPaid.toLocaleString("en-IN")} in finance queue
+                    </span>
+                  ) : null}
                 </span>
               </span>
             </button>
@@ -3478,10 +3517,10 @@ export default function BookingDetailsView({
                 id: "payments",
                 label: "Payments",
                 badge:
-                  booking.remainingAmount > 0
-                    ? `Due ₹${Math.round(booking.remainingAmount / 1000)}k`
+                  financeDue > 0
+                    ? `Due ₹${Math.round(financeDue / 1000)}k`
                     : "Paid",
-                tone: booking.remainingAmount > 0 ? "amber" : "emerald",
+                tone: financeDue > 0 ? "amber" : "emerald",
               },
               {
                 id: "services",
@@ -3572,7 +3611,8 @@ export default function BookingDetailsView({
               {/* Needs attention — one quiet panel with divided rows */}
               {(() => {
                 const allClear =
-                  booking.remainingAmount <= 0 &&
+                  financeDue <= 0 &&
+                  pendingPaid <= 0 &&
                   booking.trainTicketStatus !== "PENDING" &&
                   !tickets.some((t: any) => t.ticketStatus === "PENDING") &&
                   passengers.length >= (booking.numberOfTravelers || 1);
@@ -3616,7 +3656,7 @@ export default function BookingDetailsView({
                       </h3>
                     </div>
                     <div className="divide-y divide-[#E8EEF4]">
-                      {booking.remainingAmount > 0 && (
+                      {financeDue > 0 && (
                         <div className="px-4 py-3 text-xs text-slate-600 flex items-center gap-2.5 bg-[#FF4D00]/[0.025]">
                           <span className="h-5 w-5 rounded-md bg-[#FF4D00]/10 text-[#C2410C] inline-flex items-center justify-center shrink-0">
                             <CreditCard className="w-3 h-3" />
@@ -3625,11 +3665,12 @@ export default function BookingDetailsView({
                             Outstanding balance of{" "}
                             <span className="font-semibold text-[#C2410C]">
                               ₹
-                              {(booking.remainingAmount || 0).toLocaleString(
-                                "en-IN",
-                              )}
+                              {financeDue.toLocaleString("en-IN")}
                             </span>{" "}
                             is due
+                            {pendingPaid > 0
+                              ? ` (₹${pendingPaid.toLocaleString("en-IN")} waiting in Finance)`
+                              : ""}
                           </span>
                         </div>
                       )}
@@ -4831,10 +4872,10 @@ export default function BookingDetailsView({
                     <h3 className="font-semibold text-[#0B1528] text-xs">
                       Payment History & Transactions
                     </h3>
-                    {booking.remainingAmount > 0 ? (
+                    {financeDue > 0 ? (
                       <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 uppercase font-mono">
                         Balance Due ₹
-                        {(booking.remainingAmount || 0).toLocaleString("en-IN")}
+                        {financeDue.toLocaleString("en-IN")}
                       </span>
                     ) : (
                       <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 uppercase font-mono">
@@ -4842,9 +4883,21 @@ export default function BookingDetailsView({
                       </span>
                     )}
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/admin/approvals-hub?tab=payment-approvals&q=${encodeURIComponent(booking.bookingId || booking.id)}`,
+                        )
+                      }
+                      className="text-[10px] font-semibold uppercase text-slate-500 hover:text-[#FF4D00] px-2 py-1.5"
+                    >
+                      Finance hub
+                    </button>
                   <button
                     onClick={() => {
-                      setPayAmount(booking.remainingAmount.toString());
+                      setPayAmount(String(financeDue || booking.remainingAmount || ""));
                       setPaymentSource("collected");
                       setPayMode("UPI");
                       setPayComments("");
@@ -4854,6 +4907,7 @@ export default function BookingDetailsView({
                   >
                     + Record Payment
                   </button>
+                  </div>
                 </div>
 
                 {/* Inline Payment Submission block */}
@@ -4932,10 +4986,10 @@ export default function BookingDetailsView({
                         )}
                       >
                         {tabName === "successful"
-                          ? "Successful"
+                          ? `Cleared (${successfulPayments.length})`
                           : tabName === "outstanding"
-                            ? "Outstanding Requests"
-                            : "Expired/Failed"}
+                            ? `Outstanding (${pendingPayments.length + (financeDue > 0 ? 1 : 0)})`
+                            : `Expired/Failed (${failedPayments.length})`}
                       </button>
                     ),
                   )}
@@ -4944,25 +4998,19 @@ export default function BookingDetailsView({
                 {/* Active Tab Panel */}
                 <div className="p-5">
                   {paymentTab === "successful" &&
-                    (paymentsList.length > 0 ? (
+                    (successfulPayments.length > 0 ? (
                       <div className="border border-[#E8EEF4]/60 rounded overflow-hidden">
                         <table className="w-full text-left text-xs">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-semibold text-slate-450">
                               <th className="px-4 py-2">Payment comments</th>
-                              <th className="px-4 py-2">Ref num</th>
+                              <th className="px-4 py-2">UTR / Ref</th>
                               <th className="px-4 py-2 text-right">Amt</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[#E8EEF4]">
-                            {paymentsList.map((p: any) => {
+                            {successfulPayments.map((p: any) => {
                               const isExpanded = expandedPaymentId === p.id;
-                              const processor =
-                                p.paymentMode === "Cash" ||
-                                p.paymentMode === "UPI" ||
-                                p.paymentMode === "Bank Transfer"
-                                  ? "payments.offlinepayment"
-                                  : "online";
                               const displayDate = safeFormatDateTime(
                                 p.createdAt,
                                 {
@@ -4999,8 +5047,8 @@ export default function BookingDetailsView({
                                           `${booking.bookingId} payment`}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-3 text-slate-400 font-mono">
-                                      {processor}
+                                    <td className="px-4 py-3 text-slate-600 font-mono">
+                                      {displayPaymentRef(p)}
                                     </td>
                                     <td className="px-4 py-3 text-right font-semibold font-mono">
                                       ₹{" "}
@@ -5246,7 +5294,7 @@ export default function BookingDetailsView({
                         </p>
                         <button
                           onClick={() => {
-                            setPayAmount(booking.remainingAmount.toString());
+                            setPayAmount(String(financeDue || ""));
                             setPaymentSource("collected");
                             setPayMode("UPI");
                             setPayComments("");
@@ -5260,12 +5308,13 @@ export default function BookingDetailsView({
                     ))}
 
                   {paymentTab === "outstanding" &&
-                    (booking.remainingAmount > 0 ? (
+                    (pendingPayments.length > 0 || financeDue > 0 ? (
                       <div className="border border-[#E8EEF4]/60 rounded overflow-hidden">
                         <table className="w-full text-left text-xs">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-semibold text-slate-400">
                               <th className="px-4 py-2">Request Type</th>
+                              <th className="px-4 py-2">UTR / Ref</th>
                               <th className="px-4 py-2">Updated At</th>
                               <th className="px-4 py-2 text-right">
                                 Outstanding
@@ -5273,13 +5322,38 @@ export default function BookingDetailsView({
                             </tr>
                           </thead>
                           <tbody>
+                            {pendingPayments.map((p: any) => (
+                              <tr key={p.id} className="text-slate-700">
+                                <td className="px-4 py-3 font-semibold">
+                                  {p.notes || "Recorded payment"}
+                                  <span className="ml-2 text-[8px] font-semibold bg-amber-50 text-amber-600 border border-amber-200 px-1 py-0.2 rounded uppercase">
+                                    Awaiting finance
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-slate-600 font-mono">
+                                  {displayPaymentRef(p)}
+                                </td>
+                                <td className="px-4 py-3 text-slate-400 font-mono">
+                                  {safeFormatDate(p.createdAt, {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })}
+                                </td>
+                                <td className="px-4 py-3 text-right font-semibold font-mono text-amber-700">
+                                  ₹{" "}
+                                  {Number(p.amount || 0).toLocaleString("en-IN")}
+                                </td>
+                              </tr>
+                            ))}
+                            {financeDue > 0 && (
                             <tr className="text-slate-700">
                               <td className="px-4 py-3 font-semibold">
-                                Balance Payment due collection
-                                <span className="ml-2 text-[8px] font-semibold bg-amber-50 text-amber-600 border border-amber-250 px-1 py-0.2 rounded uppercase">
-                                  PENDING
+                                Balance still due
+                                <span className="ml-2 text-[8px] font-semibold bg-amber-50 text-amber-600 border border-amber-200 px-1 py-0.2 rounded uppercase">
+                                  OPEN
                                 </span>
                               </td>
+                              <td className="px-4 py-3 text-slate-400 font-mono">—</td>
                               <td className="px-4 py-3 text-slate-400 font-mono">
                                 {safeFormatDate(booking.updatedAt, {
                                   day: "2-digit",
@@ -5288,11 +5362,10 @@ export default function BookingDetailsView({
                               </td>
                               <td className="px-4 py-3 text-right font-semibold font-mono text-red-650">
                                 ₹{" "}
-                                {(booking.remainingAmount || 0).toLocaleString(
-                                  "en-IN",
-                                )}
+                                {financeDue.toLocaleString("en-IN")}
                               </td>
                             </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -5302,119 +5375,54 @@ export default function BookingDetailsView({
                       </p>
                     ))}
 
-                  {paymentTab === "failed" && (
+                  {paymentTab === "failed" &&
+                    (failedPayments.length > 0 ? (
+                      <div className="border border-[#E8EEF4]/60 rounded overflow-hidden">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-semibold text-slate-400">
+                              <th className="px-4 py-2">Payment</th>
+                              <th className="px-4 py-2">UTR / Ref</th>
+                              <th className="px-4 py-2 text-right">Amt</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {failedPayments.map((p: any) => (
+                              <tr key={p.id} className="text-slate-700">
+                                <td className="px-4 py-3 font-semibold">
+                                  {p.notes || "Failed payment"}
+                                </td>
+                                <td className="px-4 py-3 font-mono text-slate-600">
+                                  {displayPaymentRef(p)}
+                                </td>
+                                <td className="px-4 py-3 text-right font-mono">
+                                  ₹ {Number(p.amount || 0).toLocaleString("en-IN")}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
                     <p className="text-[11px] text-slate-400 italic py-2">
                       No expired or failed payment histories recorded.
                     </p>
-                  )}
+                    ))}
                 </div>
               </div>
 
-              <div className="bg-white border border-[#E8EEF4] rounded overflow-hidden">
-                <div className="px-4 py-3 bg-white border-b border-[#E8EEF4] flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-[#0B1528] text-xs">
-                      Additional booking details
-                    </h3>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-green-100 text-green-700 border border-green-200/60 uppercase">
-                      Form complete
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setEditedCustomerName(
-                        booking.fullName || booking.name || "",
-                      );
-                      setEditedCustomerPhone(
-                        booking.mobile || booking.phone || "",
-                      );
-                      setEditedCustomerEmail(booking.email || "");
-                      setIsEditingCustomer(true);
-                      toast.info(
-                        "Please use the guest attributes edit form in the right sidebar!",
-                      );
-                    }}
-                    className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1"
-                  >
-                    Edit
-                  </button>
+              {booking.notes &&
+                String(booking.notes).trim() &&
+                !/^city\/state:/i.test(String(booking.notes).trim()) && (
+                <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden px-5 py-3.5">
+                  <h3 className="font-semibold text-[#0B1528] text-xs mb-1">
+                    Special requests
+                  </h3>
+                  <p className="text-xs text-slate-600 whitespace-pre-wrap">
+                    {booking.notes}
+                  </p>
                 </div>
-
-                <div className="p-0">
-                  <table className="w-full text-left text-xs table-striped">
-                    <thead>
-                      <tr className="border-b border-[#E8EEF4] bg-slate-50 text-[10px] font-semibold text-slate-400">
-                        <th className="px-4 py-2 w-[40%]">Query</th>
-                        <th className="px-4 py-2">Response</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E8EEF4] text-slate-700 font-medium">
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-500">
-                          Title first name and last name
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-850 font-semibold">
-                          {booking.fullName || passengers[0]?.name || "Not specified"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-500">Gender</td>
-                        <td className="px-4 py-2.5">
-                          <span
-                            className={cn(
-                              "inline-flex border text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase",
-                              getGenderTone(
-                                normalizePassenger(booking, passengers[0], 0)
-                                  .genderFull,
-                              ),
-                            )}
-                          >
-                            {normalizePassenger(booking, passengers[0], 0)
-                              .genderFull || "Not specified"}
-                          </span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-500">Age</td>
-                        <td className="px-4 py-2.5 text-slate-850">
-                          {normalizePassenger(booking, passengers[0], 0).age ??
-                            "Not specified"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-500">
-                          Country code and phone number
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-850 font-mono">
-                          +91 {booking.mobile}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-500">E-mail</td>
-                        <td className="px-4 py-2.5 text-slate-850 font-mono">
-                          {booking.email || "Not specified"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-500">
-                          Newsletter signup
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-400 italic">
-                          Not specified
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-500">
-                          Special Requests / Notes
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-850">
-                          {booking.notes || "Not specified"}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              )}
             </div>
           )}
 

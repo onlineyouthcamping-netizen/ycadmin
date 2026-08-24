@@ -116,11 +116,9 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   const navigate = useNavigate();
   const { admin } = useAuthStore();
 
-  const adminEmail = (admin?.email || "").toLowerCase();
+  const role = String(userRole || admin?.role || "").toLowerCase();
   const isFounder =
-    adminEmail === "hemal.patel@youthcamping.online" ||
-    adminEmail.includes("hemal") ||
-    admin?.role === "superadmin";
+    role === "superadmin" || role === "super_admin" || role === "founder";
 
   const canViewAccounting = hasPermission(
     userPerms,

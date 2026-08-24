@@ -6,6 +6,9 @@ export const dashboardService = {
     const res = await api.get("/admin/stats", {
       params: { dateFilter: dateRange },
     });
+    if (!res.data?.success) {
+      throw new Error(res.data?.error || "Dashboard stats unavailable");
+    }
     return res.data.data;
   },
 };

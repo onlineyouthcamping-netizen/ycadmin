@@ -23,6 +23,16 @@ function KpiIcon({ icon: Icon }: { icon: LucideIcon }) {
   );
 }
 
+function kpiMoney(amount: number | undefined | null) {
+  if (amount === undefined || amount === null) return "—";
+  return `₹ ${Number(amount).toLocaleString("en-IN")}`;
+}
+
+function kpiCount(value: number | undefined | null) {
+  if (value === undefined || value === null) return "—";
+  return String(value);
+}
+
 function KpiCard({
   label,
   icon,
@@ -78,9 +88,9 @@ export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({
     label="Total revenue"
     icon={IndianRupee}
     loading={loading}
-    value={`₹ ${(stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
+    value={kpiMoney(stats?.totalRevenue)}
     trend
-    caption="Gross all-time"
+    caption="Verified collections"
     onClick={() => navigate("/admin/finance")}
   />
 );
@@ -94,9 +104,12 @@ export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({
     label="Monthly revenue"
     icon={BarChart2}
     loading={loading}
-    value={`₹ ${(stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue || stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
+    value={kpiMoney(
+      stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue ??
+        stats?.totalRevenue,
+    )}
     trend
-    caption="Active this month"
+    caption="Verified this month"
     onClick={() => navigate("/admin/finance")}
   />
 );
@@ -110,8 +123,8 @@ export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({
     label="Pending customers"
     icon={Users}
     loading={loading}
-    value={`₹ ${(stats?.pendingPayments || 0).toLocaleString("en-IN")}`}
-    caption={`${loading ? "…" : stats?.totalBookings || 0} bookings`}
+    value={kpiMoney(stats?.pendingPayments)}
+    caption={`${loading ? "…" : kpiCount(stats?.totalBookings)} bookings`}
     onClick={() => navigate("/admin/finance?tab=payments")}
   />
 );
@@ -125,8 +138,8 @@ export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({
     label="Pending vendors"
     icon={Building2}
     loading={loading}
-    value={`₹ ${(stats?.pendingVendorsCost || 0).toLocaleString("en-IN")}`}
-    caption={`${loading ? "…" : stats?.pendingVendorsCount || 0} vendors`}
+    value={kpiMoney(stats?.pendingVendorsCost)}
+    caption={`${loading ? "…" : kpiCount(stats?.pendingVendorsCount)} vendors`}
     onClick={() => navigate("/admin/finance?tab=expenses")}
   />
 );
@@ -140,7 +153,11 @@ export const TripsRunningCard: React.FC<DashboardWidgetContextProps> = ({
     label="Trips running"
     icon={Compass}
     loading={loading}
-    value={loading ? "…" : String(stats?.totalTrips || 0)}
+    value={
+      loading
+        ? "…"
+        : kpiCount(stats?.tripsRunningNow?.length ?? stats?.totalTrips)
+    }
     caption="Active itineraries"
     onClick={() => navigate("/admin/operations")}
   />
@@ -155,7 +172,7 @@ export const BookingsMonthCard: React.FC<DashboardWidgetContextProps> = ({
     label="Bookings this month"
     icon={Calendar}
     loading={loading}
-    value={loading ? "…" : String(stats?.totalBookings || 0)}
+    value={loading ? "…" : kpiCount(stats?.totalBookings)}
     trend
     caption="Overall reservations"
     onClick={() => navigate("/admin/bookings")}
@@ -185,7 +202,7 @@ export const kpiWidgets: DashboardWidget[] = [
     id: "pending-customers",
     title: "Pending Customers",
     category: "kpi",
-    permission: PERMISSIONS.BOOKINGS_VIEW,
+    permission: PERMISSIONS.ACCOUNTING_VIEW,
     order: 14,
     colSpanDesktop: "col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-2",
     component: PendingCustomersCard,

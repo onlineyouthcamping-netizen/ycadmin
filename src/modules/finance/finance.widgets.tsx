@@ -8,10 +8,23 @@ import type {
 } from "@/config/dashboardWidgetRegistry";
 
 // Cash Flow Overview Widget
+function cashAmount(value: number | undefined | null) {
+  if (value === undefined || value === null) return "—";
+  return `₹ ${Number(value).toLocaleString("en-IN")}`;
+}
+
 export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
   stats,
+  loading,
   navigate,
-}) => (
+}) => {
+  const collection = loading ? "…" : cashAmount(stats?.cashFlow?.collectionToday);
+  const payments = loading ? "…" : cashAmount(stats?.cashFlow?.paymentsToday);
+  const net = stats?.cashFlow?.netCashInflow;
+  const netLabel = loading ? "…" : cashAmount(net);
+  const netPositive = typeof net === "number" ? net >= 0 : true;
+
+  return (
   <DashCard>
     <DashHead
       title="Cash flow"
@@ -31,7 +44,7 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
             Collection today
           </p>
           <p className="mt-0.5 text-[14px] font-bold tabular-nums text-green-700">
-            &#8377; {(stats?.cashFlow?.collectionToday || 0).toLocaleString("en-IN")}
+            {collection}
           </p>
         </div>
         <TrendingUp className="h-4 w-4 shrink-0 text-green-500" strokeWidth={1.75} />
@@ -46,7 +59,7 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
             Payments today
           </p>
           <p className="mt-0.5 text-[14px] font-bold tabular-nums text-red-600">
-            &#8377; {(stats?.cashFlow?.paymentsToday || 0).toLocaleString("en-IN")}
+            {payments}
           </p>
         </div>
         <TrendingDown className="h-4 w-4 shrink-0 text-red-400" strokeWidth={1.75} />
@@ -55,14 +68,15 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
       <div className="mt-1 flex items-center justify-between border-t border-slate-100 pt-2">
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Net inflow</span>
         <span
-          className={`text-[12px] font-bold tabular-nums ${(stats?.cashFlow?.netCashInflow || 0) >= 0 ? "text-green-700" : "text-red-600"}`}
+          className={`text-[12px] font-bold tabular-nums ${netPositive ? "text-green-700" : "text-red-600"}`}
         >
-          &#8377; {(stats?.cashFlow?.netCashInflow || 0).toLocaleString("en-IN")}
+          {netLabel}
         </span>
       </div>
     </DashBody>
   </DashCard>
-);
+  );
+};
 
 export const financeWidgets: DashboardWidget[] = [
   {

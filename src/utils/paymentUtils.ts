@@ -90,3 +90,62 @@ export function getPaymentReceivedColorHex(
   }
 }
 
+export type ReceiptFinanceStatus = "success" | "pending" | "failed";
+
+export function classifyReceiptStatus(raw?: string): ReceiptFinanceStatus {
+  const s = String(raw || "").toLowerCase().trim();
+  if (
+    s === "success" ||
+    s === "verified" ||
+    s === "paid" ||
+    s === "approved" ||
+    s === "cleared"
+  ) {
+    return "success";
+  }
+  if (
+    s === "failed" ||
+    s === "rejected" ||
+    s === "expired" ||
+    s === "cancelled" ||
+    s === "refunded"
+  ) {
+    return "failed";
+  }
+  return "pending";
+}
+
+export function isClearedReceipt(p: { status?: string; approvalStatus?: string }): boolean {
+  if (classifyReceiptStatus(p?.approvalStatus) === "success") return true;
+  return classifyReceiptStatus(p?.status) === "success";
+}
+
+/** Staff-facing UTR / txn id — never Razorpay/plugin codes like payments.offlinepayment */
+export function displayPaymentRef(p: {
+  transactionId?: string | null;
+  utrNumber?: string | null;
+  referenceNumber?: string | null;
+  id?: string;
+}): string {
+  const candidates = [p?.transactionId, p?.utrNumber, p?.referenceNumber];
+  for (const raw of candidates) {
+    const t = String(raw || "").trim();
+    if (!t) continue;
+    if (/^payments\./i.test(t)) continue;
+    if (/offlinepayment/i.test(t)) continue;
+    return t;
+  }
+  const id = String(p?.id || "").trim();
+  return id ? `PAY-${id.slice(-8).toUpperCase()}` : "—";
+}
+
+export function sumReceipts(
+  payments: Array<{ amount?: number; status?: string; approvalStatus?: string }>,
+  kind: ReceiptFinanceStatus,
+): number {
+  return (payments || []).reduce((sum, p) => {
+    const status = isClearedReceipt(p) ? "success" : classifyReceiptStatus(p?.status);
+    return status === kind ? sum + (Number(p?.amount) || 0) : sum;
+  }, 0);
+}
+

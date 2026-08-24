@@ -137,22 +137,40 @@ describe("vendorFoodMenu", () => {
         { type: "Breakfast", dishes: "Dal" },
         { type: "Dinner", dishes: "Roti" },
       ],
-      undefined,
+      "Breakfast & Dinner",
+      "vendor",
+    )).toBe("Breakfast & Dinner");
+    expect(mealChipLabel(
+      [{ type: "Dinner", dishes: "Roti" }],
+      "Breakfast & Dinner",
       "vendor",
     )).toBe("Breakfast & Dinner");
   });
 
-  it("matches hotel stay by alias, substring, and city in itinerary hotel text", () => {
-    const menus = [
-      parseVendorFoodMenu({
-        name: "Barpa Cottage",
-        city: "Chitkul",
-        aliases: ["Barpa"],
-        foodMenu: [{ type: "DINNER", name: "Dinner", inclusions: "dal, rice" }],
-      })!,
-    ];
-    expect(matchMenuToStay(menus, "Cottage in Chitkul/Sangla", "Sangla")?.vendorName).toBe("Barpa Cottage");
-    expect(matchMenuToStay(menus, "Stay at Barpa", "Kinnaur")?.vendorName).toBe("Barpa Cottage");
+  it("matches the assigned hotel by name, alias, or vendor code — not another hotel in the same city", () => {
+    const barpa = parseVendorFoodMenu({
+      name: "Barpa Cottage Manali",
+      vendorCode: "VND-1786625842521",
+      city: "Manali",
+      aliases: ["Barpa"],
+      foodMenu: [
+        { type: "BREAKFAST", name: "Breakfast", inclusions: "poha, paratha" },
+        { type: "DINNER", name: "Dinner", inclusions: "dal, rice, roti" },
+      ],
+    })!;
+    const ameera = parseVendorFoodMenu({
+      name: "Ameera Hotel Shimla",
+      city: "Shimla",
+      foodMenu: [{ type: "DINNER", name: "Dinner", inclusions: "soup, rice" }],
+    })!;
+    const menus = [barpa, ameera];
+    expect(matchMenuToStay(menus, "Stay at Barpa", "Manali")?.vendorName).toBe("Barpa Cottage Manali");
+    expect(matchMenuToStay(menus, "Barpa Cottage Manali", "Manali", "VND-1786625842521")?.vendorName).toBe(
+      "Barpa Cottage Manali",
+    );
+    expect(matchMenuToStay(menus, "Ameera Hotel Shimla", "Shimla")?.vendorName).toBe("Ameera Hotel Shimla");
+    expect(matchMenuToStay(menus, "Ameera Hotel Shimla", "Shimla")?.items[0].inclusions).toContain("soup");
+    expect(matchMenuToStay(menus, "Pending Hotel (Manali)", "Manali")?.vendorName).toBeUndefined();
   });
 
   it("strips duplicated meals and hotel lines from trip-control remarks", () => {

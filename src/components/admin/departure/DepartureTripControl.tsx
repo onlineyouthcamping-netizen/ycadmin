@@ -40,6 +40,7 @@ import {
   matchMenuToStay,
   opsOnlyRemark,
   parseVendorFoodMenu,
+  titleCaseMealPlan,
   VendorMenuSource,
 } from "@/utils/departure/vendorFoodMenu";
 
@@ -257,7 +258,7 @@ export default function DepartureTripControl({
     const ids = [
       ...new Set(
         (opsHotels || [])
-          .map((h: any) => h.vendorId || h.vendor?.id)
+          .map((h: any) => h.vendorId || h.vendor?.id || h.vendorCode || h.vendor?.vendorCode)
           .filter(Boolean)
           .map(String),
       ),
@@ -560,10 +561,14 @@ export default function DepartureTripControl({
             vendorMenus,
             rawHotelName || hotelName,
             stayLocation,
-            hotelMatch?.vendorId || hotelMatch?.vendor?.id,
+            hotelMatch?.vendorId ||
+              hotelMatch?.vendor?.id ||
+              hotelMatch?.vendorCode ||
+              hotelMatch?.vendor?.vendorCode,
           );
       const dayMeals = formatDayMeals(mealMenu, itineraryMeals);
       const mealSummary = compactMealSummary(mealMenu, itineraryMeals);
+      const mealPlanLabel = titleCaseMealPlan(itineraryMeals);
 
       return {
         dayNum,
@@ -591,6 +596,7 @@ export default function DepartureTripControl({
         remarkDisplay: displayRemark,
         mealSummary,
         mealMenu,
+        mealPlanLabel,
         mealGroups: dayMeals.groups,
         mealSource: dayMeals.source,
       };
