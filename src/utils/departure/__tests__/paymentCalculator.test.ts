@@ -22,39 +22,93 @@ describe("paymentCalculator", () => {
     expect(res.remainingAmount).toBe(10000);
   });
 
-  it("should calculate PARTIAL status when partially paid", () => {
+  it("treats advancePaid with PENDING approval as unverified UNPAID", () => {
+    const res = calculateBookingFinancialStatus({
+      totalAmount: 10000,
+      advancePaid: 5000,
+      opsClientPayments: [
+        { id: "p1", amount: 5000, approvalStatus: "PENDING" },
+      ],
+    });
+    expect(res.paymentStatus).toBe("UNPAID");
+    expect(res.paidAmount).toBe(0);
+    expect(res.remainingAmount).toBe(10000);
+  });
+
+  it("treats advancePaid with REJECTED approval as unverified UNPAID", () => {
+    const res = calculateBookingFinancialStatus({
+      totalAmount: 10000,
+      advancePaid: 5000,
+      opsClientPayments: [
+        { id: "p1", amount: 5000, approvalStatus: "REJECTED" },
+      ],
+    });
+    expect(res.paymentStatus).toBe("UNPAID");
+    expect(res.paidAmount).toBe(0);
+    expect(res.remainingAmount).toBe(10000);
+  });
+
+  it("treats Ops advancePaid alone as zero verified collection", () => {
     const res = calculateBookingFinancialStatus({
       totalAmount: 10000,
       advancePaid: 5000,
     });
+    expect(res.paymentStatus).toBe("UNPAID");
+    expect(res.paidAmount).toBe(0);
+    expect(res.remainingAmount).toBe(10000);
+  });
+
+  it("calculates PARTIAL when founder-approved collection is less than total", () => {
+    const res = calculateBookingFinancialStatus({
+      totalAmount: 10000,
+      advancePaid: 5000,
+      opsClientPayments: [
+        { id: "p1", amount: 5000, approvalStatus: "APPROVED_FOUNDER" },
+      ],
+    });
     expect(res.paymentStatus).toBe("PARTIAL");
+    expect(res.paidAmount).toBe(5000);
     expect(res.remainingAmount).toBe(5000);
   });
 
-  it("should calculate PAID status when fully paid", () => {
+  it("calculates PAID when founder-approved collection covers the total", () => {
     const res = calculateBookingFinancialStatus({
       totalAmount: 10000,
       advancePaid: 10000,
+      opsClientPayments: [
+        { id: "p1", amount: 10000, approvalStatus: "APPROVED_FOUNDER" },
+      ],
     });
     expect(res.paymentStatus).toBe("PAID");
     expect(res.remainingAmount).toBe(0);
   });
 
-  it("should calculate OVERPAID status when overpaid", () => {
+  it("calculates OVERPAID when founder-approved collection exceeds total", () => {
     const res = calculateBookingFinancialStatus({
       totalAmount: 10000,
       advancePaid: 12000,
+      opsClientPayments: [
+        { id: "p1", amount: 12000, approvalStatus: "APPROVED_FOUNDER" },
+      ],
     });
     expect(res.paymentStatus).toBe("OVERPAID");
     expect(res.overpaymentAmount).toBe(2000);
     expect(res.remainingAmount).toBe(0);
   });
 
-  it("should calculate REFUNDED status when refunded", () => {
+  it("calculates REFUNDED when founder-approved refunds net collection to zero", () => {
     const res = calculateBookingFinancialStatus({
       totalAmount: 10000,
       advancePaid: 5000,
-      refundAmount: 5000,
+      opsClientPayments: [
+        { id: "p1", amount: 5000, approvalStatus: "APPROVED_FOUNDER" },
+        {
+          id: "r1",
+          amount: 5000,
+          type: "REFUND",
+          approvalStatus: "APPROVED_FOUNDER",
+        },
+      ],
     });
     expect(res.paymentStatus).toBe("REFUNDED");
     expect(res.netPaidAmount).toBe(0);

@@ -51,60 +51,15 @@ import {
   refineServiceAgainstVendor,
 } from "@/utils/vendorDisplayText";
 
-/** Misc vendor-payment rows live in the Misc tab until explicitly approved. */
+import {
+  isMiscExpenseApproved,
+  deriveMiscApprovalUiStatus,
+  resolveMiscApproverDisplay,
+} from "@/utils/departure/miscExpenseApproval";
+
 function isMiscellaneousVendorCategory(category?: string | null) {
   const c = (category || "").toUpperCase();
   return c === "MISCELLANEOUS" || c === "MISC";
-}
-
-/** Approval for misc must come from approvalStatus / remarks — never from payment status alone. */
-function isMiscExpenseApproved(row: {
-  approvalStatus?: string | null;
-  remarks?: string | null;
-  status?: string | null;
-}) {
-  const a = (row.approvalStatus || "").toUpperCase();
-  const rem = (row.remarks || "").toUpperCase();
-  if (a === "REJECTED" || rem.includes("STATUS: REJECTED")) return false;
-  if (
-    a === "APPROVED" ||
-    a === "APPROVED_FOUNDER" ||
-    a.startsWith("APPROVED") ||
-    rem.includes("STATUS: APPROVED")
-  ) {
-    return true;
-  }
-  return false;
-}
-
-function deriveMiscApprovalUiStatus(row: {
-  approvalStatus?: string | null;
-  remarks?: string | null;
-  status?: string | null;
-}): "APPROVED" | "REJECTED" | "PENDING" {
-  const a = (row.approvalStatus || "").toUpperCase();
-  const rem = (row.remarks || "").toUpperCase();
-  if (a === "REJECTED" || rem.includes("STATUS: REJECTED")) return "REJECTED";
-  if (isMiscExpenseApproved(row)) return "APPROVED";
-  return "PENDING";
-}
-
-/** Approver name only after real approval — never the creator / paidBy recorder. */
-function resolveMiscApproverDisplay(row: {
-  approvalStatus?: string | null;
-  remarks?: string | null;
-  status?: string | null;
-  paidBy?: string | null;
-  approvedBy?: string | null;
-}): string {
-  if (deriveMiscApprovalUiStatus(row) !== "APPROVED") return "—";
-  const rem = row.remarks || "";
-  if (rem.includes("ApprovedBy:")) {
-    const fromRemarks = rem.split("ApprovedBy:")[1]?.split("|")[0]?.trim();
-    if (fromRemarks) return fromRemarks;
-  }
-  // paidBy is overwritten to the approver on Approve; safe only when already APPROVED
-  return row.approvedBy || row.paidBy || "Finance Admin";
 }
 
 function partnerDisplayName(row: any): string {

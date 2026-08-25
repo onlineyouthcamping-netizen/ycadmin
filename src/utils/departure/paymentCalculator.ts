@@ -1,7 +1,9 @@
 /**
  * Financial & Payment Status Calculator Utility
- * Safely parses numeric values and calculates authoritative remaining balances and statuses.
+ * Departure Hub collected money = Finance-verified receipts only (APPROVED_FOUNDER).
  */
+
+import { isCollectionVerified } from "@/utils/collectionVerification";
 
 export type CanonicalPaymentStatus =
   | "UNPAID"
@@ -61,24 +63,27 @@ export function calculateBookingFinancialStatus(booking: any): BookingFinancialS
     safeNumber(booking.totalAmount || booking.amount || booking.price || booking.totalPrice)
   );
 
-  // Determine paid amount from payments array or direct fields
   let paidAmount = 0;
   let refundAmount = 0;
 
-  if (Array.isArray(booking.payments) && booking.payments.length > 0) {
-    booking.payments.forEach((p: any) => {
-      const pAmt = safeNumber(p.amount || p.paidAmount);
-      const pType = String(p.type || p.status || "").toUpperCase();
-      if (pType.includes("REFUND")) {
-        refundAmount += Math.abs(pAmt);
-      } else {
-        paidAmount += Math.max(0, pAmt);
-      }
-    });
-  } else {
-    paidAmount = safeNumber(booking.advancePaid || booking.paidAmount || booking.amountPaid);
-    refundAmount = safeNumber(booking.refundAmount);
-  }
+  const receiptRows = [
+    ...(Array.isArray(booking.opsClientPayments) ? booking.opsClientPayments : []),
+    ...(Array.isArray(booking.payments) ? booking.payments : []),
+  ];
+  const seen = new Set<string>();
+  receiptRows.forEach((p: any) => {
+    const key = String(p?.id || `${p?.amount}-${p?.approvalStatus}-${p?.createdAt || ""}`);
+    if (seen.has(key)) return;
+    seen.add(key);
+    if (!isCollectionVerified(p?.approvalStatus)) return;
+    const pAmt = safeNumber(p.amount || p.paidAmount);
+    const pType = String(p.type || p.entryType || "").toUpperCase();
+    if (pType.includes("REFUND") || pAmt < 0) {
+      refundAmount += Math.abs(pAmt);
+    } else {
+      paidAmount += Math.max(0, pAmt);
+    }
+  });
 
   const netPaidAmount = Math.max(0, paidAmount - refundAmount);
 

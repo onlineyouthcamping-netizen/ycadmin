@@ -8,10 +8,30 @@ import {
 
 describe("paymentUtils finance receipt helpers", () => {
   it("classifies verification states for the booking payments tabs", () => {
-    expect(classifyReceiptStatus("Verified")).toBe("success");
     expect(classifyReceiptStatus("Pending Verification")).toBe("pending");
     expect(classifyReceiptStatus("pending")).toBe("pending");
     expect(classifyReceiptStatus("Rejected")).toBe("failed");
+  });
+
+  it("does not treat OpsClientPayment.status Verified as collected without founder approval", () => {
+    expect(
+      isClearedReceipt({
+        status: "success",
+        approvalStatus: "PENDING",
+      }),
+    ).toBe(false);
+    expect(
+      isClearedReceipt({
+        status: "Verified",
+        approvalStatus: "PENDING",
+      }),
+    ).toBe(false);
+    expect(
+      isClearedReceipt({
+        status: "Verified",
+        approvalStatus: "APPROVED_FOUNDER",
+      }),
+    ).toBe(true);
   });
 
   it("hides plugin leftover refs like payments.offlinepayment", () => {
@@ -28,12 +48,11 @@ describe("paymentUtils finance receipt helpers", () => {
 
   it("sums only finance-cleared money toward due", () => {
     const rows = [
-      { amount: 5000, status: "pending" },
-      { amount: 10000, status: "success" },
-      { amount: 2000, status: "failed" },
+      { amount: 5000, status: "pending", approvalStatus: "PENDING" },
+      { amount: 10000, status: "success", approvalStatus: "APPROVED_FOUNDER" },
+      { amount: 2000, status: "failed", approvalStatus: "REJECTED" },
     ];
     expect(sumReceipts(rows, "success")).toBe(10000);
     expect(sumReceipts(rows, "pending")).toBe(5000);
-    expect(isClearedReceipt({ status: "Verified" })).toBe(true);
   });
 });

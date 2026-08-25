@@ -1,13 +1,10 @@
 /**
  * Centralized Payment Color & Formatting Utilities
- *
- * Status Color Mapping:
- * - Inquiry / Pending / Unconfirmed / Awaiting Confirmation => Received = RED (#DC2626)
- * - Confirmed => Received = GREEN (#059669)
- * - Cancelled => Received = GREY (#64748B)
- * - Refunded => Received = BLUE (#2563EB)
- * - Partially Refunded => Received = ORANGE (#D97706)
  */
+
+import {
+  isCollectionVerified,
+} from "@/utils/collectionVerification";
 
 export enum BookingPaymentState {
   CONFIRMED = "confirmed",
@@ -116,7 +113,9 @@ export function classifyReceiptStatus(raw?: string): ReceiptFinanceStatus {
 }
 
 export function isClearedReceipt(p: { status?: string; approvalStatus?: string }): boolean {
-  if (classifyReceiptStatus(p?.approvalStatus) === "success") return true;
+  if (p?.approvalStatus != null && String(p.approvalStatus).trim() !== "") {
+    return isCollectionVerified(p.approvalStatus);
+  }
   return classifyReceiptStatus(p?.status) === "success";
 }
 

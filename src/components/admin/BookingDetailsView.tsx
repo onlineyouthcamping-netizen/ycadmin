@@ -11,6 +11,7 @@ import {
   isClearedReceipt,
   sumReceipts,
 } from "@/utils/paymentUtils";
+import { isCollectionRejected } from "@/utils/collectionVerification";
 import {
   normalizePassenger,
   normalizeBookingPassengers,
@@ -984,13 +985,16 @@ export default function BookingDetailsView({
   const pendingPayments = useMemo(
     () =>
       (paymentsList || []).filter(
-        (p) => classifyReceiptStatus(p.status) === "pending" && !isClearedReceipt(p),
+        (p) => !isClearedReceipt(p) && !isCollectionRejected(p.approvalStatus, p.status),
       ),
     [paymentsList],
   );
   const failedPayments = useMemo(
     () =>
-      (paymentsList || []).filter((p) => classifyReceiptStatus(p.status) === "failed"),
+      (paymentsList || []).filter((p) =>
+        isCollectionRejected(p.approvalStatus, p.status) ||
+        classifyReceiptStatus(p.status) === "failed",
+      ),
     [paymentsList],
   );
   const clearedPaid = useMemo(
@@ -2649,8 +2653,8 @@ export default function BookingDetailsView({
                 <div class="total-row"><span class="lbl">GST @ ${Math.round(gstRate * 100)}%</span><span class="val">&#8377;${gstAmount.toLocaleString("en-IN")}</span></div>
                 ${gstDiscount > 0 ? `<div class="total-row"><span class="lbl" style="color:#e11d48">Discount</span><span class="val" style="color:#e11d48">&minus;&#8377;${gstDiscount.toLocaleString("en-IN")}</span></div>` : ""}
                 <div class="total-row"><span class="lbl">Total Amount</span><span class="val">&#8377;${(booking.totalAmount || 0).toLocaleString("en-IN")}</span></div>
-                <div class="total-row"><span class="lbl">Advance Paid</span><span class="val" style="color:#059669">&minus;&#8377;${(booking.advancePaid || 0).toLocaleString("en-IN")}</span></div>
-                <div class="total-row grand"><span class="lbl">Balance Due</span><span class="val">&#8377;${(booking.remainingAmount || 0).toLocaleString("en-IN")}</span></div>
+                <div class="total-row"><span class="lbl">Advance Paid</span><span class="val" style="color:#059669">&minus;&#8377;${clearedPaid.toLocaleString("en-IN")}</span></div>
+                <div class="total-row grand"><span class="lbl">Balance Due</span><span class="val">&#8377;${financeDue.toLocaleString("en-IN")}</span></div>
               </div>
             </div>
             <div class="footer">

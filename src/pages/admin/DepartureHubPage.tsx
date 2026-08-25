@@ -6,13 +6,23 @@ import {
 import { calculateReadinessScore } from "@/utils/readinessUtils";
 import {
   isSameDepartureDate,
-  toDepartureDateKey,
 } from "@/utils/departureDate";
 import { isPassengerCancelled, filterActivePassengers } from "@/utils/departure/passengerStatus";
 import { getBookingGroupKey, groupPassengersByBooking } from "@/utils/departure/passengerAllocation";
 import { isAllocOnFleet, renumberVehicleAllocations } from "@/utils/departure/vehicleSeatAlloc";
 import { calculateBookingFinancialStatus, safeNumber } from "@/utils/departure/paymentCalculator";
 import { calculateRoomOccupancy } from "@/utils/departure/accommodationCalculator";
+import { resolveDepartureIdentity } from "@/utils/departure/parseDepartureId";
+import { normalizeDepartureHubTab } from "@/utils/departure/departureHubTab";
+import { fetchAllDepartureBookings } from "@/utils/departure/fetchDepartureBookings";
+import { mergeOpsVendorPayments, opsRecordedPaymentStatus } from "@/utils/departure/vendorIdentity";
+import { mapBookingsToDeparturePassengers, isTransportAllocatedForPassenger } from "@/utils/departure/departurePassengers";
+import { matchPassengerForOpsRow, isActualVehicleAllocated } from "@/utils/departure/passengerIdentity";
+import { printTripTitle } from "@/utils/inquiryCounts";
+import {
+  isGuideExpenseType,
+  listActiveAssignedGuides,
+} from "@/utils/departure/guideAssignments";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
@@ -77,7 +87,7 @@ import {
   Save,
   Edit2,
 } from "lucide-react";
-import { allocateWholeRupees, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { dashLink } from "@/modules/dashboard.chrome";
 import api from "@/services/api";
 import { opsService } from "@/services/ops.service";
@@ -126,9 +136,6 @@ const GUIDE_EXPENSE_CATEGORIES = [
   { value: "EXPENSE_ENTRY_TICKETS", label: "Entry Tickets / Activities" },
   { value: "EXPENSE_MISCELLANEOUS", label: "Miscellaneous" },
 ] as const;
-
-const isGuideExpenseType = (assignmentType?: string | null) =>
-  assignmentType === "EXPENSE" || assignmentType?.startsWith("EXPENSE_") === true;
 
 const getGuideExpenseCategoryLabel = (assignmentType?: string | null) =>
   GUIDE_EXPENSE_CATEGORIES.find((category) => category.value === assignmentType)
@@ -234,21 +241,8 @@ export default function DepartureHubPage() {
   const [searchParams] = useSearchParams();
 
   // ─── TAB NORMALIZER ───
-  const normalizeTab = (raw: string | null | undefined): string => {
-    const t = (raw || "overview").toLowerCase().trim();
-    if (t === "overview") return "overview";
-    if (["hotel", "hotels", "accommodations", "accommodation", "itinerary"].includes(t)) return "hotels";
-    if (["transport", "allocation", "tempo", "fleet", "vehicles"].includes(t)) return "transport";
-    if (["passengers", "manifest", "pax"].includes(t)) return "passengers";
-    if (["operations", "ops", "ticketing", "tasks", "checklist"].includes(t)) return "operations";
-    if (["finance", "money", "payments", "accounting"].includes(t)) return "finance";
-    if (["station", "stationpayments", "station_payments"].includes(t)) return "stationpayments";
-    if (["documents", "docs"].includes(t)) return "overview";
-    if (["reports", "report"].includes(t)) return "reports";
-    if (["guides", "guide"].includes(t)) return "guides";
-    if (["activities", "activity"].includes(t)) return "activities";
-    return t || "overview";
-  };
+  const normalizeTab = (raw: string | null | undefined): string =>
+    normalizeDepartureHubTab(raw);
 
   // ─── READ TAB FROM WINDOW URL (bypasses React Router caching) ───
   const readTabFromUrl = (): string => {
@@ -291,27 +285,20 @@ export default function DepartureHubPage() {
   const departureIdParam =
     searchParams.get("departureId") ||
     new URLSearchParams(location.search).get("departureId");
-  let resolvedTripId =
-    searchParams.get("tripId") ||
-    new URLSearchParams(location.search).get("tripId") ||
-    "";
-  let resolvedDepartureDateStr =
-    searchParams.get("departureDate") ||
-    searchParams.get("date") ||
-    new URLSearchParams(location.search).get("departureDate") ||
-    "";
-
-  if (departureIdParam && departureIdParam.includes("_")) {
-    const idx = departureIdParam.indexOf("_");
-    resolvedTripId = departureIdParam.substring(0, idx);
-    resolvedDepartureDateStr = departureIdParam.substring(idx + 1);
-  }
-
-  if (!resolvedTripId) resolvedTripId = "MKA-0705";
-  if (!resolvedDepartureDateStr) resolvedDepartureDateStr = "2027-07-05";
-
-  const tripId = resolvedTripId;
-  const departureDateStr = resolvedDepartureDateStr;
+  const departureIdentity = resolveDepartureIdentity({
+    departureId: departureIdParam,
+    tripId:
+      searchParams.get("tripId") ||
+      new URLSearchParams(location.search).get("tripId"),
+    departureDate:
+      searchParams.get("departureDate") ||
+      searchParams.get("date") ||
+      new URLSearchParams(location.search).get("departureDate"),
+    date: searchParams.get("date"),
+  });
+  const hasValidDeparture = departureIdentity.ok;
+  const tripId = departureIdentity.ok ? departureIdentity.tripId : "";
+  const departureDateStr = departureIdentity.ok ? departureIdentity.departureDate : "";
 
   const initializationKeyRef = useRef<string | null>(null);
   const vehicleFleetNameRef = useRef<HTMLInputElement | null>(null);
@@ -322,212 +309,11 @@ export default function DepartureHubPage() {
     Record<string, { room: string; vehicle: string; seat: string }>
   >({});
   const allPassengers = useMemo(() => {
-    const arr: any[] = [];
-    const opsRoomByTraveler = new Map<string, string>();
-    Object.values(passengerAllocations || {}).forEach((alloc: any) => {
-      if (!alloc?.name || !alloc?.room || alloc.room === "—") return;
-      opsRoomByTraveler.set(String(alloc.name).trim().toLowerCase(), alloc.room);
-      if (alloc.id) opsRoomByTraveler.set(String(alloc.id), alloc.room);
-    });
-
-    bookings
-      .filter((b: any) => !isPassengerCancelled(null, b))
-      .forEach((b: any) => {
-        let passengersObj = b.passengers;
-        if (typeof passengersObj === "string") {
-          try {
-            passengersObj = JSON.parse(passengersObj);
-          } catch (e) {
-            passengersObj = {};
-          }
-        }
-
-        const fin = calculateBookingFinancialStatus(b);
-        const due = fin.remainingAmount;
-        const paymentLabel =
-          fin.paymentStatus === "PAID"
-            ? "Paid in Full"
-            : fin.paymentStatus === "OVERPAID"
-              ? "Overpaid"
-              : fin.paymentStatus === "PARTIAL"
-                ? "Partial Payment"
-                : "Payment Pending";
-
-        const roomDetailsObj = b.roomDetails || passengersObj?.details || {};
-        const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
-
-        const leadName = b.fullName || b.name;
-        const leadRoomInfo = personsRoomDetails[leadName] || {};
-        const opsLeadRoom =
-          opsRoomByTraveler.get(String(leadName || "").trim().toLowerCase()) ||
-          opsRoomByTraveler.get(String(b.id || "")) ||
-          null;
-        const leadRoomNo =
-          opsLeadRoom ||
-          leadRoomInfo.roomNo ||
-          passengersObj?.details?.roomAllocation ||
-          "—";
-        const leadRoomType =
-          leadRoomInfo.roomType ||
-          b.roomSharing ||
-          b.roomType ||
-          passengersObj?.details?.roomType ||
-          (b.numberOfTravelers === 1 ? "Individual" : "Double Sharing");
-        const leadCoupleWith = leadRoomInfo.coupleWith || "";
-
-        const normalizeCompareName = (nameStr: string) => {
-          if (!nameStr) return "";
-          let clean = nameStr.toLowerCase().trim();
-          if (clean.startsWith("mr. ")) clean = clean.substring(4).trim();
-          else if (clean.startsWith("mrs. ")) clean = clean.substring(5).trim();
-          else if (clean.startsWith("ms. ")) clean = clean.substring(4).trim();
-          return clean;
-        };
-
-        const normLeadName = normalizeCompareName(leadName);
-        const paxList = Array.isArray(passengersObj?.persons)
-          ? passengersObj.persons
-          : Array.isArray(passengersObj)
-            ? passengersObj
-            : [];
-        const filteredCoPax = paxList.filter(
-          (p: any) => normalizeCompareName(p?.name || "") !== normLeadName,
-        );
-        const passengerCount = filteredCoPax.length + 1;
-
-        const allocatedAmounts = allocateWholeRupees(
-          b.totalAmount || 0,
-          passengerCount,
-        );
-        const allocatedPaid = allocateWholeRupees(
-          b.advancePaid || 0,
-          passengerCount,
-        );
-        const allocatedBalances = allocateWholeRupees(
-          due > 0 ? due : 0,
-          passengerCount,
-        );
-
-        const trainOpt =
-          b.trainOption ||
-          b.trainClass ||
-          passengersObj?.details?.trainClass ||
-          passengersObj?.details?.trainOption ||
-          (passengersObj?.persons && Array.isArray(passengersObj.persons) && passengersObj.persons[0]?.trainOption) ||
-          "3 TIER AC TRAIN";
-
-        const isBookingCancelled =
-          b.isCancelled === true ||
-          b.cancelled === true ||
-          String(b.status || "").toLowerCase() === "cancelled" ||
-          String(b.bookingStatus || "").toLowerCase() === "cancelled";
-
-        const base = {
-          bookingId: b.id,
-          bookingRef: b.bookingId || b.id,
-          bookingDate: b.createdAt?.substring(0, 10) || "2027-06-15",
-          departureDate: toDepartureDateKey(b.departureDate) || departureDateStr,
-          batchGroup: "Batch 1",
-          gender: normalizeGenderFull(b.gender || passengersObj?.details?.gender, leadName),
-          age: b.age || 24,
-          status: isBookingCancelled ? "CANCELLED" : (b.status || "CONFIRMED"),
-          isCancelled: isBookingCancelled,
-          phone: b.phone || b.mobile || "—",
-          email: b.email || "—",
-          pickupPoint: b.pickupCity || "Ahmedabad",
-          dropPoint: "Manali",
-          roomSharing: b.roomSharing || b.roomType || passengersObj?.details?.roomType || "Double Sharing",
-          roomType: leadRoomType,
-          coupleWith: leadCoupleWith,
-          trainOption: trainOpt,
-          trainClass: trainOpt,
-          emergencyContact: "9876543211",
-          roomNo: leadRoomNo,
-          paymentStatus: paymentLabel,
-          amount: allocatedAmounts[0],
-          paidAmount: allocatedPaid[0],
-          balance: allocatedBalances[0],
-          bookingBalance: Math.max(0, Math.round(due)),
-          paymentMode: "UPI",
-          paymentDate: "2027-06-16",
-          idProofType: "Aadhar Card",
-          guideName: "Dikshu Sharma",
-          transportDetails: "Tempo Traveller AC",
-          notes: b.notes || "No special requirements",
-          hasDocs: !!passengersObj?.details?.idProof,
-          ticketStatus: b.trainTicketStatus || "PENDING",
-          ticketVerified: b.trainTicketStatus === "CONFIRMED",
-          documentStatus:
-            passengersObj?.details?.idProof || b.idProofType
-              ? "Verified"
-              : "Missing",
-          leadPassengerName: b.fullName || b.name,
-          linkedBooking:
-            b.linkedBooking ||
-            passengersObj?.details?.linkedBooking ||
-            (b.bookingId === "BK-SPITI-08SEP-RIDDHI" || b.name?.toLowerCase().includes("riddhi")
-              ? "BK-SPITI-08SEP-PRINCE"
-              : undefined),
-        };
-        arr.push({ id: b.id, name: leadName, ...base, isLead: true });
-        if (Array.isArray(passengersObj?.persons)) {
-          let coPaxIdx = 0;
-          passengersObj.persons.forEach((p: any, idx: number) => {
-            if (normalizeCompareName(p.name) === normLeadName) return;
-            coPaxIdx++;
-
-            const coRoomInfo = personsRoomDetails[p.name] || {};
-            const opsCoRoom =
-              opsRoomByTraveler.get(String(p.name || "").trim().toLowerCase()) ||
-              null;
-            const coRoomNo = opsCoRoom || coRoomInfo.roomNo || "—";
-            const coRoomType =
-              coRoomInfo.roomType ||
-              p.roomSharing ||
-              b.roomSharing ||
-              b.roomType ||
-              passengersObj?.details?.roomType ||
-              "Double Sharing";
-            const coCoupleWith = coRoomInfo.coupleWith || "";
-            const coTrainOpt = p.trainOption || p.trainClass || trainOpt;
-
-            const isCoPaxCancelled =
-              isBookingCancelled ||
-              p.isCancelled === true ||
-              p.cancelled === true ||
-              String(p.status || "").toLowerCase() === "cancelled";
-
-            arr.push({
-              id: `${b.id}-co-${idx}`,
-              name: p.name,
-              ...base,
-              roomNo: coRoomNo,
-              roomType: coRoomType,
-              coupleWith: coCoupleWith,
-              trainOption: coTrainOpt,
-              trainClass: coTrainOpt,
-              phone: p.phone || b.phone || "—",
-              email: p.email || "—",
-              pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
-              amount: allocatedAmounts[coPaxIdx] || 0,
-              paidAmount: allocatedPaid[coPaxIdx] || 0,
-              balance: allocatedBalances[coPaxIdx] || 0,
-              notes: p.notes || (isCoPaxCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
-              isLead: false,
-              gender: normalizeGenderFull(p.gender || p.genderFull, p.name),
-              age: p.age || 24,
-              status: isCoPaxCancelled ? "CANCELLED" : (p.status || "CONFIRMED"),
-              isCancelled: isCoPaxCancelled,
-              ticketStatus: p.ticketStatus || (isCoPaxCancelled ? "CANCELLED" : b.trainTicketStatus) || "PENDING",
-              ticketVerified:
-                !isCoPaxCancelled &&
-                (p.ticketStatus === "CONFIRMED" || b.trainTicketStatus === "CONFIRMED"),
-              documentStatus: p.idProof ? "Verified" : "Missing",
-            });
-          });
-        }
-      });
-    return arr;
+    return mapBookingsToDeparturePassengers(
+      bookings,
+      departureDateStr,
+      passengerAllocations,
+    );
   }, [bookings, departureDateStr, passengerAllocations]);
 
   const activeDeparturePassengers = useMemo(
@@ -536,6 +322,9 @@ export default function DepartureHubPage() {
   );
   const [itineraryList, setItineraryList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [depLoadErrors, setDepLoadErrors] = useState<Record<string, string>>({});
+  const [bookingsIncomplete, setBookingsIncomplete] = useState(false);
+  const [activitiesStale, setActivitiesStale] = useState(false);
   const [engineStats, setEngineStats] = useState<any>(null);
   const [tripDetails, setTripDetails] = useState<any | null>(null);
   const [tripVendors, setTripVendors] = useState<any[]>([]);
@@ -666,11 +455,7 @@ export default function DepartureHubPage() {
 
       // Map passengerAllocations to proper DB format
       allPassengers.forEach((p: any) => {
-        const norm = (p.name || "").trim().toLowerCase();
-        const alloc =
-          (p.id && passengerAllocations[p.id]) ||
-          (p.name && passengerAllocations[p.name]) ||
-          (norm ? passengerAllocations[Object.keys(passengerAllocations).find((k) => k.trim().toLowerCase() === norm) || ""] : null);
+        const alloc = (p.id && passengerAllocations[p.id]) || null;
         if (!alloc) return;
         const bookingId =
           p.bookingId ||
@@ -1205,25 +990,53 @@ export default function DepartureHubPage() {
     const currentGen = loadGenerationRef.current;
 
     setLoading(true);
-    // Reset stale departure data. allocFleet is only wiped when switching departures
-    // (resetFleet=true) — not during same-departure refreshes after save operations —
-    // to avoid the "No vehicles in fleet" flash while the transport API request is in
-    // flight (or if it fails and transportFetched ends up false).
-    setBookings([]);
-    setDepartureRecord(null);
-    setReadinessData(null);
-    setEngineStats(null);
-    setOpsHotels([]);
-    if (!skipAllocReset) setPassengerAllocations({});
-    setActivitiesList([]);
-    setDbGuides([]);
-    if (resetFleet) setAllocFleet([]);
-    setChecklistTasks([]);
-    setItineraryList([]);
+    setDepLoadErrors({});
+    setActivitiesStale(false);
+    if (resetFleet) {
+      setBookings([]);
+      setDepartureRecord(null);
+      setReadinessData(null);
+      setEngineStats(null);
+      setOpsHotels([]);
+      if (!skipAllocReset) setPassengerAllocations({});
+      setActivitiesList([]);
+      setDbGuides([]);
+      setAllocFleet([]);
+      setChecklistTasks([]);
+      setItineraryList([]);
+    }
     try {
       const signal = controller.signal;
+      const nextErrors: Record<string, string> = {};
+
+      let bookingsIncompleteFlag = false;
+      try {
+        const loaded = await fetchAllDepartureBookings({
+          pageSize: 100,
+          getPage: async (pageNum, limit) => {
+            const res = await api.get(
+              `/bookings?status=all&tripId=${encodeURIComponent(tripId)}&departureDate=${encodeURIComponent(departureDateStr)}&page=${pageNum}&limit=${limit}`,
+              { signal },
+            );
+            return res.data || { data: [] };
+          },
+        });
+        if (currentGen !== loadGenerationRef.current) return;
+        const filtered = (loaded.bookings || []).filter(
+          (b: any) =>
+            b.tripId === tripId &&
+            isSameDepartureDate(b.departureDate, departureDateStr),
+        );
+        setBookings(filtered);
+        bookingsIncompleteFlag = loaded.incomplete;
+        setBookingsIncomplete(loaded.incomplete);
+      } catch {
+        if (currentGen !== loadGenerationRef.current) return;
+        nextErrors.bookings = "Failed to load bookings";
+        setBookingsIncomplete(true);
+      }
+
       const [
-        bookingsRes,
         depRes,
         engineRes,
         itinRes,
@@ -1235,7 +1048,6 @@ export default function DepartureHubPage() {
         activitiesRes,
         opsPaymentsRes,
       ] = await Promise.allSettled([
-        api.get(`/bookings?status=all&tripId=${tripId}&limit=100`, { signal }),
         api.get(`/departures/resolve?tripId=${tripId}&date=${departureDateStr}`, { signal }),
         api.get(`/departure-engine/${tripId}/${departureDateStr}/passenger-stats`, { signal }),
         api.get(`/ops/itinerary/${tripId}?departureDate=${departureDateStr}`, { signal }),
@@ -1251,16 +1063,19 @@ export default function DepartureHubPage() {
       // Stale response check — ignore if user switched departure while fetching
       if (currentGen !== loadGenerationRef.current) return;
 
-      // 1. Bookings
-      if (bookingsRes.status === "fulfilled" && bookingsRes.value?.data?.data) {
-        const allBookings = bookingsRes.value.data.data;
-        const filtered = allBookings.filter(
-          (b: any) =>
-            b.tripId === tripId &&
-            isSameDepartureDate(b.departureDate, departureDateStr),
-        );
-        setBookings(filtered);
-      }
+      const markErr = (key: string, res: PromiseSettledResult<any>, label: string) => {
+        if (res.status === "rejected") nextErrors[key] = `${label} failed to load`;
+      };
+      markErr("departure", depRes, "Departure");
+      markErr("engine", engineRes, "Passenger stats");
+      markErr("itinerary", itinRes, "Itinerary");
+      markErr("vendors", vendorsRes, "Vendor directory");
+      markErr("trip", tripRes, "Trip");
+      markErr("hotels", hotelsRes, "Hotels");
+      markErr("transport", transportRes, "Fleet");
+      markErr("guides", guidesRes, "Guides");
+      markErr("activities", activitiesRes, "Activities");
+      markErr("vendorPayments", opsPaymentsRes, "Vendor payments");
 
       // 2. Departure resolve
       if (depRes.status === "fulfilled" && depRes.value?.data?.success) {
@@ -1297,31 +1112,37 @@ export default function DepartureHubPage() {
       }
 
       // 7. Ops Hotels
-      const hotels =
-        hotelsRes.status === "fulfilled" ? hotelsRes.value?.data?.data || [] : [];
-      setOpsHotels(hotels);
+      if (hotelsRes.status === "fulfilled") {
+        setOpsHotels(hotelsRes.value?.data?.data || []);
+      }
 
       // 8. Ops Transports & Guides
       const transportFetched = transportRes.status === "fulfilled";
       const transports = transportFetched ? transportRes.value?.data?.data || [] : [];
-      const guides =
-        guidesRes.status === "fulfilled" ? guidesRes.value?.data?.data || [] : [];
-      setDbGuides(guides);
+      if (guidesRes.status === "fulfilled") {
+        setDbGuides(guidesRes.value?.data?.data || []);
+      }
 
-      // 9. Ops Activities
+      // 9. Ops Activities — empty array is a real empty result; failure must not look empty
+      if (activitiesRes.status === "fulfilled" && Array.isArray(activitiesRes.value?.data?.data)) {
+        const rawActivities = activitiesRes.value.data.data;
+        setActivitiesList(rawActivities);
+        setActivitiesStale(false);
+        const depKey = `yc_activities_${tripId}_${departureDateStr}`;
+        try {
+          localStorage.setItem(depKey, JSON.stringify({ server: true, at: Date.now(), rows: rawActivities }));
+        } catch {
+          /* ignore quota */
+        }
+      } else if (activitiesRes.status === "rejected") {
+        setActivitiesStale(true);
+      }
+
       const rawActivities =
         activitiesRes.status === "fulfilled" &&
         Array.isArray(activitiesRes.value?.data?.data)
           ? activitiesRes.value.data.data
           : [];
-
-      if (rawActivities.length > 0) {
-        setActivitiesList(rawActivities);
-        const depKey = `yc_activities_${tripId}_${departureDateStr}`;
-        try {
-          localStorage.setItem(depKey, JSON.stringify(rawActivities));
-        } catch (e) {}
-      }
 
       const mappedActivities = rawActivities.map((a: any) => {
         const pax = Number(
@@ -1406,24 +1227,36 @@ export default function DepartureHubPage() {
         setAllocFleet(initialFleet);
       }
 
+      const hotels =
+        hotelsRes.status === "fulfilled" ? hotelsRes.value?.data?.data || [] : [];
+      const guides =
+        guidesRes.status === "fulfilled" ? guidesRes.value?.data?.data || [] : [];
+
       // Mapped tripVendors
       const mappedVendors = [
         ...hotels.map((h: any) => ({
           id: h.id,
+          sourceId: h.id,
+          sourceType: "hotel",
           name: h.hotelName || h.vendor?.name || "Hotel Vendor",
           vendorType: "hotel",
           category: "Hotels",
           vendorId: {
+            id: h.vendorId || h.vendor?.id,
             name: h.hotelName || h.vendor?.name || "Hotel Vendor",
             location: h.location,
             notes: h.notes,
           },
-          paymentStatus: (h.advancePaid >= h.totalAmount && h.totalAmount > 0) ? "paid" : (h.advancePaid > 0 ? "advance_paid" : "pending"),
+          paymentStatus: opsRecordedPaymentStatus(
+            Number(h.advancePaid || 0),
+            Number(h.totalAmount || 0),
+          ),
+          financeVerified: false,
           notes: h.notes,
           agreedCost: h.totalAmount,
           paidAmount: h.advancePaid,
           balanceDue: h.balanceAmount,
-          numberOfRooms: h.numberOfRooms || 5,
+          numberOfRooms: h.numberOfRooms,
           confirmed: h.confirmed || "CONFIRMED",
           rawAssignment: h,
         })),
@@ -1440,19 +1273,21 @@ export default function DepartureHubPage() {
               : vTitle;
           return {
             id: t.id || `transport-${idx + 1}`,
+            sourceId: t.id,
+            sourceType: "transport",
             name: displayName,
             vendorType: "transport",
             category: "Transport",
             vendorId: {
+              id: t.vendorId || t.vendor?.id,
               name: displayName,
               location: t.notes || "Local",
             },
-            paymentStatus:
-              t.advancePaid >= t.totalAmount && t.totalAmount > 0
-                ? "paid"
-                : t.advancePaid > 0
-                  ? "advance_paid"
-                  : "pending",
+            paymentStatus: opsRecordedPaymentStatus(
+              Number(t.advancePaid || 0),
+              Number(t.totalAmount || 0),
+            ),
+            financeVerified: false,
             agreedCost: Number(t.totalAmount || 0),
             paidAmount: Number(t.advancePaid || 0),
             balanceDue: Math.max(
@@ -1462,18 +1297,23 @@ export default function DepartureHubPage() {
             rawAssignment: t,
           };
         }),
-        ...guides
-          .filter((g: any) => g.assignmentStatus !== "CANCELLED" && g.status !== "CANCELLED")
-          .map((g: any) => ({
+        ...listActiveAssignedGuides(guides).map((g: any) => ({
             id: g.id,
+            sourceId: g.id,
+            sourceType: "guide",
             name: g.guideName || g.guide?.name || "Lead Guide",
             vendorType: "guide",
             category: "Guides",
             vendorId: {
+              id: g.vendorId || g.guide?.id,
               name: g.guideName || g.guide?.name || "Lead Guide",
               location: "Guide Partner",
             },
-            paymentStatus: (g.advancePaid >= g.agreedAmount && g.agreedAmount > 0) ? "paid" : (g.advancePaid > 0 ? "advance_paid" : "pending"),
+            paymentStatus: opsRecordedPaymentStatus(
+              Number(g.advancePaid || 0),
+              Number(g.agreedAmount || 0),
+            ),
+            financeVerified: false,
             agreedCost: g.agreedAmount,
             paidAmount: g.advancePaid,
             balanceDue: g.balanceAmount,
@@ -1489,73 +1329,14 @@ export default function DepartureHubPage() {
           ? opsPaymentsRes.value.data.data
           : [];
 
-      recordedPayments.forEach((vp: any) => {
-        const vName = (vp.vendorName || "").trim();
-        if (!vName || vName === "NO_STAY" || vName === "—") return;
-        const existingIdx = mappedVendors.findIndex(
-          (v) => (v.name || "").toLowerCase().trim() === vName.toLowerCase(),
-        );
-        const agreed = Number(vp.agreedAmount || 0);
-        const paid = Number(vp.advancePaid || 0);
-        if (existingIdx >= 0) {
-          mappedVendors[existingIdx].agreedCost = Math.max(
-            mappedVendors[existingIdx].agreedCost || 0,
-            agreed,
-          );
-          mappedVendors[existingIdx].paidAmount = Math.max(
-            mappedVendors[existingIdx].paidAmount || 0,
-            paid,
-          );
-          mappedVendors[existingIdx].balanceDue = Math.max(
-            0,
-            mappedVendors[existingIdx].agreedCost -
-              mappedVendors[existingIdx].paidAmount,
-          );
-          mappedVendors[existingIdx].paymentStatus =
-            mappedVendors[existingIdx].paidAmount >=
-              mappedVendors[existingIdx].agreedCost &&
-            mappedVendors[existingIdx].agreedCost > 0
-              ? "paid"
-              : mappedVendors[existingIdx].paidAmount > 0
-                ? "advance_paid"
-                : "pending";
-        } else {
-          const cat = (vp.category || "").toLowerCase();
-          const vType = cat.includes("hotel")
-            ? "hotel"
-            : cat.includes("transport")
-              ? "transport"
-              : cat.includes("guide")
-                ? "guide"
-                : cat.includes("activit")
-                  ? "activity"
-                  : "other";
-          mappedVendors.push({
-            id: vp.id,
-            name: vName,
-            vendorType: vType,
-            category: vp.category || "Other",
-            vendorId: {
-              name: vName,
-              location: vp.serviceDescription || "Service",
-              notes: vp.remarks || "",
-            },
-            paymentStatus:
-              paid >= agreed && agreed > 0
-                ? "paid"
-                : paid > 0
-                  ? "advance_paid"
-                  : "pending",
-            notes: vp.remarks || vp.serviceDescription || "",
-            agreedCost: agreed,
-            paidAmount: paid,
-            balanceDue: Math.max(0, agreed - paid),
-            rawAssignment: vp,
-          });
-        }
-      });
-
-      setTripVendors(mappedVendors);
+      const mergedVendors = mergeOpsVendorPayments(mappedVendors, recordedPayments);
+      setTripVendors(mergedVendors);
+      setDepLoadErrors(nextErrors);
+      if (bookingsIncompleteFlag) {
+        nextErrors.bookingsIncomplete =
+          "Not all bookings could be loaded. Passenger list may be incomplete.";
+        setDepLoadErrors({ ...nextErrors });
+      }
 
       const checkRes = await api
         .get(`/ops/checklists/${tripId}?departureDate=${departureDateStr}`)
@@ -1699,34 +1480,54 @@ export default function DepartureHubPage() {
           setPassengerAllocations((prev: any) => {
             const next: Record<string, any> = { ...prev };
 
-            // Write room allocations by BOTH travelerName and passenger.id
+            const claimedRoom = new Set<string>();
             rooms.forEach((r: any) => {
-              const nameKey = r.travelerName;
-              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || (p.name && nameKey && p.name.toLowerCase().trim() === nameKey.toLowerCase().trim()));
-              const existing = (nameKey && next[nameKey]) || (pObj?.id && next[pObj.id]) || (pObj?.name && next[pObj.name]) || { vehicle: "—", seat: "—" };
-              const entry = {
+              const pObj = matchPassengerForOpsRow(
+                currentPassengersList,
+                {
+                  passengerId: r.passengerId,
+                  bookingId: r.bookingId,
+                  travelerName: r.travelerName,
+                },
+                claimedRoom,
+              );
+              if (!pObj?.id) return;
+              claimedRoom.add(String(pObj.id));
+              const existing = next[pObj.id] || { vehicle: "—", seat: "—" };
+              next[pObj.id] = {
                 ...existing,
+                id: pObj.id,
                 room: r.roomNumber,
               };
-              if (nameKey) next[nameKey] = entry;
-              if (pObj?.name) next[pObj.name] = entry;
-              if (pObj?.id) next[pObj.id] = { ...entry };
             });
 
+            const claimedVehicle = new Set<string>();
             vehicles.forEach((v: any) => {
-              const nameKey = v.travelerName;
-              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || (p.name && nameKey && p.name.toLowerCase().trim() === nameKey.toLowerCase().trim()));
-              const vName = v.fleet?.driverName || fleetNameMap[v.fleetId] || initialFleet.find((f: any) => f.id === v.fleetId)?.name || (initialFleet.length === 1 ? initialFleet[0].name : (v.fleetId || "Tempo 1"));
-              const existing = (nameKey && next[nameKey]) || (pObj?.id && next[pObj.id]) || (pObj?.name && next[pObj.name]) || { room: "—" };
-              const entry = {
+              const pObj = matchPassengerForOpsRow(
+                currentPassengersList,
+                {
+                  passengerId: v.passengerId,
+                  bookingId: v.bookingId,
+                  travelerName: v.travelerName,
+                },
+                claimedVehicle,
+              );
+              if (!pObj?.id) return;
+              claimedVehicle.add(String(pObj.id));
+              const vName =
+                v.fleet?.driverName ||
+                fleetNameMap[v.fleetId] ||
+                initialFleet.find((f: any) => f.id === v.fleetId)?.name ||
+                (initialFleet.length === 1 ? initialFleet[0].name : v.fleetId);
+              if (!vName) return;
+              const existing = next[pObj.id] || { room: "—" };
+              next[pObj.id] = {
                 ...existing,
+                id: pObj.id,
                 vehicle: vName,
                 fleetId: v.fleetId,
                 seat: v.seatNumber ? String(v.seatNumber) : "—",
               };
-              if (nameKey) next[nameKey] = entry;
-              if (pObj?.name) next[pObj.name] = entry;
-              if (pObj?.id) next[pObj.id] = { ...entry };
             });
 
             return next;
@@ -1750,9 +1551,10 @@ export default function DepartureHubPage() {
   };
 
   useEffect(() => {
+    if (!hasValidDeparture) return;
     fetchPageData(true); // reset fleet when switching departures
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripId, departureDateStr]);
+  }, [tripId, departureDateStr, hasValidDeparture]);
 useEffect(() => {
   if (activeTab !== 'transport' || !tripId) return;
   const controller = new AbortController();
@@ -2611,23 +2413,7 @@ useEffect(() => {
         /* ignore invalid JSON */
       }
     }
-    return [
-      {
-        id: "train-1",
-        trainName: "14416 / SHATABDI EXP",
-        pnr: "2456 7890 1234",
-        from: "Amritsar (ASR)",
-        to: "Ahmedabad (ADI)",
-        depTime: "04:10 PM",
-        arrTime: "09:45 PM",
-        depStation: "ASR",
-        arrStation: "ADI",
-        date: "13 Jul 2027",
-        dayWd: "Sun",
-        seats: "57 / 60",
-        status: "CONFIRMED",
-      },
-    ];
+    return [];
   });
 
   const [editTrainOpen, setEditTrainOpen] = useState(false);
@@ -2698,10 +2484,10 @@ useEffect(() => {
         <td style="padding: 10px; text-align: center; font-size: 11px;">${i + 1}</td>
         <td style="padding: 10px; font-weight: bold; font-size: 11px;">${p.name}</td>
         <td style="padding: 10px; font-size: 11px;">${p.bookingId}</td>
-        <td style="padding: 10px; font-size: 11px; font-weight: bold; color: #1E293B;">${p.phone}</td>
-        <td style="padding: 10px; font-size: 11px;">${p.gender} (${p.age})</td>
-        <td style="padding: 10px; font-size: 11px;">${p.pickupPoint}</td>
-        <td style="padding: 10px; font-family: monospace; font-size: 11px; font-weight: bold;">${p.roomNo}</td>
+        <td style="padding: 10px; font-size: 11px; font-weight: bold; color: #1E293B;">${p.phone || "—"}</td>
+        <td style="padding: 10px; font-size: 11px;">${p.gender || "—"} (${p.age ?? "—"})</td>
+        <td style="padding: 10px; font-size: 11px;">${p.pickupPoint || "—"}</td>
+        <td style="padding: 10px; font-family: monospace; font-size: 11px; font-weight: bold;">${p.roomNo || "—"}</td>
       </tr>
     `,
       )
@@ -2726,7 +2512,7 @@ useEffect(() => {
           <h1>DEPARTURE MANIFEST</h1>
           <div class="header-meta">
             <div class="meta-item"><span class="meta-label">Trip Code</span><span class="meta-val">${tripId}</span></div>
-            <div class="meta-item"><span class="meta-label">Itinerary</span><span class="meta-val">${tripDetails?.title || "Spiti Valley Road Trip"}</span></div>
+            <div class="meta-item"><span class="meta-label">Itinerary</span><span class="meta-val">${printTripTitle(tripDetails?.title)}</span></div>
             <div class="meta-item"><span class="meta-label">Date</span><span class="meta-val">${departureDateStr}</span></div>
             <div class="meta-item"><span class="meta-label">Tour Lead</span><span class="meta-val">${leadGuideName}</span></div>
             <div class="meta-item"><span class="meta-label">Pax Count</span><span class="meta-val">${allPassengers.length} Verified</span></div>
@@ -2795,37 +2581,8 @@ useEffect(() => {
       toast.error("Name and Phone are required");
       return;
     }
-    // Simulate creating passenger booking record
-    const dummyBooking = {
-      id: `bk-new-${Date.now()}`,
-      bookingId: `BK-${Math.floor(100000 + Math.random() * 900000)}`,
-      fullName: newPaxName,
-      name: newPaxName,
-      phone: newPaxPhone,
-      mobile: newPaxPhone,
-      age: parseInt(newPaxAge) || 24,
-      gender: newPaxGender,
-      tripId,
-      tripName: tripDetails?.title || "Spiti Valley Road Trip",
-      departureDate: departureDateStr,
-      totalAmount: parseInt(newPaxAmount) || 14000,
-      advancePaid: 0,
-      remainingAmount: parseInt(newPaxAmount) || 14000,
-      status: "confirmed",
-      createdAt: new Date().toISOString(),
-      passengers: {
-        details: {
-          idProof: null,
-          roomAllocation: "TBD",
-        },
-        persons: [],
-      },
-    };
-    setBookings((prev) => [dummyBooking, ...prev]);
-    toast.success("Passenger added successfully to departure hub list!");
-    setAddPassengerOpen(false);
-    setNewPaxName("");
-    setNewPaxPhone("");
+    toast.error("Passengers must be added from Bookings. The hub does not create booking records.");
+    return;
   };
 
   const handleEditDepartureSubmit = (e: React.FormEvent) => {
@@ -2930,14 +2687,15 @@ useEffect(() => {
       const transportsPaid = tripVendors
         .filter((v) => v.vendorType === "transport" || v.category === "Transport")
         .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
+      const activeGuides = listActiveAssignedGuides(dbGuides);
       const guidesCost = Math.max(
-        (dbGuides || []).reduce((sum: number, g: any) => sum + (Number(g.agreedAmount) || 0), 0),
+        activeGuides.reduce((sum: number, g: any) => sum + (Number(g.agreedAmount) || 0), 0),
         tripVendors
           .filter((v) => v.vendorType === "guide" || v.category === "Guides")
           .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0)
       );
       const guidesPaid = Math.max(
-        (dbGuides || []).reduce((sum: number, g: any) => sum + (Number(g.advancePaid) || 0), 0),
+        activeGuides.reduce((sum: number, g: any) => sum + (Number(g.advancePaid) || 0), 0),
         tripVendors
           .filter((v) => v.vendorType === "guide" || v.category === "Guides")
           .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0)
@@ -3163,7 +2921,10 @@ useEffect(() => {
     try {
       const startDate = new Date(departureDateStr);
       const daysMatch = tripDetails?.duration?.match(/(\d+)\s*Day/i);
-      const numDays = daysMatch ? parseInt(daysMatch[1], 10) : 9;
+      const numDays = daysMatch ? parseInt(daysMatch[1], 10) : null;
+      if (!numDays || Number.isNaN(startDate.getTime())) {
+        return departureDateStr || "—";
+      }
       const endDate = new Date(
         startDate.getTime() + (numDays - 1) * 24 * 60 * 60 * 1000,
       );
@@ -3175,9 +2936,9 @@ useEffect(() => {
       } as const;
       const startStr = startDate.toLocaleDateString("en-US", formatOptions);
       const endStr = endDate.toLocaleDateString("en-US", formatOptions);
-      return `${startStr} – ${endStr} (${tripDetails?.duration || "9D / 8N"})`;
+      return `${startStr} – ${endStr} (${tripDetails?.duration})`;
     } catch {
-      return `05 Jul 2027 – 13 Jul 2027 (9D / 8N)`;
+      return departureDateStr || "—";
     }
   }, [departureDateStr, tripDetails]);
 
@@ -3211,7 +2972,7 @@ useEffect(() => {
         })
       : "TBD";
 
-    const capacity = tripDetails?.maxGroupSize || 30;
+    const capacity = tripDetails?.maxGroupSize;
     const filledPercentage =
       capacity > 0 ? (stats.totalParticipants / capacity) * 100 : 0;
     const seats50PercentStr = sortedBookings[
@@ -3342,7 +3103,7 @@ useEffect(() => {
       const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       return { wd, date: dateFormatted, dateStr };
     } catch (err) {
-      return { wd: "SAT", date: "05 Jul 2027" };
+      return { wd: "—", date: "—" };
     }
   };
 
@@ -3352,67 +3113,13 @@ useEffect(() => {
         ? tripDetails.itinerary
         : itineraryList && itineraryList.length > 0
         ? itineraryList
-        : (() => {
-            const tid = (tripId || "").toLowerCase();
-            if (tid.includes("ker") || tid.includes("krl") || tid.includes("kerala")) {
-              return [
-                { day: 1, title: "Ahmedabad to Cochin Train Journey", location: "Cochin", stay: "Night Journey", description: "Departure/reporting time: Arriving at Ernakulam Junction around 9:00 PM." },
-                { day: 2, title: "Arrival in Cochin", location: "Cochin", stay: "Cochin", description: "Proceed to your hotel near the railway station and settle in." },
-                { day: 3, title: "Scenic Drive to Munnar", location: "Munnar", stay: "Munnar", description: "Warm pick-up & transfer to Munnar tea plantations." },
-                { day: 4, title: "Explore the Beauty of Munnar", location: "Munnar", stay: "Munnar", description: "Kundala Dam, Mattupetty Dam, Tea Gardens exploration." },
-                { day: 5, title: "Thekkady – Wildlife & Cultural Experience", location: "Thekkady", stay: "Thekkady", description: "Periyar National Park & spice plantation tour." },
-                { day: 6, title: "Thekkady to Alleppey – Backwater Paradise", location: "Alleppey", stay: "Alleppey", description: "Alleppey houseboat & backwater cruise experience." },
-                { day: 7, title: "Alleppey to Cochin", location: "Cochin", stay: "Cochin", description: "Fort Kochi sightseeing, Chinese fishing nets & local market." },
-                { day: 8, title: "Cochin to Ahmedabad", location: "Cochin", stay: "Night Journey", description: "Board return train from Ernakulam Junction." },
-                { day: 9, title: "Arrival at Your City", location: "Your City", stay: "—", description: "Reach home with memorable Kerala trip experiences." },
-              ];
-            }
-            if (tid.includes("spt") || tid.includes("spiti")) {
-              return [
-                { day: 1, title: "Train Journey to Chandigarh / Jalandhar", location: "Chandigarh", stay: "Night Journey", description: "Overnight train journey from starting location." },
-                { day: 2, title: "Drive to Shimla / Narkanda", location: "Shimla", stay: "Shimla", description: "Scenic mountain drive towards Narkanda." },
-                { day: 3, title: "Shimla to Chitkul", location: "Chitkul", stay: "Chitkul", description: "Travel to last Indian village Chitkul." },
-                { day: 4, title: "Travel Chitkul to Tabo via Nako", location: "Tabo", stay: "Tabo", description: "Visit Nako Lake & Tabo Monastery." },
-                { day: 5, title: "Explore Tabo, Dhankar & Kaza", location: "Kaza", stay: "Kaza", description: "Visit Dhankar Monastery & drive to Kaza." },
-                { day: 6, title: "Key Monastery, Hikkim, Komic, Langza", location: "Kaza", stay: "Kaza", description: "Highest post office Hikkim & Key Monastery." },
-                { day: 7, title: "Kaza to Chandratal Lake", location: "Chandratal", stay: "Chandratal", description: "Cross Kunzum Pass & camp at Chandratal." },
-                { day: 8, title: "Chandratal to Manali", location: "Manali", stay: "Manali", description: "Drive through Atal Tunnel to Manali." },
-                { day: 9, title: "Manali Sightseeing & Return Train", location: "Manali", stay: "Night Journey", description: "Local sightseeing & departure." },
-                { day: 10, title: "Arrive at Your City", location: "Your City", stay: "—", description: "Reach home safely." },
-              ];
-            }
-            if (tid.includes("mka") || tid.includes("manali")) {
-              return [
-                { day: 1, title: "Train Journey to Jalandhar", location: "Jalandhar", stay: "Night Journey", description: "Overnight train journey." },
-                { day: 2, title: "Visit Wagha Border & Golden Temple", location: "Amritsar", stay: "Amritsar", description: "Sightseeing in Amritsar." },
-                { day: 3, title: "Day for Kasol & Parvati Valley Exploration", location: "Kasol", stay: "Kasol", description: "Exploration of Kasol & Manikaran." },
-                { day: 4, title: "Bijli Mahadev Trek", location: "Manali", stay: "Manali", description: "Scenic trek to Bijli Mahadev." },
-                { day: 5, title: "Adventure Activities: Rafting & Paragliding", location: "Manali", stay: "Manali", description: "River rafting & paragliding in Kullu." },
-                { day: 6, title: "Solang Valley – Atal Tunnel – Sissu", location: "Sissu", stay: "Sissu", description: "Explore Solang Valley and Sissu." },
-                { day: 7, title: "Manali Sightseeing & Jogini Waterfall", location: "Manali", stay: "Manali", description: "Hadimba Temple & Jogini Waterfall." },
-                { day: 8, title: "Return Train Journey", location: "Jalandhar", stay: "Night Journey", description: "Board return train." },
-                { day: 9, title: "Arrive at Your City", location: "Your City", stay: "—", description: "Reach home." },
-              ];
-            }
-            const fallbackDays = [];
-            const count = tripDetails?.durationDays || 9;
-            for (let i = 1; i <= count; i++) {
-              fallbackDays.push({
-                day: i,
-                title: i === 1 ? `Day ${i} Departure & Journey` : i === count ? `Day ${i} Return & Arrival` : `Day ${i} Exploration & Stay`,
-                location: `Destination Day ${i}`,
-                stay: i === 1 || i === count ? "Night Journey" : `Hotel Day ${i}`,
-                description: `Operational details for Day ${i}`,
-              });
-            }
-            return fallbackDays;
-          })();
+        : [];
 
     const rawList = activeItinerarySource.map((it: any, idx: number) => {
       const stayName =
         it.stay && it.stay !== "—" ? it.stay : it.location || "";
       const mealsName =
-        it.meals && it.meals !== "—" ? it.meals : "Breakfast & Dinner";
+        it.meals && it.meals !== "—" ? it.meals : "—";
       const actName = Array.isArray(it.activities)
         ? it.activities.length > 0
           ? it.activities.join(" • ")
@@ -3466,235 +3173,59 @@ useEffect(() => {
   }, [tripDetails, itineraryList, departureDateStr, tripId]);
 
   const computedHotels = useMemo(() => {
-    const isSpiti =
-      tripId?.toLowerCase().includes("spt") ||
-      tripId?.toLowerCase().includes("spiti");
-
-    // SPT itinerary: 9 nights → 8 hotel rows (Kaza = 2 nights in 1 row)
-    // Day 1 = train, Day 10-11 = return/home — no hotel rows
-    const sptNights = [
-      {
-        dayNum: 2,
-        city: "Shimla",
-        region: "Himachal Pradesh",
-        nights: 1,
-        dayLabel: "Day 2",
-      },
-      {
-        dayNum: 3,
-        city: "Sangla / Chitkul",
-        region: "Himachal Pradesh",
-        nights: 1,
-        dayLabel: "Day 3",
-      },
-      {
-        dayNum: 4,
-        city: "Tabo",
-        region: "Himachal Pradesh",
-        nights: 1,
-        dayLabel: "Day 4",
-      },
-      {
-        dayNum: 5,
-        city: "Kaza",
-        region: "Spiti Valley",
-        nights: 2,
-        dayLabel: "Day 5–6",
-      },
-      {
-        dayNum: 7,
-        city: "Chandratal",
-        region: "Spiti Valley",
-        nights: 1,
-        dayLabel: "Day 7",
-      },
-      {
-        dayNum: 8,
-        city: "Manali",
-        region: "Himachal Pradesh",
-        nights: 1,
-        dayLabel: "Day 8",
-      },
-      {
-        dayNum: 9,
-        city: "Kullu",
-        region: "Himachal Pradesh",
-        nights: 1,
-        dayLabel: "Day 9",
-      },
-    ];
-
-    // Real DB hotel assignments from ops
     const hotelAssignments = tripVendors.filter((v: any) => {
       const vendorObj = typeof v.vendorId === "object" ? v.vendorId : null;
       const type = vendorObj?.type || v.vendorType || "";
       return type === "hotel";
     });
 
-    if (isSpiti) {
-      return sptNights.map((night, idx) => {
-        const { wd, date } = getDayDateAndWd(
-          departureDateStr,
-          night.dayNum - 1,
-        );
+    if (hotelAssignments.length === 0) return [];
 
-        // Find matching hotel assignment by location/city name instead of plain index matching
-        const assignment =
-          hotelAssignments.find((h) => {
-            const raw = h.rawAssignment || h;
-            const loc = (raw?.location || h.vendorId?.location || "")
-              .toLowerCase()
-              .trim();
-            const target = night.city.toLowerCase().trim();
-            return loc.includes(target) || target.includes(loc);
-          }) || null;
+    return hotelAssignments.map((v: any, idx: number) => {
+      const vendorObj =
+        typeof v.vendorId === "object" ? v.vendorId : {};
+      const { wd, date } = getDayDateAndWd(departureDateStr, idx);
+      const dest = tripDetails?.location || vendorObj.location || v.rawAssignment?.location || "—";
+      const raw = v.rawAssignment || v;
 
-        const vendorObj = assignment
-          ? typeof assignment.vendorId === "object"
-            ? assignment.vendorId
-            : null
-          : null;
-        const raw = assignment?.rawAssignment || assignment;
+      const allocatedRooms = new Set(
+        Object.values(passengerAllocations)
+          .filter(
+            (alloc) =>
+              alloc.room && alloc.room !== "—" && alloc.room !== "Unassigned",
+          )
+          .map((alloc) => alloc.room),
+      );
+      const roomsCount =
+        allocatedRooms.size > 0 ? allocatedRooms.size : raw?.numberOfRooms || 0;
+      const opsRecorded =
+        v.paymentStatus === "ops_recorded" || v.financeVerified === true;
 
-        // Dynamically compute how many unique rooms are currently allocated to this location/city en-route
-        const allocatedRoomsForCity = new Set(
-          Object.values(passengerAllocations)
-            .filter((alloc) => {
-              if (
-                !alloc.room ||
-                alloc.room === "—" ||
-                alloc.room === "Unassigned"
-              )
-                return false;
-              // Check if traveler is allocated to a room, and if this hotel location matches the en-route city
-              const isMatch = night.city
-                .toLowerCase()
-                .trim()
-                .includes(
-                  (assignment?.vendorId?.location || raw?.location || "")
-                    .toLowerCase()
-                    .trim(),
-                );
-              return isMatch || idx === 0; // fallback default to map room numbers
-            })
-            .map((alloc) => alloc.room),
-        );
-        const roomsCount =
-          allocatedRoomsForCity.size > 0
-            ? allocatedRoomsForCity.size
-            : raw?.numberOfRooms ||
-              assignment?.numberOfRooms ||
-              (night.city.includes("Chandratal") || night.city.includes("Kullu")
-                ? 4
-                : 5);
-        const isCampUnit =
-          night.city.toLowerCase().includes("chandratal") ||
-          night.city.toLowerCase().includes("kullu") ||
-          (vendorObj?.name || raw?.hotelName || "")
-            .toLowerCase()
-            .includes("tent") ||
-          (vendorObj?.name || raw?.hotelName || "")
-            .toLowerCase()
-            .includes("camp");
-        const unitLabel = isCampUnit ? "Tents" : "Rooms";
+      return {
+        id: v.id,
+        day: `Day ${idx + 1}`,
+        wd,
+        date,
+        destRegion: dest,
+        destCity: dest,
+        hotel: vendorObj.name || raw?.hotelName || "—",
+        vendor: vendorObj.location || raw?.location || "—",
+        allocations: [{ text: `${roomsCount} Rooms`, color: "blue" }],
+        totalPaxText: `${raw?.totalPax ?? allPassengers.length} Pax`,
+        capacityPercent: 100,
+        capacityColor: "bg-green-600",
+        nights: raw?.nightsCount || raw?.nights,
+        status:
+          raw?.confirmed === "CONFIRMED" || opsRecorded ? "CONFIRMED" : "PENDING",
+        statusSub:
+          raw?.confirmed === "CONFIRMED" ? "Voucher Sent" : "Payment Due",
+        amt: Number(raw?.totalAmount || v.agreedCost || 0).toLocaleString("en-IN"),
+        amtSub: `Ops recorded: ₹${Number(raw?.advancePaid || v.paidAmount || 0).toLocaleString("en-IN")}`,
+        rawAssignment: raw,
+      };
+    });
+  }, [tripVendors, tripDetails, departureDateStr, passengerAllocations, allPassengers]);
 
-        return {
-          id: assignment?.id || `spt-stay-${idx}`,
-          day: night.dayLabel, // e.g. "Day 5–6" for Kaza
-          wd,
-          date,
-          destRegion: night.region,
-          destCity: night.city,
-          hotel: vendorObj?.name || raw?.hotelName || "— Not Assigned —",
-          vendor: vendorObj?.location || raw?.location || night.city,
-          allocations: assignment
-            ? [{ text: `${roomsCount} ${unitLabel}`, color: "blue" }]
-            : [{ text: "Pending", color: "orange" }],
-          totalPaxText: assignment
-            ? `${raw?.totalPax || allPassengers.length} Pax`
-            : "Not booked",
-          capacityPercent: 100,
-          capacityColor: assignment ? "bg-green-600" : "bg-slate-300",
-          nights: night.nights, // use itinerary-defined nights (Kaza = 2)
-          status: assignment
-            ? raw?.confirmed === "CONFIRMED" ||
-              assignment.paymentStatus === "paid"
-              ? "CONFIRMED"
-              : "PENDING"
-            : "PENDING",
-          statusSub: assignment
-            ? raw?.confirmed === "CONFIRMED"
-              ? "Voucher Sent"
-              : "Payment Due"
-            : "Not Assigned",
-          amt: assignment
-            ? Number(raw?.totalAmount || assignment.agreedCost || 0).toLocaleString(
-                "en-IN",
-              )
-            : "0",
-          amtSub: assignment
-            ? `Paid: ₹${Number(raw?.advancePaid || assignment.paidAmount || 0).toLocaleString("en-IN")}`
-            : "No payment",
-          rawAssignment: raw || assignment,
-        };
-      });
-    }
-
-    // Non-SPT trips: use real DB assignments
-    if (hotelAssignments.length > 0) {
-      return hotelAssignments.map((v: any, idx: number) => {
-        const vendorObj =
-          typeof v.vendorId === "object"
-            ? v.vendorId
-            : { name: "Assigned Hotel" };
-        const dayNum = idx + 1;
-        const { wd, date } = getDayDateAndWd(departureDateStr, idx);
-        const dest = tripDetails?.location || "Manali";
-        const raw = v.rawAssignment || v;
-
-        // Dynamically compute unique rooms allocated
-        const allocatedRooms = new Set(
-          Object.values(passengerAllocations)
-            .filter(
-              (alloc) =>
-                alloc.room && alloc.room !== "—" && alloc.room !== "Unassigned",
-            )
-            .map((alloc) => alloc.room),
-        );
-        const roomsCount =
-          allocatedRooms.size > 0
-            ? allocatedRooms.size
-            : raw?.numberOfRooms || 0;
-
-        return {
-          id: v.id,
-          day: `Day ${dayNum}`,
-          wd,
-          date,
-          destRegion: "Himachal Pradesh",
-          destCity: dest,
-          hotel: vendorObj.name || raw?.hotelName || "Hotel",
-          vendor: vendorObj.location || raw?.location || "Stay Location",
-          allocations: [{ text: `${roomsCount} Rooms`, color: "blue" }],
-          totalPaxText: `${raw?.totalPax || allPassengers.length} Pax`,
-          capacityPercent: 100,
-          capacityColor: "bg-green-600",
-          nights: raw?.nights || 1,
-          status:
-            raw?.confirmed === "CONFIRMED" || v.paymentStatus === "paid"
-              ? "CONFIRMED"
-              : "PENDING",
-          statusSub:
-            raw?.confirmed === "CONFIRMED" ? "Voucher Sent" : "Payment Due",
-          amt: Number(raw?.totalAmount || v.agreedCost || 0).toLocaleString("en-IN"),
-          amtSub: `Paid: ₹${Number(raw?.advancePaid || v.paidAmount || 0).toLocaleString("en-IN")}`,
-          rawAssignment: raw,
-        };
-      });
-    }
-
-    return [];
-  }, [tripVendors, tripDetails, departureDateStr, tripId, bookings]);
 
   const computedTransport = useMemo(() => {
     const transAssignments = tripVendors.filter((v: any) => {
@@ -3711,23 +3242,23 @@ useEffect(() => {
             : { name: "Assigned Transport" };
         const dayNum = idx + 1;
         const { wd, date } = getDayDateAndWd(departureDateStr, idx);
-        const dest = tripDetails?.location || "Manali";
+        const dest = tripDetails?.location || vendorObj.location || "—";
 
         return {
           id: v.id,
-          type: "Tempo Traveller",
-          cap: "26 Seater",
-          plate: v.notes || "GJ01XX1234",
-          model: "Force Traveller",
-          vendor: vendorObj.name,
-          phone: vendorObj.phone || "+91 98765 43210",
-          from: "Ahmedabad",
-          fromTime: `${date.split(" ")[0]} ${date.split(" ")[1]}, 06:00 AM`,
+          type: v.vehicleType || vendorObj.vehicleType || "—",
+          cap: v.capacity != null ? `${v.capacity} Seater` : "—",
+          plate: v.notes || v.vehicleNumber || "—",
+          model: v.vehicleType || "—",
+          vendor: vendorObj.name || "—",
+          phone: vendorObj.phone || "—",
+          from: v.pickupCity || "—",
+          fromTime: "—",
           to: dest,
-          toTime: `${date.split(" ")[0]} ${date.split(" ")[1]}, 06:00 PM`,
-          days: `${date.split(" ")[0]} ${date.split(" ")[1]}`,
-          daysCount: "2 Days",
-          seats: "26 / 26",
+          toTime: "—",
+          days: date || "—",
+          daysCount: "—",
+          seats: "—",
           total: v.agreedCost?.toLocaleString("en-IN") || "0",
           paid: v.paidAmount?.toLocaleString("en-IN") || "0",
           due: ((v.agreedCost || 0) - (v.paidAmount || 0)).toLocaleString(
@@ -4444,15 +3975,7 @@ useEffect(() => {
 
     // Iterate allPassengers as the canonical source (one entry per person)
     allPassengers.forEach((pObj: any) => {
-      const norm = (pObj.name || "").trim().toLowerCase();
-      const allocById = pObj.id ? passengerAllocations[pObj.id] : null;
-      const allocByName = pObj.name ? passengerAllocations[pObj.name] : null;
-      const allocByNorm = norm ? passengerAllocations[Object.keys(passengerAllocations).find((k) => k.trim().toLowerCase() === norm) || ""] : null;
-      const alloc = (allocById && allocById.room && allocById.room !== "—")
-        ? allocById
-        : (allocByName && allocByName.room && allocByName.room !== "—")
-          ? allocByName
-          : (allocByNorm || allocById || allocByName);
+      const alloc = pObj.id ? passengerAllocations[pObj.id] : null;
 
       if (!alloc || !alloc.room || alloc.room === "Unassigned" || alloc.room === "—") return;
       if (isPassengerCancelled(pObj)) return;
@@ -4490,15 +4013,8 @@ useEffect(() => {
   const computedVehicleAllocations = useMemo(() => {
     const list: any[] = [];
     allPassengers.forEach((pObj: any) => {
-      const norm = (pObj.name || "").trim().toLowerCase();
       const allocById = pObj.id ? passengerAllocations[pObj.id] : null;
-      const allocByName = pObj.name ? passengerAllocations[pObj.name] : null;
-      const allocByNorm = norm ? passengerAllocations[Object.keys(passengerAllocations).find((k) => k.trim().toLowerCase() === norm) || ""] : null;
-      const alloc = (allocById && allocById.vehicle && allocById.vehicle !== "—")
-        ? allocById
-        : (allocByName && allocByName.vehicle && allocByName.vehicle !== "—")
-          ? allocByName
-          : (allocByNorm || allocById || allocByName);
+      const alloc = allocById;
 
       if (
         alloc?.vehicle &&
@@ -4529,8 +4045,8 @@ useEffect(() => {
   const allocWarnings = useMemo(() => {
     const warnings: string[] = [];
     allPassengers.forEach((p) => {
-      const alloc = passengerAllocations[p.name];
-      if (!alloc || alloc.room === "—" || alloc.vehicle === "—") {
+      const alloc = p.id ? passengerAllocations[p.id] : null;
+      if (!isActualVehicleAllocated(alloc) || !alloc?.room || alloc.room === "—") {
         warnings.push(`Unallocated traveler: ${p.name}`);
       }
     });
@@ -4547,7 +4063,7 @@ useEffect(() => {
 
   const handleOpenShuffle = (traveler: any) => {
     setShufflingTraveler(traveler);
-    const current = passengerAllocations[traveler.name] || {
+    const current = (traveler.id && passengerAllocations[traveler.id]) || {
       room: "—",
       vehicle: "—",
       seat: "—",
@@ -4609,18 +4125,7 @@ useEffect(() => {
           return;
         }
       } catch (e) {
-        // Backend fallback: read cache
-        const cached = localStorage.getItem(depKey);
-        if (cached !== null) {
-          try {
-            if (isMounted) setActivitiesList(JSON.parse(cached));
-            return;
-          } catch (err) {}
-        }
-      }
-
-      if (isMounted) {
-        setActivitiesList([]);
+        if (isMounted) setActivitiesStale(true);
       }
     };
 
@@ -4944,24 +4449,24 @@ useEffect(() => {
     const activePassengers = allPassengers.filter((p: any) => !p.isCancelled);
     const total = activePassengers.length;
     const paidInFull = activePassengers.filter(
-      (p) => p.paymentStatus === "Paid in Full",
+      (p) => p.isLead && p.paymentStatus === "Paid in Full",
     ).length;
     const partial = activePassengers.filter(
-      (p) => p.paymentStatus === "Partial Payment",
+      (p) => p.isLead && p.paymentStatus === "Partial Payment",
     ).length;
     const pending = activePassengers.filter(
-      (p) => p.paymentStatus === "Payment Pending",
+      (p) => p.isLead && p.paymentStatus === "Payment Pending",
     ).length;
-    const withDue = activePassengers.filter((p) => p.balance > 0).length;
+    const withDue = activePassengers.filter((p) => p.isLead && p.balance > 0).length;
     const totalDue = activePassengers
-      .filter((p) => p.balance > 0)
-      .reduce((s, p) => s + p.balance, 0);
+      .filter((p) => p.isLead && p.balance > 0)
+      .reduce((s, p) => s + Number(p.balance || 0), 0);
     const outstandingPartial = activePassengers
-      .filter((p) => p.paymentStatus === "Partial Payment")
-      .reduce((s, p) => s + p.balance, 0);
+      .filter((p) => p.isLead && p.paymentStatus === "Partial Payment")
+      .reduce((s, p) => s + Number(p.balance || 0), 0);
     const outstandingPending = activePassengers
-      .filter((p) => p.paymentStatus === "Payment Pending")
-      .reduce((s, p) => s + p.balance, 0);
+      .filter((p) => p.isLead && p.paymentStatus === "Payment Pending")
+      .reduce((s, p) => s + Number(p.balance || 0), 0);
     // Reconciliation checklist stats
     const ticketed = activePassengers.filter(
       (p) => p.ticketStatus && p.ticketStatus !== "PENDING" && p.ticketStatus !== "CANCELLED",
@@ -4972,8 +4477,8 @@ useEffect(() => {
     const roomAllocated = activePassengers.filter(
       (p) => p.roomNo && p.roomNo !== "—" && p.roomNo !== "Unassigned",
     ).length;
-    const transportAllocated = activePassengers.filter(
-      (p) => p.pickupPoint && p.pickupPoint !== "—",
+    const transportAllocated = activePassengers.filter((p) =>
+      isTransportAllocatedForPassenger(p, passengerAllocations),
     ).length;
     const missingDocument = activePassengers.filter(
       (p) => p.documentStatus === "Missing",
@@ -4999,7 +4504,7 @@ useEffect(() => {
       transportAllocated,
       missingDocument,
     };
-  }, [allPassengers]);
+  }, [allPassengers, passengerAllocations]);
 
   const paxDemographics = useMemo(() => {
     const activePax = allPassengers.filter((p: any) => !p.isCancelled);
@@ -5098,25 +4603,20 @@ useEffect(() => {
         }
       }
 
-      const due =
-        b.remainingAmount !== undefined
-          ? b.remainingAmount
-          : (b.totalAmount || 0) - (b.advancePaid || 0);
-      const paymentStatusStr = (b.paymentStatus || "").toLowerCase();
+      const fin = calculateBookingFinancialStatus(b);
+      const due = fin.remainingAmount;
       const paymentLabel =
-        due <= 0
+        fin.paymentStatus === "PAID"
           ? "Paid in Full"
-          : paymentStatusStr.includes("pending") ||
-              b.advancePaid === 0 ||
-              b.advancePaid === null
-            ? "Payment Pending"
-            : "Partial Payment";
+          : fin.paymentStatus === "OVERPAID"
+            ? "Overpaid"
+            : fin.paymentStatus === "PARTIAL"
+              ? "Partial Payment"
+              : "Payment Pending";
       const paymentStatusShort =
-        due <= 0
+        fin.paymentStatus === "PAID" || fin.paymentStatus === "OVERPAID"
           ? "PAID"
-          : paymentStatusStr.includes("pending") ||
-              b.advancePaid === 0 ||
-              b.advancePaid === null
+          : fin.paymentStatus === "UNPAID"
             ? "UNPAID"
             : "PARTIALLY PAID";
 
@@ -5137,51 +4637,28 @@ useEffect(() => {
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
       const normLeadName = normalizeCompareName(leadName);
-      const paxList = Array.isArray(passengersObj?.persons)
-        ? passengersObj.persons
-        : Array.isArray(passengersObj)
-          ? passengersObj
-          : [];
-      const filteredCoPax = paxList.filter(
-        (p: any) => normalizeCompareName(p?.name || "") !== normLeadName,
-      );
-      const passengerCount = filteredCoPax.length + 1;
-
-      const allocatedAmounts = allocateWholeRupees(
-        b.totalAmount || 0,
-        passengerCount,
-      );
-      const allocatedPaid = allocateWholeRupees(
-        b.advancePaid || 0,
-        passengerCount,
-      );
-      const allocatedBalances = allocateWholeRupees(
-        due > 0 ? due : 0,
-        passengerCount,
-      );
-
       const leadPassenger = {
         name: leadName,
-        age: normalizePassenger(b, null, 0).age || b.age || 24,
+        age: b.age ?? normalizePassenger(b, null, 0).age ?? null,
         gender: normalizePassenger(b, null, 0).genderFull,
         phone: b.phone || b.mobile || "—",
         email: b.email || "—",
-        pickupPoint: b.pickupCity || "Ahmedabad",
+        pickupPoint: b.pickupCity || "—",
         isLead: true,
         roomType:
           leadRoomInfo.roomType ||
           b.roomSharing ||
           b.roomType ||
           passengersObj?.details?.roomType ||
-          (b.numberOfTravelers === 1 ? "Individual" : "Double Sharing"),
+          "—",
         coupleWith: leadRoomInfo.coupleWith || "",
         roomNo:
           leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—",
         paymentStatus: paymentLabel,
-        amount: allocatedAmounts[0],
-        paidAmount: allocatedPaid[0],
-        balance: allocatedBalances[0],
-        status: b.status || "CONFIRMED",
+        amount: fin.totalAmount,
+        paidAmount: fin.netPaidAmount,
+        balance: due,
+        status: b.status || "—",
         isCancelled: b.status === "cancelled" || b.status === "CANCELLED",
         notes: b.notes || b.adminNotes || "",
       };
@@ -5189,19 +4666,16 @@ useEffect(() => {
       const personsList = [leadPassenger];
 
       if (Array.isArray(passengersObj?.persons)) {
-        let coPaxIdx = 0;
         passengersObj.persons.forEach((p: any, idx: number) => {
-          // Prevent duplicating lead if they are listed in persons too
           if (normalizeCompareName(p.name) === normLeadName) return;
-          coPaxIdx++;
           const coRoomInfo = personsRoomDetails[p.name] || {};
           personsList.push({
             name: p.name,
-            age: normalizePassenger(b, p, idx).age || p.age || 24,
+            age: p.age ?? normalizePassenger(b, p, idx).age ?? null,
             gender: normalizePassenger(b, p, idx).genderFull,
             phone: p.phone || b.phone || "—",
             email: p.email || "—",
-            pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
+            pickupPoint: p.pickupPoint || b.pickupCity || "—",
             isLead: false,
             status: p.status || (p.isCancelled ? "CANCELLED" : "CONFIRMED"),
             isCancelled:
@@ -5225,9 +4699,9 @@ useEffect(() => {
             roomNo:
               coRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
             paymentStatus: paymentLabel,
-            amount: allocatedAmounts[coPaxIdx] || 0,
-            paidAmount: allocatedPaid[coPaxIdx] || 0,
-            balance: allocatedBalances[coPaxIdx] || 0,
+            amount: null,
+            paidAmount: null,
+            balance: null,
           });
         });
       }
@@ -5308,12 +4782,12 @@ useEffect(() => {
         coupleCount,
         roomRequirement,
         totalAmount: b.totalAmount || 0,
-        paidAmount: b.advancePaid || 0,
-        balance: due > 0 ? due : 0,
+        paidAmount: fin.netPaidAmount,
+        balance: due,
         paymentStatus: paymentLabel,
         paymentStatusShort,
-        trainTicketStatus: b.trainTicketStatus || "PENDING",
-        pickupPoint: b.pickupCity || "Ahmedabad",
+        trainTicketStatus: b.trainTicketStatus || "—",
+        pickupPoint: b.pickupCity || "—",
         passengers: personsList,
         rawBooking: b,
       };
@@ -5497,6 +4971,7 @@ useEffect(() => {
     { id: "transport",   label: "Transport" },
     { id: "guides",      label: "Guides" },
     { id: "activities",  label: "Activities" },
+    { id: "documents",   label: "Documents" },
     { id: "operations",  label: "Operations", badge: computedTasks.filter((t) => t.status !== "COMPLETED").length || 0 },
     { id: "finance",     label: "Finance",    badge: computedPayments.filter((p) => p.pending > 0).length || 0 },
     { id: "stationpayments", label: "Station Payments" },
@@ -5555,10 +5030,38 @@ useEffect(() => {
     setEditDepartureOpen(true);
   };
 
+  if (!hasValidDeparture) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center bg-[#F4F7FB] p-8 text-center">
+        <p className="text-base font-semibold text-[#0B1528]">Departure not specified</p>
+        <p className="mt-2 max-w-md text-sm text-slate-500">
+          Open a departure from Operations using a URL that identifies the exact trip and date
+          ({`tripId_YYYY-MM-DD`}). This screen will not load another departure.
+        </p>
+        <Button className="mt-4" variant="outline" onClick={() => navigate("/admin/operations")}>
+          Back to Departures
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden md:overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased">
       {/* ─── RESPONSIVE DEPARTURE HUB ─── */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col md:overflow-hidden">
+        {(Object.keys(depLoadErrors).length > 0 || bookingsIncomplete || activitiesStale) && (
+          <div className="mx-4 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
+            {Object.values(depLoadErrors).join(" · ")}
+            {activitiesStale ? " Activities may be stale; server refresh failed." : ""}
+            <button
+              type="button"
+              className="ml-2 font-semibold underline"
+              onClick={() => fetchPageData(false, true)}
+            >
+              Retry
+            </button>
+          </div>
+        )}
         {/* ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ */}
         <div className="bg-white border-b border-[#E8EEF4]">
           {/* Breadcrumb (desktop) — mobile uses a single Back control in the title row */}
@@ -5842,19 +5345,7 @@ useEffect(() => {
                 const transportRequiredCount = Math.max(1, Math.ceil((activeDeparturePassengers.length || 1) / 17));
                 const isTransportConfirmed = transportAssignedCount >= transportRequiredCount;
 
-                const guideRoles = new Set([
-                  "PRIMARY_GUIDE",
-                  "ASSISTANT_GUIDE",
-                  "CO_GUIDE",
-                  "LOCAL_GUIDE",
-                  "TRIP_LEADER",
-                  "DRIVER_GUIDE",
-                  "FREELANCER",
-                  "SUPPORT_STAFF",
-                ]);
-                const actualDepartureGuides = dbGuides.filter((g: any) =>
-                  g.assignmentType ? guideRoles.has(g.assignmentType) : true
-                );
+                const actualDepartureGuides = listActiveAssignedGuides(dbGuides);
                 const guideCount = actualDepartureGuides.length;
                 const isGuideAssigned = guideCount > 0;
 
@@ -7533,13 +7024,22 @@ useEffect(() => {
                       <b>Vendor:</b> {selectedStayForDrawer?.vendor}
                     </p>
                     <p>
-                      <b>Contact Person:</b> Rajesh Sharma
+                      <b>Contact Person:</b>{" "}
+                      {selectedStayForDrawer?.rawAssignment?.contactName ||
+                        selectedStayForDrawer?.vendorId?.contactName ||
+                        "—"}
                     </p>
                     <p>
-                      <b>Phone:</b> +91 98765 43210
+                      <b>Phone:</b>{" "}
+                      {selectedStayForDrawer?.rawAssignment?.contactPhone ||
+                        selectedStayForDrawer?.vendorId?.phone ||
+                        "—"}
                     </p>
                     <p>
-                      <b>GSTIN:</b> 02AAACR2345K1Z0
+                      <b>GSTIN:</b>{" "}
+                      {selectedStayForDrawer?.rawAssignment?.gstin ||
+                        selectedStayForDrawer?.vendorId?.gstin ||
+                        "—"}
                     </p>
                   </div>
                 </div>
@@ -7785,9 +7285,7 @@ useEffect(() => {
           {/* ──────────────────────── GUIDES ──────────────────────── */}
           {/* ─── PLAN: GUIDES ─── */}
           {activeTab === "guides" && (() => {
-            const actualGuides = dbGuides.filter(
-              (g: any) => !isGuideExpenseType(g.assignmentType),
-            );
+            const actualGuides = listActiveAssignedGuides(dbGuides);
             const tripExpenses = dbGuides.filter((g: any) =>
               isGuideExpenseType(g.assignmentType),
             );
@@ -8119,9 +7617,7 @@ useEffect(() => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {actualGuides
-                        .filter((g: any) => g.assignmentStatus !== "CANCELLED")
-                        .map((g: any) => {
+                    {actualGuides.map((g: any) => {
                           const guideDisplayName =
                             g.guideName ||
                             g.name ||
@@ -8560,7 +8056,7 @@ useEffect(() => {
               opsHotels={opsHotels}
               allocFleet={allocFleet}
               dbGuides={dbGuides}
-              totalPax={passengerStats.total || 15}
+              totalPax={passengerStats.total}
               onEditHotel={(row: any) => {
                 setSelectedWizardDayInfo(row);
                 setIsAddHotelWizardOpen(true);
@@ -8597,6 +8093,9 @@ useEffect(() => {
                 tripVendors={tripVendors}
               />
             </div>
+          )}
+          {activeTab === "documents" && (
+            <DepartureDocuments tripId={tripId} departureDateStr={departureDateStr} />
           )}
 
           {/* ──────────────────────── REPORTS ──────────────────────── */}

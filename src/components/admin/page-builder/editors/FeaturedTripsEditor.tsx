@@ -27,44 +27,7 @@ interface FeaturedTripsEditorProps {
   onReset: () => void;
 }
 
-const DEFAULT_TRIPS: TripItem[] = [
-  {
-    id: "mka-1",
-    title: "Manali Kasol Amritsar Backpacking Trip",
-    location: "Himachal Pradesh & Punjab",
-    price: 12999,
-  },
-  {
-    id: "ladakh-1",
-    title: "Leh Ladakh Road Trip",
-    location: "Ladakh",
-    price: 24999,
-  },
-  {
-    id: "spiti-1",
-    title: "Spiti Valley Road Trip",
-    location: "Spiti Valley",
-    price: 19999,
-  },
-  {
-    id: "kk-1",
-    title: "Kedarkantha Winter Trek",
-    location: "Uttarakhand",
-    price: 6499,
-  },
-  {
-    id: "kerala-1",
-    title: "Kerala Backwaters & Hills Trip",
-    location: "Kerala",
-    price: 19999,
-  },
-  {
-    id: "wspiti-1",
-    title: "Winter Spiti Expedition",
-    location: "Spiti Valley",
-    price: 19999,
-  },
-];
+const DEFAULT_TRIPS: TripItem[] = [];
 
 export function FeaturedTripsEditor({
   draft,
@@ -72,12 +35,7 @@ export function FeaturedTripsEditor({
   onChange,
   onReset,
 }: FeaturedTripsEditorProps) {
-  const selectedTripIds: string[] = draft.selectedTripIds || [
-    "mka-1",
-    "ladakh-1",
-    "spiti-1",
-    "kk-1",
-  ];
+  const selectedTripIds: string[] = draft.selectedTripIds || [];
 
   const updateField = (field: string, value: any) => {
     onChange({ ...draft, [field]: value });

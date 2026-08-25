@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn, safeFormatDate } from "@/lib/utils";
+import { inquiryTabCount } from "@/utils/inquiryCounts";
 import { useAuthStore } from "@/store/auth.store";
 import EmailComposerDrawer from "@/components/admin/EmailComposerDrawer";
 import EmailLogsTimeline from "@/components/admin/EmailLogsTimeline";
@@ -64,6 +65,7 @@ export default function InquiriesPage() {
   const [pageSize, setPageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   // Email Composer
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -123,15 +125,17 @@ export default function InquiriesPage() {
         }
 
         const list = res.data || [];
+        setLoadFailed(false);
         setInquiries(list);
-        setTotalCount(res.pagination?.totalCount || list.length);
-        setTotalPages(currentTotalPages || Math.ceil(list.length / pageSize));
+        setTotalCount(res.pagination?.totalCount ?? list.length);
+        setTotalPages(currentTotalPages || Math.ceil(list.length / pageSize) || 0);
 
         if (list.length > 0 && !selected) {
           setSelected(list[0]);
         }
       } catch (error) {
         if (requestId !== loadRequestRef.current) return;
+        setLoadFailed(true);
         toast.error("Failed to load inquiries");
       } finally {
         if (requestId === loadRequestRef.current) setLoading(false);
@@ -168,65 +172,58 @@ export default function InquiriesPage() {
     return [
       {
         label: "New Leads",
-        count:
-          counts.new ||
-          inquiries.filter((i) => i.status === "new").length ||
-          15,
+        count: loadFailed ? null : counts.new,
         color: "text-blue-600",
         bg: "bg-blue-50",
       },
       {
         label: "Contacted",
-        count: counts.contacted || 28,
+        count: loadFailed ? null : counts.contacted,
         color: "text-[#FF6B00]",
         bg: "bg-[#FF4D00]/5",
       },
       {
         label: "Follow-up",
-        count: counts.followUp || 36,
+        count: loadFailed ? null : counts.followUp,
         color: "text-amber-600",
         bg: "bg-amber-50",
       },
       {
         label: "Interested",
-        count: counts.interested || 17,
+        count: loadFailed ? null : counts.interested,
         color: "text-[#FF4D00]",
         bg: "bg-[#FF4D00]/5",
       },
       {
         label: "Payment Pending",
-        count: counts.paymentPending || 10,
+        count: loadFailed ? null : counts.paymentPending,
         color: "text-[#FF4D00]",
         bg: "bg-[#FF4D00]/5",
       },
       {
         label: "Booked",
-        count: counts.booked || 18,
+        count: loadFailed ? null : counts.booked,
         color: "text-green-600",
         bg: "bg-green-50",
       },
       {
         label: "Lost",
-        count: counts.lost || 6,
+        count: loadFailed ? null : counts.lost,
         color: "text-red-600",
         bg: "bg-red-50",
       },
     ];
-  }, [inquiries]);
+  }, [inquiries, loadFailed]);
 
   // Tab count resolver
-  const getTabCount = (key: string) => {
-    if (key === activeTab) return totalCount;
-    if (key === "new")
-      return inquiries.filter((i) => i.status === "new").length || 15;
-    if (key === "contacted")
-      return inquiries.filter((i) => i.status === "contacted").length || 28;
-    if (key === "converted")
-      return inquiries.filter((i) => i.status === "converted").length || 18;
-    if (key === "closed")
-      return inquiries.filter((i) => i.status === "closed").length || 6;
-    return inquiries.length || 25;
-  };
+  const getTabCount = (key: string) =>
+    inquiryTabCount({
+      key,
+      activeTab,
+      totalCount,
+      inquiries,
+      loadFailed,
+    });
 
   // Status updater
   const updateStatus = async (inq: Inquiry, status: string) => {
@@ -337,7 +334,7 @@ export default function InquiriesPage() {
                 </span>
                 <div className="flex items-baseline justify-between pt-0.5">
                   <span className="text-lg font-black text-slate-900 tracking-tight">
-                    {kpi.count}
+                    {kpi.count === null ? "—" : kpi.count}
                   </span>
                   <span
                     className={cn(
@@ -346,7 +343,11 @@ export default function InquiriesPage() {
                       kpi.color,
                     )}
                   >
-                    {kpi.count > 0 ? "Active" : "Zero"}
+                    {kpi.count === null
+                      ? "Unavailable"
+                      : kpi.count > 0
+                        ? "Active"
+                        : "Zero"}
                   </span>
                 </div>
               </div>
@@ -381,7 +382,7 @@ export default function InquiriesPage() {
                         : "bg-slate-100 text-slate-500",
                     )}
                   >
-                    {count}
+                    {count === null ? "—" : count}
                   </span>
                 </button>
               );

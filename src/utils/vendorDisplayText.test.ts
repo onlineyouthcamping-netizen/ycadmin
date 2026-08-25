@@ -63,7 +63,7 @@ describe("formatVendorService", () => {
       serviceDescription: JSON.stringify(HOTEL_PRICING),
       billReference: JSON.stringify(HOTEL_PRICING),
     });
-    expect(result.primary).toBe("Room-wise · 2 D / 9 T");
+    expect(result.primary).toBe("Room-wise · 2 D · 9 T");
     expect(result.secondary).toBe("BILL-hotel1");
     expect(result.primary).not.toContain("{");
     expect(result.secondary).not.toContain("{");

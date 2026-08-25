@@ -33,6 +33,8 @@ import api from "@/services/api";
 import TripControlRowDrawer, { TripControlRowData } from "./TripControlRowDrawer";
 import { TripControlMealsCell } from "./TripControlMeals";
 import { findHotelForDay } from "@/utils/accommodationCalculator";
+import { vendorPayoutExportStatus } from "@/utils/departure/opsVendorStatus";
+import { listActiveAssignedGuides } from "@/utils/departure/guideAssignments";
 import { pickOpsDayRow } from "@/utils/departure/opsDayItineraryMatch";
 import {
   compactMealSummary,
@@ -172,34 +174,20 @@ export default function DepartureTripControl({
   // User-selected status overrides for each day (persisted in DB and LocalStorage)
   const [statusOverrides, setStatusOverrides] = useState<
     Record<string, { hotelStatus?: string; transportStatus?: string; checkInStatus?: string }>
-  >(() => {
-    try {
-      const saved = localStorage.getItem(`trip_control_status_${tripId}_${departureDateStr}`);
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`trip_control_status_${tripId}_${departureDateStr}`);
-      if (saved) {
-        setStatusOverrides(JSON.parse(saved));
-      }
-    } catch {}
-  }, [tripId, departureDateStr]);
+  >({});
+  const [itineraryLoadError, setItineraryLoadError] = useState(false);
 
   // Fetch DB day itinerary records on mount/change
   const loadDbItinerary = async () => {
     try {
       setLoadingDbItinerary(true);
+      setItineraryLoadError(false);
       const res = await opsService.getDayItinerary(tripId, departureDateStr);
       if (Array.isArray(res)) {
         setDbDayItineraries(res);
       }
     } catch (_err) {
-      // Ignore network errors, fall back to live computation
+      setItineraryLoadError(true);
     } finally {
       setLoadingDbItinerary(false);
     }
@@ -321,18 +309,7 @@ export default function DepartureTripControl({
   // Lead guide info
   const leadGuide = useMemo(() => {
     // Departure-specific assignments take precedence
-    const guideRoles = new Set([
-      "PRIMARY_GUIDE",
-      "ASSISTANT_GUIDE",
-      "CO_GUIDE",
-      "LOCAL_GUIDE",
-      "TRIP_LEADER",
-      "DRIVER_GUIDE",
-      "FREELANCER",
-      "SUPPORT_STAFF",
-    ]);
-    const validGuides =
-      dbGuides?.filter((g) => guideRoles.has(g.assignmentType)) || [];
+    const validGuides = listActiveAssignedGuides(dbGuides);
     if (validGuides.length > 0) {
       return { name: validGuides[0].guideName || "Lead Guide", phone: validGuides[0].emergencyContact || "" };
     }
@@ -407,7 +384,7 @@ export default function DepartureTripControl({
         : planTitle;
 
       const destination = stayLocation;
-      const paxCount = totalPax > 0 ? totalPax : 15;
+      const paxCount = Number.isFinite(Number(totalPax)) ? Number(totalPax) : 0;
 
       // Find DB saved row if present
       const dbRow = pickOpsDayRow(dbDayItineraries, dayLabel, dateStr);
@@ -452,8 +429,8 @@ export default function DepartureTripControl({
       let hotelName = isNoStay
         ? "— (Night Journey)"
         : rawHotelName
-        ? rawHotelName
-        : `Pending Hotel (${stayLocation})`;
+          ? rawHotelName
+          : "—";
 
       let hotelPhone = hotelMatch?.phone || hotelMatch?.hotelPhone || "";
 
@@ -495,7 +472,7 @@ export default function DepartureTripControl({
           transportName = "—";
           if (!rowOverride?.transportStatus) transportStatus = "NOT REQUIRED";
         } else {
-          transportName = leadTransport.name !== "—" ? leadTransport.name : "17 Seater Tempo";
+          transportName = leadTransport.name !== "—" ? leadTransport.name : "—";
           if (!rowOverride?.transportStatus) transportStatus = "BOOKED";
         }
       }
@@ -619,7 +596,13 @@ export default function DepartureTripControl({
         if (total <= 0) return;
         const paid = Number(h.advancePaid ?? h.paidAmount ?? 0);
         const due = Math.max(0, total - paid);
-        const status = due === 0 ? "Paid" : paid > 0 ? "Partial" : "Due";
+        const status = vendorPayoutExportStatus({
+          total,
+          paid,
+          due,
+          approvalStatus: h.approvalStatus,
+          financeVerified: h.financeVerified,
+        });
         const hName = h.hotelName || h.name || h.location || "Hotel";
         rows.push({
           date: departureDateStr,
@@ -642,7 +625,13 @@ export default function DepartureTripControl({
         if (total <= 0) return;
         const paid = Number(t.paidAmount ?? t.advancePaid ?? 0);
         const due = Math.max(0, total - paid);
-        const status = due === 0 ? "Paid" : paid > 0 ? "Partial" : "Due";
+        const status = vendorPayoutExportStatus({
+          total,
+          paid,
+          due,
+          approvalStatus: t.approvalStatus,
+          financeVerified: t.financeVerified,
+        });
         const cap = t.capacity || 14;
         const vType = t.vehicleType || "Tempo Traveller";
         const vTitle = t.name || t.driverName || `Tempo #${idx + 1}`;
@@ -668,7 +657,13 @@ export default function DepartureTripControl({
         if (total <= 0) return;
         const paid = Number(g.advancePaid ?? g.paidAmount ?? 0);
         const due = Math.max(0, total - paid);
-        const status = due === 0 ? "Paid" : paid > 0 ? "Partial" : "Due";
+        const status = vendorPayoutExportStatus({
+          total,
+          paid,
+          due,
+          approvalStatus: g.approvalStatus,
+          financeVerified: g.financeVerified,
+        });
 
         let label = `Guide (${g.guideName || g.name || "Lead Guide"})`;
         if (g.assignmentType === "EXPENSE_FOOD") {
@@ -710,7 +705,13 @@ export default function DepartureTripControl({
           if (total <= 0) return;
           const paid = Number(g.paidAmount ?? g.advancePaid ?? 0);
           const due = Math.max(0, total - paid);
-          const status = due === 0 ? "Paid" : paid > 0 ? "Partial" : "Due";
+          const status = vendorPayoutExportStatus({
+            total,
+            paid,
+            due,
+            approvalStatus: g.approvalStatus,
+            financeVerified: g.financeVerified,
+          });
           rows.push({
             date: departureDateStr,
             service: `Guide (${g.name || "Lead Guide"})`,
@@ -731,8 +732,8 @@ export default function DepartureTripControl({
   // 1. EXCEL EXPORT (.xlsx)
   const handleExportExcel = () => {
     try {
-      const tripTitle = tripDetails?.title || `Spiti Valley Departure (${departureDateStr})`;
-      const totalPersons = totalPax > 0 ? totalPax : 15;
+      const tripTitle = tripDetails?.title || tripId || `Departure (${departureDateStr})`;
+      const totalPersons = Number.isFinite(Number(totalPax)) ? Number(totalPax) : 0;
 
       const excelData: any[][] = [];
       excelData.push([`${departureDateStr} ${tripTitle.toUpperCase()}`]);
@@ -815,8 +816,8 @@ export default function DepartureTripControl({
   // 2. PRINTABLE PDF EXPORT (.pdf)
   const handleExportPDF = () => {
     try {
-      const tripTitle = tripDetails?.title || `Spiti Valley Departure (${departureDateStr})`;
-      const totalPersons = totalPax > 0 ? totalPax : 15;
+      const tripTitle = tripDetails?.title || tripId || `Departure (${departureDateStr})`;
+      const totalPersons = Number.isFinite(Number(totalPax)) ? Number(totalPax) : 0;
       const paymentRows = getPaymentRowsForExport();
 
       const printWindow = window.open("", "_blank");
@@ -959,7 +960,7 @@ export default function DepartureTripControl({
   const handleCopyGoogleSheetsTSV = () => {
     try {
       const lines: string[] = [];
-      const tripTitle = tripDetails?.title || `Spiti Valley Departure (${departureDateStr})`;
+      const tripTitle = tripDetails?.title || tripId || `Departure (${departureDateStr})`;
       const paymentRows = getPaymentRowsForExport();
 
       lines.push(`${departureDateStr} ${tripTitle.toUpperCase()}`);
@@ -1009,7 +1010,7 @@ export default function DepartureTripControl({
   const handleExportCSV = () => {
     try {
       const lines: string[] = [];
-      const tripTitle = tripDetails?.title || `Spiti Valley Departure (${departureDateStr})`;
+      const tripTitle = tripDetails?.title || tripId || `Departure (${departureDateStr})`;
       const paymentRows = getPaymentRowsForExport();
 
       const formatCell = (val: any) => `"${String(val ?? "").replace(/"/g, '""')}"`;
@@ -1151,7 +1152,7 @@ export default function DepartureTripControl({
       const isCheckedIn = newStatus === "CHECKED-IN";
       const isCancelled = newStatus === "CANCELLED";
       const isConfirmed = newStatus === "CONFIRMED" || newStatus === "BOOKED";
-      const hotelVal = isNotRequired ? "— (Not Required)" : isCancelled ? "— (Cancelled)" : row.hotelName !== "—" ? row.hotelName : "Contracted Stay";
+      const hotelVal = isNotRequired ? "— (Not Required)" : isCancelled ? "— (Cancelled)" : row.hotelName !== "—" ? row.hotelName : "—";
 
       await persistDayRow(row, {
         hotelName: hotelVal,
@@ -1187,7 +1188,7 @@ export default function DepartureTripControl({
     try {
       const isNotRequired = newStatus === "NOT REQUIRED";
       const isCancelled = newStatus === "CANCELLED";
-      const defaultTrans = leadTransport.name !== "—" ? leadTransport.name : "17 Seater Tempo";
+      const defaultTrans = leadTransport.name !== "—" ? leadTransport.name : "—";
       const vehicleVal = isNotRequired ? "— (Not Required)" : isCancelled ? "— (Cancelled)" : (row.transportName !== "—" ? row.transportName : defaultTrans);
 
       await persistDayRow(row, {
@@ -1314,6 +1315,11 @@ export default function DepartureTripControl({
             <p className="text-[11px] text-slate-500 mt-0.5">
               Click a row to update hotel, fleet, guide, or check-in.
             </p>
+            {itineraryLoadError && (
+              <p className="text-[11px] text-red-600 mt-1">
+                Trip Control could not load server itinerary. Statuses may be incomplete.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0">
@@ -1324,7 +1330,7 @@ export default function DepartureTripControl({
               ·
             </span>
             <span className="text-[11px] text-slate-500 tabular-nums">
-              {totalPax > 0 ? totalPax : 15} pax
+              {Number.isFinite(Number(totalPax)) ? `${totalPax} pax` : "pax unknown"}
             </span>
 
             <DropdownMenu>
