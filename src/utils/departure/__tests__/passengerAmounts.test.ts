@@ -1,0 +1,160 @@
+import { describe, expect, it } from "vitest";
+import {
+  allocateBookingPassengerAmounts,
+  amountsFromBookingItems,
+  personNameFromItemLabel,
+  splitEvenly,
+} from "../passengerAmounts";
+
+describe("splitEvenly", () => {
+  it("splits with remainder on the last slots", () => {
+    expect(splitEvenly(10000, 3)).toEqual([3333, 3333, 3334]);
+    expect(splitEvenly(7, 2)).toEqual([3, 4]);
+    expect(splitEvenly(42000, 2)).toEqual([21000, 21000]);
+  });
+});
+
+describe("personNameFromItemLabel", () => {
+  it("reads trailing [Name] tags", () => {
+    expect(personNameFromItemLabel("NON AC SLEEPER [Chirag patel]")).toBe(
+      "Chirag patel",
+    );
+    expect(personNameFromItemLabel("Discount [Prince]")).toBe("Prince");
+    expect(personNameFromItemLabel("Package only")).toBeNull();
+  });
+});
+
+describe("group → passenger amount distribution", () => {
+  it("does not dump full group paid/balance onto the lead", () => {
+    const shares = allocateBookingPassengerAmounts({
+      totalAmount: 52000,
+      netPaidAmount: 10000,
+      remainingAmount: 42000,
+      passengers: [
+        { name: "Dr Chirag patel" },
+        { name: "Dr Drashti patel" },
+      ],
+    });
+
+    expect(shares).toHaveLength(2);
+    expect(shares[0].paidAmount).toBe(5000);
+    expect(shares[1].paidAmount).toBe(5000);
+    expect(shares[0].balance).toBe(21000);
+    expect(shares[1].balance).toBe(21000);
+    expect(shares[0].amount).toBe(26000);
+    expect(shares[1].amount).toBe(26000);
+    expect(
+      (shares[0].paidAmount || 0) + (shares[1].paidAmount || 0),
+    ).toBe(10000);
+    expect(
+      (shares[0].balance || 0) + (shares[1].balance || 0),
+    ).toBe(42000);
+    expect(shares[0].paidIsBookingShare).toBe(true);
+  });
+
+  it("splits a 7-pax booking so no one gets the full group due", () => {
+    const names = [
+      "Prince",
+      "Sneha",
+      "Saumya",
+      "Vanshika",
+      "Manav",
+      "Hemal",
+      "Extra",
+    ];
+    const shares = allocateBookingPassengerAmounts({
+      totalAmount: 184000,
+      netPaidAmount: 40000,
+      remainingAmount: 144000,
+      passengers: names.map((name) => ({ name })),
+    });
+
+    expect(shares.every((s) => (s.balance || 0) < 144000)).toBe(true);
+    expect(shares.every((s) => (s.paidAmount || 0) < 40000)).toBe(true);
+    expect(shares.reduce((sum, s) => sum + (s.paidAmount || 0), 0)).toBe(40000);
+    expect(shares.reduce((sum, s) => sum + (s.balance || 0), 0)).toBe(144000);
+    expect(shares.reduce((sum, s) => sum + (s.amount || 0), 0)).toBe(184000);
+  });
+
+  it("uses per-person booking line items for amount shares", () => {
+    const items = [
+      {
+        name: "NON AC SLEEPER [Chirag]",
+        rate: 23000,
+        qty: 1,
+        category: "transport",
+      },
+      {
+        name: "NON AC SLEEPER [Drashti]",
+        rate: 23000,
+        qty: 1,
+        category: "transport",
+      },
+      {
+        name: "Discount [Chirag]",
+        rate: -1000,
+        qty: 1,
+        category: "discounts",
+      },
+      {
+        name: "Discount [Drashti]",
+        rate: -1000,
+        qty: 1,
+        category: "discounts",
+      },
+    ];
+    const fromItems = amountsFromBookingItems(items, [
+      { name: "Chirag" },
+      { name: "Drashti" },
+    ]);
+    expect(fromItems).toEqual([22000, 22000]);
+
+    const shares = allocateBookingPassengerAmounts({
+      totalAmount: 46200, // e.g. base + GST scaled
+      netPaidAmount: 10000,
+      remainingAmount: 36200,
+      passengers: [{ name: "Chirag" }, { name: "Drashti" }],
+      bookingItems: items,
+    });
+
+    expect(shares[0].amountFromLineItems).toBe(true);
+    expect(shares[0].amount).toBe(23100);
+    expect(shares[1].amount).toBe(23100);
+    expect(shares[0].paidAmount).toBe(5000);
+    expect(shares[1].paidAmount).toBe(5000);
+  });
+
+  it("uses aggregated package qty as per-person rate before scaling", () => {
+    const shares = allocateBookingPassengerAmounts({
+      totalAmount: 52000,
+      netPaidAmount: 10000,
+      remainingAmount: 42000,
+      passengers: [{ name: "A" }, { name: "B" }],
+      bookingItems: [
+        { name: "NON AC SLEEPER", rate: 23000, qty: 2, category: "transport" },
+      ],
+    });
+    expect(shares[0].amountFromLineItems).toBe(true);
+    // 23000 each scaled up to sum 52000 → 26000 each
+    expect(shares[0].amount).toBe(26000);
+    expect(shares[1].amount).toBe(26000);
+  });
+
+  it("zeros cancelled passengers and splits only across active", () => {
+    const shares = allocateBookingPassengerAmounts({
+      totalAmount: 52000,
+      netPaidAmount: 10000,
+      remainingAmount: 42000,
+      passengers: [
+        { name: "Lead" },
+        { name: "Co", isCancelled: true },
+        { name: "Active2" },
+      ],
+    });
+    expect(shares[1].amount).toBeNull();
+    expect(shares[1].paidAmount).toBeNull();
+    expect(shares[1].balance).toBeNull();
+    expect(shares[0].paidAmount! + shares[2].paidAmount!).toBe(10000);
+    expect(shares[0].balance! + shares[2].balance!).toBe(42000);
+  });
+});

@@ -7,6 +7,10 @@ import {
 import {
   normalizeGenderFull,
 } from "@/utils/passengerUtils";
+import {
+  allocatePassengerAmountsForBooking,
+  normalizeCompareName,
+} from "./passengerAmounts";
 
 const MISSING = "—";
 
@@ -70,15 +74,6 @@ export function mapBookingsToDeparturePassengers(
         MISSING;
       const leadCoupleWith = leadRoomInfo.coupleWith || "";
 
-      const normalizeCompareName = (nameStr: string) => {
-        if (!nameStr) return "";
-        let clean = nameStr.toLowerCase().trim();
-        if (clean.startsWith("mr. ")) clean = clean.substring(4).trim();
-        else if (clean.startsWith("mrs. ")) clean = clean.substring(5).trim();
-        else if (clean.startsWith("ms. ")) clean = clean.substring(4).trim();
-        return clean;
-      };
-
       const normLeadName = normalizeCompareName(leadName);
       const trainOpt =
         b.trainOption ||
@@ -95,6 +90,8 @@ export function mapBookingsToDeparturePassengers(
         b.cancelled === true ||
         String(b.status || "").toLowerCase() === "cancelled" ||
         String(b.bookingStatus || "").toLowerCase() === "cancelled";
+
+      const draftRows: any[] = [];
 
       const base = {
         bookingId: b.id,
@@ -118,9 +115,6 @@ export function mapBookingsToDeparturePassengers(
         emergencyContact: missingText(b.emergencyContact || passengersObj?.details?.emergencyContact),
         roomNo: leadRoomNo,
         paymentStatus: paymentLabel,
-        amount: fin.totalAmount,
-        paidAmount: fin.netPaidAmount,
-        balance: due,
         bookingBalance: Math.max(0, Math.round(due)),
         paymentMode: missingText(b.paymentMode || b.payment_method),
         paymentDate: MISSING,
@@ -137,7 +131,7 @@ export function mapBookingsToDeparturePassengers(
         linkedBooking: b.linkedBooking || passengersObj?.details?.linkedBooking || undefined,
         bookingLevelPayment: true,
       };
-      arr.push({ id: b.id, name: leadName, ...base, isLead: true });
+      draftRows.push({ id: b.id, name: leadName, ...base, isLead: true });
       if (Array.isArray(passengersObj?.persons)) {
         passengersObj.persons.forEach((p: any, idx: number) => {
           if (normalizeCompareName(p.name) === normLeadName) return;
@@ -168,7 +162,7 @@ export function mapBookingsToDeparturePassengers(
             p.cancelled === true ||
             String(p.status || "").toLowerCase() === "cancelled";
 
-          arr.push({
+          draftRows.push({
             id: coId,
             name: p.name,
             ...base,
@@ -180,9 +174,6 @@ export function mapBookingsToDeparturePassengers(
             phone: missingText(p.phone || b.phone || b.mobile),
             email: missingText(p.email),
             pickupPoint: missingText(p.pickupPoint || b.pickupCity),
-            amount: null,
-            paidAmount: null,
-            balance: null,
             notes: p.notes || (isCoPaxCancelled ? "Cancelled" : MISSING),
             isLead: false,
             gender: normalizeGenderFull(p.gender || p.genderFull, p.name),
@@ -200,6 +191,23 @@ export function mapBookingsToDeparturePassengers(
           });
         });
       }
+
+      const money = allocatePassengerAmountsForBooking(b, draftRows, {
+        totalAmount: fin.totalAmount,
+        netPaidAmount: fin.netPaidAmount,
+        remainingAmount: due,
+      });
+      draftRows.forEach((row, i) => {
+        const share = money[i];
+        arr.push({
+          ...row,
+          amount: share?.amount ?? null,
+          paidAmount: share?.paidAmount ?? null,
+          balance: share?.balance ?? null,
+          amountFromLineItems: share?.amountFromLineItems ?? false,
+          paidIsBookingShare: share?.paidIsBookingShare ?? true,
+        });
+      });
     });
 
   return arr;

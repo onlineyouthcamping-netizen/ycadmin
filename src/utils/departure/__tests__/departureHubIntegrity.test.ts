@@ -73,7 +73,7 @@ describe("departure passenger mapping", () => {
     expect(rows.length).toBe(0);
   });
 
-  it("does not split booking money onto co-passengers", () => {
+  it("splits booking money across active co-passengers (not lead-only)", () => {
     const rows = mapBookingsToDeparturePassengers(
       [
         {
@@ -91,8 +91,11 @@ describe("departure passenger mapping", () => {
     );
     const lead = rows.find((r) => r.isLead);
     const co = rows.find((r) => !r.isLead);
-    expect(lead.paidAmount).toBe(5000);
-    expect(co.paidAmount).toBeNull();
+    expect(lead.paidAmount).toBe(2500);
+    expect(co.paidAmount).toBe(2500);
+    expect(lead.balance).toBe(7500);
+    expect(co.balance).toBe(7500);
+    expect(lead.amount + co.amount).toBe(20000);
   });
 
   it("does not treat pickup point as vehicle allocation", () => {

@@ -17,6 +17,10 @@ import { normalizeDepartureHubTab } from "@/utils/departure/departureHubTab";
 import { fetchAllDepartureBookings } from "@/utils/departure/fetchDepartureBookings";
 import { mergeOpsVendorPayments, opsRecordedPaymentStatus } from "@/utils/departure/vendorIdentity";
 import { mapBookingsToDeparturePassengers, isTransportAllocatedForPassenger } from "@/utils/departure/departurePassengers";
+import {
+  allocatePassengerAmountsForBooking,
+  normalizeCompareName,
+} from "@/utils/departure/passengerAmounts";
 import { matchPassengerForOpsRow, isActualVehicleAllocated, resolvePassengerAlloc } from "@/utils/departure/passengerIdentity";
 import {
   computeHotelStayCoverage,
@@ -4603,15 +4607,6 @@ useEffect(() => {
         passengersObj?.details?.personsRoomDetails ||
         {};
 
-      const normalizeCompareName = (nameStr: string) => {
-        if (!nameStr) return "";
-        let clean = nameStr.toLowerCase().trim();
-        if (clean.startsWith("mr. ")) clean = clean.substring(4).trim();
-        else if (clean.startsWith("mrs. ")) clean = clean.substring(5).trim();
-        else if (clean.startsWith("ms. ")) clean = clean.substring(4).trim();
-        return clean;
-      };
-
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
       const normLeadName = normalizeCompareName(leadName);
@@ -4633,9 +4628,11 @@ useEffect(() => {
         roomNo:
           leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—",
         paymentStatus: paymentLabel,
-        amount: fin.totalAmount,
-        paidAmount: fin.netPaidAmount,
-        balance: due,
+        amount: null as number | null,
+        paidAmount: null as number | null,
+        balance: null as number | null,
+        paidIsBookingShare: true,
+        amountFromLineItems: false,
         status: b.status || "—",
         isCancelled: b.status === "cancelled" || b.status === "CANCELLED",
         notes: b.notes || b.adminNotes || "",
@@ -4680,9 +4677,25 @@ useEffect(() => {
             amount: null,
             paidAmount: null,
             balance: null,
+            paidIsBookingShare: true,
+            amountFromLineItems: false,
           });
         });
       }
+
+      const moneyShares = allocatePassengerAmountsForBooking(b, personsList, {
+        totalAmount: fin.totalAmount,
+        netPaidAmount: fin.netPaidAmount,
+        remainingAmount: due,
+      });
+      personsList.forEach((p, i) => {
+        const share = moneyShares[i];
+        p.amount = share?.amount ?? null;
+        p.paidAmount = share?.paidAmount ?? null;
+        p.balance = share?.balance ?? null;
+        p.paidIsBookingShare = share?.paidIsBookingShare ?? true;
+        p.amountFromLineItems = share?.amountFromLineItems ?? false;
+      });
 
       let coupleCount = 0;
       const coupleNames = new Set<string>();
@@ -6319,8 +6332,11 @@ useEffect(() => {
                                         : "Unpaid"}
                                   </span>
                                   <div className="text-[11px] text-slate-400 mt-0.5 tabular-nums">
-                                    Paid ₹
-                                    {Number(p?.paidAmount || 0).toLocaleString("en-IN")} / pax
+                                    {p?.paidIsBookingShare
+                                      ? "Share ₹"
+                                      : "Paid ₹"}
+                                    {Number(p?.paidAmount || 0).toLocaleString("en-IN")}
+                                    {p?.isCancelled ? "" : " / pax"}
                                   </div>
                                 </td>
                                 <td
@@ -6333,9 +6349,11 @@ useEffect(() => {
                                 >
                                   <div>
                                     ₹{Number(p?.balance || 0).toLocaleString("en-IN")}{" "}
-                                    <span className="text-[10px] font-normal text-slate-400">
-                                      / pax
-                                    </span>
+                                    {!p?.isCancelled && (
+                                      <span className="text-[10px] font-normal text-slate-400">
+                                        / pax
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="text-[11px] text-slate-400 font-normal mt-0.5">
                                     Group due ₹
