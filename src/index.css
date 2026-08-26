@@ -191,6 +191,18 @@
     @apply font-semibold tracking-tight text-[#0B1528];
     font-family: "Montserrat", sans-serif !important;
   }
+
+  /* Hide native spin buttons on number inputs (Chrome/Safari/Firefox) */
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 @layer utilities {

@@ -2222,17 +2222,22 @@ export default function BookingDetailsView({
         totalAmount,
         remainingAmount,
         baseAmount: calculatedBase,
-        discountAmount: calculatedDiscount,
         gstAmount: calculatedGst,
         advancePaid: totalPaymentsPaid,
-        sourceMeta: newMeta,
+        sourceMeta: {
+          ...newMeta,
+          // Persist calculated discount in meta (Booking has no discountAmount column)
+          discountAmount: calculatedDiscount,
+        },
       });
 
       toast.success("Booking items updated successfully!");
       setIsEditingItems(false);
       onRefresh();
-    } catch (e) {
-      toast.error("Failed to update booking items");
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message || "Failed to update booking items";
+      toast.error(msg);
     }
   };
 

@@ -47,7 +47,12 @@ export function normalizeBooking(raw: any): Booking {
     // Derived attribution / pricing metadata
     leadSource: sourceMetaRaw?.source ?? (sourceMetaRaw?.utm_source as string) ?? raw.leadSource,
     source: sourceMetaRaw?.source ?? raw.source,
-    discountAmount: typeof raw.discountAmount === "number" ? raw.discountAmount : 0,
+    discountAmount:
+      typeof raw.discountAmount === "number"
+        ? raw.discountAmount
+        : typeof sourceMetaRaw?.discountAmount === "number"
+          ? sourceMetaRaw.discountAmount
+          : 0,
     duration: raw.tripRef?.duration ?? raw.duration,
   };
 }
