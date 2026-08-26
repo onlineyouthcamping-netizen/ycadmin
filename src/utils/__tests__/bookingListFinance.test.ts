@@ -27,4 +27,18 @@ describe("bookingListFinance", () => {
     expect(bookingListDueAmount(b)).toBe(144000);
     expect(bookingListPaidAmount(b)).toBe(40000);
   });
+
+  it("prefers cleared ops over duplicate legacy Payment", () => {
+    const b = {
+      totalAmount: 23000,
+      advancePaid: 5000,
+      remainingAmount: 18000,
+      opsClientPayments: [
+        { amount: 5000, approvalStatus: "APPROVED_FOUNDER" },
+      ],
+      payments: [{ amount: 5000, status: "success" }],
+    };
+    expect(bookingListPaidAmount(b)).toBe(5000);
+    expect(bookingListDueAmount(b)).toBe(18000);
+  });
 });

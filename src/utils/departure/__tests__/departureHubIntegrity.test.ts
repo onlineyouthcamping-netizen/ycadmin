@@ -146,6 +146,23 @@ describe("finance-verified passenger money", () => {
     expect(fin.paymentStatus).toBe("PARTIAL");
   });
 
+  it("does not double-count ops + legacy Payment for the same advance", () => {
+    // Gautam/Riddhi-style: OpsClientPayment ₹5k + legacy Payment ₹5k (cuid key)
+    const fin = calculateBookingFinancialStatus({
+      totalAmount: 23000,
+      advancePaid: 5000,
+      opsClientPayments: [
+        { id: "ops1", amount: 5000, approvalStatus: "APPROVED_FOUNDER" },
+      ],
+      payments: [
+        { id: "leg1", amount: 5000, status: "success" },
+      ],
+    });
+    expect(fin.netPaidAmount).toBe(5000);
+    expect(fin.remainingAmount).toBe(18000);
+    expect(fin.paymentStatus).toBe("PARTIAL");
+  });
+
   it("counts legacy Payment success (no approvalStatus) like booking CLEARED", () => {
     // Sanjay-style: website/UPI row in Payment table, not OpsClientPayment
     const fin = calculateBookingFinancialStatus({

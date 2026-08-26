@@ -68,10 +68,15 @@ export function calculateBookingFinancialStatus(booking: any): BookingFinancialS
   let paidAmount = 0;
   let refundAmount = 0;
 
-  const receiptRows = [
-    ...(Array.isArray(booking.opsClientPayments) ? booking.opsClientPayments : []),
-    ...(Array.isArray(booking.payments) ? booking.payments : []),
-  ];
+  // Prefer OpsClientPayment when any cleared ops receipt exists. Legacy Payment
+  // rows are often the same advance keyed by internal booking cuid; summing both
+  // double-counts (e.g. 5k ops + 5k legacy → Paid 10k / rem 13k on a 23k booking).
+  const opsRows = Array.isArray(booking.opsClientPayments)
+    ? booking.opsClientPayments
+    : [];
+  const legacyRows = Array.isArray(booking.payments) ? booking.payments : [];
+  const hasClearedOps = opsRows.some((p: any) => isClearedReceipt(p));
+  const receiptRows = hasClearedOps ? opsRows : legacyRows;
   const seen = new Set<string>();
   receiptRows.forEach((p: any) => {
     const key = String(p?.id || `${p?.amount}-${p?.approvalStatus}-${p?.createdAt || ""}`);

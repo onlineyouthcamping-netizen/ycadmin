@@ -16,10 +16,12 @@ export function bookingListDueAmount(booking: {
   }>;
 }): number {
   const total = Math.max(0, Number(booking?.totalAmount) || 0);
-  const receipts = [
-    ...(Array.isArray(booking?.opsClientPayments) ? booking.opsClientPayments : []),
-    ...(Array.isArray(booking?.payments) ? booking.payments : []),
-  ];
+  const ops = Array.isArray(booking?.opsClientPayments)
+    ? booking.opsClientPayments
+    : [];
+  const legacy = Array.isArray(booking?.payments) ? booking.payments : [];
+  const opsCleared = sumReceipts(ops, "success");
+  const receipts = opsCleared > 0 ? ops : legacy;
   if (receipts.length > 0) {
     const cleared = sumReceipts(receipts, "success");
     if (cleared > 0) return Math.max(0, total - cleared);
@@ -42,13 +44,12 @@ export function bookingListPaidAmount(booking: {
 }): number {
   const total = Math.max(0, Number(booking?.totalAmount) || 0);
   const due = bookingListDueAmount(booking);
-  const fromReceipts = sumReceipts(
-    [
-      ...(Array.isArray(booking?.opsClientPayments) ? booking.opsClientPayments : []),
-      ...(Array.isArray(booking?.payments) ? booking.payments : []),
-    ],
-    "success",
-  );
+  const ops = Array.isArray(booking?.opsClientPayments)
+    ? booking.opsClientPayments
+    : [];
+  const legacy = Array.isArray(booking?.payments) ? booking.payments : [];
+  const opsCleared = sumReceipts(ops, "success");
+  const fromReceipts = sumReceipts(opsCleared > 0 ? ops : legacy, "success");
   if (fromReceipts > 0) return fromReceipts;
   if (booking?.advancePaid != null) return Math.max(0, Number(booking.advancePaid) || 0);
   return Math.max(0, total - due);
