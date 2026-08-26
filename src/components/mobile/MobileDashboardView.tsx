@@ -9,10 +9,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   Users,
+  Megaphone,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import type { DashboardStats } from "@/types";
+import type { Announcement } from "@/services/announcements.service";
 import { cn } from "@/lib/utils";
 import { resolveAdminRoute } from "@/lib/adminRouteAliases";
 
@@ -23,6 +25,10 @@ interface MobileDashboardViewProps {
   onDateFilterChange: (value: string) => void;
   userPerms: unknown;
   userRole?: string;
+  announcements?: Announcement[];
+  loadingAnnouncements?: boolean;
+  onViewAllAnnouncements?: () => void;
+  onAddAnnouncement?: () => void;
 }
 
 const PERIOD_OPTIONS: { value: string; label: string }[] = [
@@ -95,6 +101,17 @@ const MetricCard: React.FC<{
   </button>
 );
 
+function relativeAnnouncementTime(createdAt: string) {
+  const diffMs = new Date().getTime() - new Date(createdAt).getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  return `${diffDays}d ago`;
+}
+
 export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   stats,
   loading,
@@ -102,6 +119,10 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   onDateFilterChange,
   userPerms,
   userRole,
+  announcements = [],
+  loadingAnnouncements = false,
+  onViewAllAnnouncements,
+  onAddAnnouncement,
 }) => {
   const navigate = useNavigate();
   const { admin } = useAuthStore();
@@ -121,6 +142,16 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
     userRole,
   );
   const canViewTrips = hasPermission(userPerms, PERMISSIONS.TRIPS_VIEW, userRole);
+  const canViewAnnouncements = hasPermission(
+    userPerms,
+    PERMISSIONS.ANNOUNCEMENTS_VIEW,
+    userRole,
+  );
+  const canAddAnnouncement = hasPermission(
+    userPerms,
+    PERMISSIONS.SETTINGS_VIEW,
+    userRole,
+  );
 
   const upcomingDepartures = stats?.tripsDepartingNext7Days || [];
   const nextDeparture = upcomingDepartures[0];
@@ -265,6 +296,69 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
           />
         )}
       </div>
+
+      {/* Company announcements — same published list as desktop */}
+      {canViewAnnouncements && (
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+            <h3 className="flex min-w-0 items-center gap-1.5 truncate text-[11px] font-semibold tracking-wide text-[#0B1528]">
+              <Megaphone className="h-3.5 w-3.5 shrink-0 text-[#FF5400]" />
+              Announcements
+            </h3>
+            <div className="flex shrink-0 items-center gap-2">
+              {canAddAnnouncement && onAddAnnouncement && (
+                <button
+                  type="button"
+                  onClick={onAddAnnouncement}
+                  className="text-[10px] font-bold uppercase tracking-wide text-[#FF5400]"
+                >
+                  + Add
+                </button>
+              )}
+              {onViewAllAnnouncements && (
+                <button
+                  type="button"
+                  onClick={onViewAllAnnouncements}
+                  className="text-[10px] font-bold uppercase tracking-wide text-slate-500"
+                >
+                  View all
+                </button>
+              )}
+            </div>
+          </div>
+
+          {loadingAnnouncements ? (
+            <div className="space-y-2">
+              {[0, 1].map((key) => (
+                <div
+                  key={key}
+                  className="h-12 rounded-xl bg-slate-100 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : announcements.length === 0 ? (
+            <p className="py-3 text-center text-[11px] font-medium text-slate-500">
+              No announcements yet.
+            </p>
+          ) : (
+            <div className="space-y-2.5">
+              {announcements.slice(0, 3).map((ann) => (
+                <div
+                  key={ann.id}
+                  className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5"
+                >
+                  <p className="text-[11px] font-semibold leading-snug text-[#0B1528]">
+                    {ann.title}
+                  </p>
+                  <p className="mt-1 text-[10px] font-medium text-slate-500">
+                    {ann.author} · {relativeAnnouncementTime(ann.createdAt)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Live Operations Priority */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-sm space-y-3">

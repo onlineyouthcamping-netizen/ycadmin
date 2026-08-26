@@ -157,6 +157,10 @@ export default function DashboardPage() {
           onDateFilterChange={setDateFilter}
           userPerms={userPerms}
           userRole={userRole}
+          announcements={announcements}
+          loadingAnnouncements={loadingAnnouncements}
+          onViewAllAnnouncements={() => setShowAllAnnouncements(true)}
+          onAddAnnouncement={() => setShowAddAnnouncement(true)}
         />
       </div>
 

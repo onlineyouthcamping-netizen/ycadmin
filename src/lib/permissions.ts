@@ -78,6 +78,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "station_payments.resend_receipt",
     "station_payments.manage_accounts",
     "station_payments.verify_upi",
+    "announcements.view",
   ],
 
   admin: [
@@ -125,6 +126,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "station_payments.receive",
     "station_payments.reconcile",
     "station_payments.resend_receipt",
+    "announcements.view",
   ],
 
   sales: [
@@ -147,6 +149,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "tickets.submit",
     "tickets.bulk",
     "tickets.alerts.view",
+    "announcements.view",
   ],
 
   operations: [
@@ -170,6 +173,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "station_payments.view",
     "station_payments.collect",
     "station_payments.handover",
+    "announcements.view",
   ],
 
   finance: [
@@ -187,6 +191,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "station_payments.receive",
     "station_payments.reconcile",
     "station_payments.manage_accounts",
+    "announcements.view",
   ],
 
   finance_controller: [
@@ -241,6 +246,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "tickets.view",
     "audit_logs.view",
     "customers.timeline.view",
+    "announcements.view",
   ],
 
   FINANCE_CONTROLLER: [
@@ -295,6 +301,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "tickets.view",
     "audit_logs.view",
     "customers.timeline.view",
+    "announcements.view",
   ],
 
   guide: [
@@ -309,6 +316,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "tickets.edit",
     "tickets.submit",
     "tickets.approve",
+    "announcements.view",
   ],
 
   viewer: [
@@ -318,6 +326,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "inquiries.view",
     "quotations.view",
     "reports.view",
+    "announcements.view",
   ],
 
   booking_verifier: [
@@ -333,6 +342,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "tickets.bulk",
     "tickets.templates.manage",
     "tickets.alerts.view",
+    "announcements.view",
   ],
 };
 

@@ -117,10 +117,18 @@ describe("vendorFoodMenu", () => {
 
     const keyed = parseVendorFoodMenu({
       name: "Barpa Cottage",
-      foodMenu: { breakfast: "Poha, paratha, tea", lunch: "Dal, rice, roti" },
+      foodMenu: {
+        breakfast: "Poha, paratha, tea",
+        lunch: "Dal, rice, roti",
+        dinner: "Soup, roti, sabzi",
+      },
     });
     expect(keyed?.items.find((i) => i.type === "Breakfast")?.inclusions).toContain("Poha");
-    expect(formatDayMeals(keyed, "Breakfast & Dinner").groups.find((g) => g.type === "Breakfast")?.dishes).toContain("Poha");
+    expect(keyed?.items.find((i) => i.type === "Dinner")?.inclusions).toContain("Soup");
+    const keyedDay = formatDayMeals(keyed, "Breakfast & Dinner");
+    expect(keyedDay.groups.find((g) => g.type === "Breakfast")?.dishes).toContain("Poha");
+    expect(keyedDay.groups.find((g) => g.type === "Dinner")?.dishes).toContain("Soup");
+    expect(keyedDay.groups.find((g) => g.type === "Lunch")).toBeUndefined();
   });
 
   it("title-cases messy booking meal strings and collapses identical dishes", () => {
@@ -171,6 +179,57 @@ describe("vendorFoodMenu", () => {
     expect(matchMenuToStay(menus, "Ameera Hotel Shimla", "Shimla")?.vendorName).toBe("Ameera Hotel Shimla");
     expect(matchMenuToStay(menus, "Ameera Hotel Shimla", "Shimla")?.items[0].inclusions).toContain("soup");
     expect(matchMenuToStay(menus, "Pending Hotel (Manali)", "Manali")?.vendorName).toBeUndefined();
+  });
+
+  it("View dishes merges breakfast-only booking tariffs with full vendor food menu (MAP)", () => {
+    const bookingTariffOnly = parseVendorFoodMenu({
+      name: "Barpa Cottage",
+      vendorCode: "VND-1786625842521",
+      city: "Manali",
+      mealTariffs: [
+        {
+          type: "BREAKFAST",
+          name: "Group Breakfast",
+          inclusions: "Tea/ Coffee, Paratha, Puri Bhaji",
+        },
+      ],
+    })!;
+    const directoryFoodMenu = parseVendorFoodMenu({
+      name: "Barpa Cottage Manali",
+      vendorCode: "VND-1786625842521",
+      city: "Manali",
+      foodMenu: [
+        { type: "BREAKFAST", name: "Breakfast", inclusions: "Tea/ Coffee, Paratha, Puri Bhaji" },
+        { type: "DINNER", name: "Dinner", inclusions: "Dal, Rice, Sabzi, Roti" },
+      ],
+      foodMenuIncluded: { breakfast: true, lunch: false, dinner: true, snacks: false },
+    })!;
+    // Booking menu listed first — previously won and hid dinner.
+    const matched = matchMenuToStay(
+      [bookingTariffOnly, directoryFoodMenu],
+      "Barpa Cottage",
+      "Manali",
+      "VND-1786625842521",
+    );
+    const day = formatDayMeals(matched, "Breakfast & Dinner");
+    expect(day.source).toBe("vendor");
+    expect(day.groups.find((g) => g.type === "Breakfast")?.dishes).toContain("Paratha");
+    expect(day.groups.find((g) => g.type === "Dinner")?.dishes).toContain("Sabzi");
+    expect(mealChipLabel(day.groups, "Breakfast & Dinner", "vendor")).toBe("Breakfast & Dinner");
+  });
+
+  it("supplements dedicated foodMenu with tariff meals for uncovered types", () => {
+    const menu = parseVendorFoodMenu({
+      name: "Barpa Cottage",
+      foodMenu: [{ type: "BREAKFAST", name: "Breakfast", inclusions: "Poha, tea" }],
+      mealTariffs: [
+        { type: "DINNER", name: "Dinner Thali", inclusions: "Dal, rice, roti, salad" },
+      ],
+    });
+    expect(menu?.items.find((i) => i.type === "Breakfast")?.inclusions).toContain("Poha");
+    expect(menu?.items.find((i) => i.type === "Dinner")?.inclusions).toContain("salad");
+    const day = formatDayMeals(menu, "Breakfast & Dinner");
+    expect(day.groups.map((g) => g.type)).toEqual(["Breakfast", "Dinner"]);
   });
 
   it("strips duplicated meals and hotel lines from trip-control remarks", () => {

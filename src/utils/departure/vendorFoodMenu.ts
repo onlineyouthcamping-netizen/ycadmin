@@ -267,10 +267,16 @@ export function parseVendorFoodMenu(vendor: any): VendorMenuSource | null {
 
   const seen = new Set<string>();
   const items: VendorMenuItem[] = [];
-  const preferDedicated = dedicatedMenu.length > 0;
+  const dedicatedTypes = new Set(
+    dedicatedMenu.map((i) => i.type).filter(Boolean),
+  );
+  const supplement = [...fromTariffs, ...fromPlans, ...fromFoodRates, ...fromCatalog].filter(
+    (item) => !dedicatedTypes.has(item.type),
+  );
   [
     ...dedicatedMenu,
-    ...(preferDedicated ? [] : [...fromTariffs, ...fromPlans, ...fromFoodRates, ...fromCatalog]),
+    // Keep saved food-menu meals; only fill meal types the editor did not cover.
+    ...supplement,
     ...(nested?.items || []),
     ...(nestedVendorId?.items || []),
   ].forEach((item) => {
@@ -500,10 +506,85 @@ function menuMatchesCity(menu: VendorMenuSource, place: string): boolean {
   return false;
 }
 
+function distinctMealTypesWithDishes(menu: VendorMenuSource): number {
+  const types = new Set(
+    menu.items.filter((i) => (i.inclusions || "").trim()).map((i) => i.type),
+  );
+  return types.size;
+}
+
+function menuRichness(menu: VendorMenuSource): number {
+  const dishItems = menu.items.filter((i) => (i.inclusions || "").trim());
+  const dishChars = dishItems.reduce((n, i) => n + i.inclusions.length, 0);
+  return (
+    distinctMealTypesWithDishes(menu) * 1000 +
+    dishItems.length * 10 +
+    Math.min(dishChars, 500) +
+    (menu.included ? 5 : 0) +
+    (menu.mealPlanLabel ? 1 : 0)
+  );
+}
+
+/** Prefer the fullest dish list — never let a breakfast-only tariff beat a MAP food menu. */
 function pickPreferred(candidates: VendorMenuSource[]): VendorMenuSource | null {
   if (candidates.length === 0) return null;
-  const withDishes = candidates.find((m) => m.items.some((i) => i.inclusions));
-  return withDishes || candidates[0];
+  return [...candidates].sort((a, b) => menuRichness(b) - menuRichness(a))[0];
+}
+
+/**
+ * Combine every matching menu for the same stay so breakfast from a tariff and
+ * dinner from the vendor food-menu editor both appear in "View dishes".
+ */
+function mergeMenuCandidates(candidates: VendorMenuSource[]): VendorMenuSource | null {
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  const base = pickPreferred(candidates)!;
+  const byType = new Map<string, VendorMenuItem>();
+  // Leaner sources first so richer / dedicated menus overwrite the same meal type.
+  [...candidates]
+    .sort((a, b) => menuRichness(a) - menuRichness(b))
+    .forEach((menu) => {
+      menu.items.forEach((item) => {
+        const dishes = (item.inclusions || "").trim();
+        if (!dishes) return;
+        const prev = byType.get(item.type);
+        if (!prev || dishes.length >= prev.inclusions.length) {
+          byType.set(item.type, { ...item, inclusions: dishes });
+        }
+      });
+    });
+
+  const ordered: VendorMenuItem[] = [];
+  const used = new Set<string>();
+  MEAL_ORDER.forEach((type) => {
+    const item = byType.get(type);
+    if (!item) return;
+    ordered.push(item);
+    used.add(type);
+  });
+  byType.forEach((item, type) => {
+    if (used.has(type)) return;
+    ordered.push(item);
+  });
+
+  let included: FoodMenuIncluded | undefined;
+  candidates.forEach((m) => {
+    if (!m.included) return;
+    included = { ...(included || {}), ...m.included };
+  });
+
+  const aliases = Array.from(
+    new Set(candidates.flatMap((m) => m.aliases || []).filter(Boolean)),
+  );
+
+  return {
+    ...base,
+    items: ordered,
+    included: included || base.included,
+    aliases: aliases.length ? aliases : base.aliases,
+    mealPlanLabel: base.mealPlanLabel || candidates.find((m) => m.mealPlanLabel)?.mealPlanLabel,
+  };
 }
 
 function idsEqual(a?: string, b?: string): boolean {
@@ -524,8 +605,10 @@ export function matchMenuToStay(
 ): VendorMenuSource | null {
   if (vendorId) {
     const byId = menus.filter((m) => menuMatchesVendorId(m, String(vendorId)));
-    const picked = pickPreferred(byId);
-    if (picked) return picked;
+    const merged = mergeMenuCandidates(byId);
+    if (merged && (merged.items.some((i) => i.inclusions) || merged.mealPlanLabel)) {
+      return merged;
+    }
   }
   const hotel = String(hotelName || "").trim();
   const usableHotel =
@@ -535,7 +618,7 @@ export function matchMenuToStay(
     !hotel.includes("Night Journey");
   if (usableHotel) {
     // Only the assigned property — never another hotel in the same city.
-    return pickPreferred(menus.filter((m) => menuMatchesHotel(m, hotel)));
+    return mergeMenuCandidates(menus.filter((m) => menuMatchesHotel(m, hotel)));
   }
   return null;
 }
