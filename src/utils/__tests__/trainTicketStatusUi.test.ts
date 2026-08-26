@@ -3,6 +3,8 @@ import {
   isGroupTrainTicketingDone,
   isTrainTicketDone,
   isTrainTicketRequired,
+  simpleTrainTicketStateToApi,
+  toSimpleTrainTicketState,
   trainTicketProgressLabel,
   trainTicketRequirementLabel,
 } from "../trainTicketStatusUi";
@@ -52,7 +54,10 @@ describe("ticket done vs not done", () => {
   it("PENDING is not done with clear label", () => {
     expect(isTrainTicketDone({ ticketStatus: "PENDING" })).toBe(false);
     expect(trainTicketProgressLabel({ ticketStatus: "PENDING" })).toBe(
-      "ticket is not done",
+      "Not done",
+    );
+    expect(toSimpleTrainTicketState({ ticketStatus: "PENDING" })).toBe(
+      "NOT_DONE",
     );
   });
 
@@ -60,6 +65,26 @@ describe("ticket done vs not done", () => {
     expect(isTrainTicketDone({ ticketStatus: "CONFIRMED" })).toBe(true);
     expect(isTrainTicketDone({ ticketStatus: "BOOKED" })).toBe(true);
     expect(isTrainTicketDone({ ticketStatus: "RAC" })).toBe(true);
+    expect(toSimpleTrainTicketState({ ticketStatus: "ISSUED" })).toBe("DONE");
+    expect(trainTicketProgressLabel({ ticketStatus: "CONFIRMED" })).toBe(
+      "Done",
+    );
+  });
+
+  it("NOT_REQUIRED maps to Not required", () => {
+    expect(toSimpleTrainTicketState({ ticketStatus: "NOT_REQUIRED" })).toBe(
+      "NOT_REQUIRED",
+    );
+    expect(trainTicketProgressLabel({ ticketStatus: "NOT_REQUIRED" })).toBe(
+      "Not required",
+    );
+  });
+
+  it("maps simple UI state to API without downgrading ISSUED", () => {
+    expect(simpleTrainTicketStateToApi("DONE")).toBe("CONFIRMED");
+    expect(simpleTrainTicketStateToApi("DONE", "ISSUED")).toBe("ISSUED");
+    expect(simpleTrainTicketStateToApi("NOT_DONE", "ISSUED")).toBe("PENDING");
+    expect(simpleTrainTicketStateToApi("NOT_REQUIRED")).toBe("NOT_REQUIRED");
   });
 });
 

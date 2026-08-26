@@ -1,7 +1,7 @@
 ﻿/**
  * TrainTicketsPanel.tsx
- * Comprehensive Two-Way Train Ticketing Module (Departure + Return Journeys)
- * Includes Group Ticket Summary, Independent Journey Sections, and Passenger Matrix.
+ * Ultra-simple train ticketing: Done / Not done / Not required.
+ * Backend still receives full payloads; removed fields use existing or empty defaults.
  */
 import React, { useState, useEffect } from "react";
 import {
@@ -11,16 +11,14 @@ import {
   AlertTriangle,
   RotateCcw,
   Ban,
-  RefreshCw,
-  History,
   ChevronDown,
   Send,
-  Loader2,
   ArrowRight,
   Check,
   Phone,
   MoreHorizontal,
   Receipt,
+  History,
 } from "lucide-react";
 import { normalizePassenger } from "@/utils/passengerUtils";
 import { Button } from "@/components/ui/button";
@@ -50,40 +48,47 @@ import {
 import {
   trainTicketService,
   type TrainTicket,
-  type TrainTemplate,
 } from "@/services/trainTicket.service";
 import api from "@/services/api";
 import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner";
-import {
-  cn,
-  TRAIN_TICKET_STATUS_COLORS,
-} from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   isGroupTrainTicketingDone,
   isTrainTicketDone,
+  simpleTrainTicketStateLabel,
+  simpleTrainTicketStateToApi,
+  toSimpleTrainTicketState,
   trainTicketProgressLabel,
   trainTicketRequirementLabel,
+  type SimpleTrainTicketState,
 } from "@/utils/trainTicketStatusUi";
-import EmailComposerDrawer from "./EmailComposerDrawer";
-
-const STATUS_COLORS = TRAIN_TICKET_STATUS_COLORS;
 
 function StatusPill({ status }: { status: string }) {
   const s = (status || "PENDING").toUpperCase();
-  const label = trainTicketProgressLabel({ ticketStatus: s });
+  if (s === "CANCELLED") {
+    return (
+      <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold border bg-red-50 text-red-700 border-red-200">
+        Cancelled
+      </span>
+    );
+  }
+  const simple = toSimpleTrainTicketState({ ticketStatus: s });
+  const label = simpleTrainTicketStateLabel(simple);
   const colorClass =
-    label === "ticket is not done"
-      ? "bg-red-50 text-red-700 border-red-200"
-      : STATUS_COLORS[s] || "bg-slate-100 text-slate-700";
+    simple === "DONE"
+      ? "bg-green-50 text-green-700 border-green-200"
+      : simple === "NOT_REQUIRED"
+        ? "bg-slate-50 text-slate-600 border-slate-200"
+        : "bg-red-50 text-red-700 border-red-200";
   return (
     <span
       className={cn(
-        "px-2 py-0.5 rounded-full text-[9px] font-semibold border border-transparent",
+        "px-2 py-0.5 rounded-full text-[9px] font-semibold border",
         colorClass,
       )}
     >
-      {label === "ticket is not done" ? "ticket is not done" : s.replace(/_/g, " ")}
+      {label}
     </span>
   );
 }
@@ -127,7 +132,7 @@ function TravellerCell({
             ? "bg-green-50 border-green-200"
             : "bg-red-50 border-red-200",
         )}
-        title={ticketDone ? "Ticket done" : "Ticket is not done"}
+        title={ticketDone ? "Done" : "Not done"}
       >
         <Train
           className={cn(
@@ -154,55 +159,6 @@ function TravellerCell({
   );
 }
 
-/** True when a station/name field is actually the trip title (bad template fill). */
-function looksLikeTripTitle(
-  value: string | null | undefined,
-  tripTitle?: string | null,
-): boolean {
-  const v = String(value || "")
-    .trim()
-    .toLowerCase();
-  if (!v) return false;
-  if (v.length > 48) return true;
-  const trip = String(tripTitle || "")
-    .trim()
-    .toLowerCase();
-  if (!trip) return false;
-  return v === trip || (trip.length >= 12 && v.includes(trip.slice(0, 24)));
-}
-
-/** Short train/route line — skip empty PNR placeholders and trip-title destinations. */
-function formatTrainBrief(
-  t: Pick<
-    TrainTicket,
-    "trainName" | "trainNumber" | "sourceStation" | "destinationStation"
-  >,
-  tripTitle?: string | null,
-): { primary: string; secondary?: string } {
-  const num = String(t.trainNumber || "").trim();
-  const name = String(t.trainName || "").trim();
-  const src = String(t.sourceStation || "").trim();
-  const dest = String(t.destinationStation || "").trim();
-  const nameOk = name && !looksLikeTripTitle(name, tripTitle);
-  const destOk = dest && !looksLikeTripTitle(dest, tripTitle);
-
-  const parts: string[] = [];
-  if (num) parts.push(num);
-  if (nameOk) parts.push(name);
-
-  if (parts.length > 0) {
-    return {
-      primary: parts.join(" · "),
-      secondary:
-        src && destOk ? `${src} → ${dest}` : src && !destOk ? src : undefined,
-    };
-  }
-
-  if (src && destOk) return { primary: `${src} → ${dest}` };
-  if (src) return { primary: src };
-  return { primary: "—" };
-}
-
 function ApprovalHint({ status }: { status?: string }) {
   const s = (status || "").toUpperCase();
   if (s === "SUBMITTED") {
@@ -224,7 +180,30 @@ function ApprovalHint({ status }: { status?: string }) {
   return null;
 }
 
-const emptyForm = (defaultType: "DEPARTURE" | "RETURN" = "DEPARTURE") => ({
+/** Hidden fields kept for API compatibility — not shown in the form. */
+type TicketFormPayload = {
+  travelerName: string;
+  passengerReference: "DEPARTURE" | "RETURN";
+  pnr: string;
+  trainName: string;
+  trainNumber: string;
+  journeyDate: string;
+  sourceStation: string;
+  destinationStation: string;
+  coach: string;
+  seatNumber: string;
+  berthType: string;
+  ticketAmount: string;
+  paidBy: "COMPANY" | "CUSTOMER";
+  amountMode: string;
+  internalNote: string;
+  ticketBookingPerson: string;
+  simpleStatus: SimpleTrainTicketState;
+};
+
+const emptyForm = (
+  defaultType: "DEPARTURE" | "RETURN" = "DEPARTURE",
+): TicketFormPayload => ({
   travelerName: "",
   passengerReference: defaultType,
   pnr: "",
@@ -237,11 +216,11 @@ const emptyForm = (defaultType: "DEPARTURE" | "RETURN" = "DEPARTURE") => ({
   seatNumber: "",
   berthType: "",
   ticketAmount: "",
-  paidBy: "COMPANY" as "COMPANY" | "CUSTOMER",
+  paidBy: "COMPANY",
   amountMode: "PAYMENT_LINK",
   internalNote: "",
   ticketBookingPerson: "",
-  ticketStatus: "PENDING" as const,
+  simpleStatus: "NOT_DONE",
 });
 
 interface TrainTicketsPanelProps {
@@ -278,22 +257,19 @@ export default function TrainTicketsPanel({
   const [loading, setLoading] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
 
-  // Form states
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm("DEPARTURE"));
-  const [activeJourneyTab, setActiveJourneyTab] = useState<
-    "ALL" | "DEPARTURE" | "RETURN"
-  >("ALL");
+  const [editingOriginalStatus, setEditingOriginalStatus] = useState<
+    string | null
+  >(null);
+  const [form, setForm] = useState<TicketFormPayload>(emptyForm("DEPARTURE"));
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
-  // Approval & Rejection Modal
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [ticketToReject, setTicketToReject] = useState<TrainTicket | null>(null);
   const [rejectionNotes, setRejectionNotes] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
 
-  // Cancellation Modal
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [ticketToCancel, setTicketToCancel] = useState<TrainTicket | null>(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -301,9 +277,10 @@ export default function TrainTicketsPanel({
   const [cancelYcCharge, setCancelYcCharge] = useState("0");
   const [cancelNotes, setCancelNotes] = useState("");
 
-  // Reticketing Modal
   const [reticketModalOpen, setReticketModalOpen] = useState(false);
-  const [ticketToReticket, setTicketToReticket] = useState<TrainTicket | null>(null);
+  const [ticketToReticket, setTicketToReticket] = useState<TrainTicket | null>(
+    null,
+  );
   const [reticketReason, setReticketReason] = useState("");
   const [reticketTrainName, setReticketTrainName] = useState("");
   const [reticketTrainNumber, setReticketTrainNumber] = useState("");
@@ -318,23 +295,19 @@ export default function TrainTicketsPanel({
   const [reticketYcCharge, setReticketYcCharge] = useState("0");
   const [reticketNotes, setReticketNotes] = useState("");
 
-  // Record Refund Modal
   const [refundModalOpen, setRefundModalOpen] = useState(false);
-  const [ticketForRefund, setTicketForRefund] = useState<TrainTicket | null>(null);
+  const [ticketForRefund, setTicketForRefund] = useState<TrainTicket | null>(
+    null,
+  );
   const [refundStatus, setRefundStatus] = useState("COMPLETED");
   const [refundTxRef, setRefundTxRef] = useState("");
   const [refundCustomAmount, setRefundCustomAmount] = useState("0");
   const [refundNotes, setRefundNotes] = useState("");
 
-  // History Modal
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [ticketHistory, setTicketHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Email Drawer
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
-
-  // Trip Train Ticket Template state
   const [tripTemplate, setTripTemplate] = useState<any>(null);
 
   useEffect(() => {
@@ -386,42 +359,26 @@ export default function TrainTicketsPanel({
       : selectedTier?.departureJourney;
   };
 
-  const handleFillFromTemplate = (
-    journeyType?: "DEPARTURE" | "RETURN",
-    targetClass?: string,
+  const applyTemplateDefaults = (
+    init: TicketFormPayload,
+    journeyType: "DEPARTURE" | "RETURN",
   ) => {
-    const legType =
-      journeyType ||
-      (form.passengerReference as "DEPARTURE" | "RETURN") ||
-      "DEPARTURE";
-    const tmpl = getMatchingLegTemplate(legType, targetClass || form.coach);
-    if (!tmpl) {
-      toast.error("No template found for this trip");
-      return;
+    const tmpl = getMatchingLegTemplate(journeyType);
+    if (tmpl) {
+      init.sourceStation = tmpl.boardingStation || "";
+      init.destinationStation = tmpl.destination || "";
+      init.trainName = tmpl.trainName || "";
+      init.trainNumber = tmpl.trainNumber || "";
+      init.coach = tmpl.class || "";
+      init.berthType = tmpl.quota || "";
+      init.ticketAmount = tmpl.expectedCost ? String(tmpl.expectedCost) : "";
     }
-
-    setForm((prev) => ({
-      ...prev,
-      sourceStation: tmpl.boardingStation || prev.sourceStation,
-      destinationStation: tmpl.destination || prev.destinationStation,
-      trainName: tmpl.trainName || prev.trainName,
-      trainNumber: tmpl.trainNumber || prev.trainNumber,
-      coach: tmpl.class || prev.coach,
-      berthType: tmpl.quota || prev.berthType,
-      ticketAmount: tmpl.expectedCost
-        ? String(tmpl.expectedCost)
-        : prev.ticketAmount,
-      journeyDate:
-        prev.journeyDate ||
-        (legType === "RETURN"
-          ? booking?.returnDate
-            ? new Date(booking.returnDate).toISOString().split("T")[0]
-            : ""
-          : booking?.departureDate
-            ? new Date(booking.departureDate).toISOString().split("T")[0]
-            : ""),
-    }));
-    toast.success(`Filled details from Trip ${legType} Template!`);
+    const dateSrc =
+      journeyType === "RETURN" ? booking?.returnDate : booking?.departureDate;
+    if (dateSrc) {
+      init.journeyDate = new Date(dateSrc).toISOString().split("T")[0];
+    }
+    return init;
   };
 
   const handleSyncTemplate = async () => {
@@ -457,7 +414,6 @@ export default function TrainTicketsPanel({
     if (bookingId) loadTickets();
   }, [bookingId]);
 
-  // Approval Handlers
   const handleApproveTicket = async (t: TrainTicket) => {
     try {
       await trainTicketService.approveTicket(t.id);
@@ -510,7 +466,6 @@ export default function TrainTicketsPanel({
     }
   };
 
-  // Separate Departure and Return tickets
   const departureTickets = tickets.filter(
     (t) => t.passengerReference !== "RETURN",
   );
@@ -518,25 +473,23 @@ export default function TrainTicketsPanel({
     (t) => t.passengerReference === "RETURN",
   );
 
-  // Summary Metrics helper
-  const getSummaryCounts = (ticketList: TrainTicket[]) => {
-    const counts = {
-      CONFIRMED: 0,
-      WAITLISTED: 0,
-      RAC: 0,
-      PENDING: 0,
-      CANCELLED: 0,
-      SELF_BOOKED: 0,
-      BOOKED: 0,
-    };
-
+  const getSimpleCounts = (ticketList: TrainTicket[]) => {
+    let done = 0;
+    let notDone = 0;
+    let notRequired = 0;
+    let cancelled = 0;
     ticketList.forEach((t) => {
       const st = (t.ticketStatus || "PENDING").toUpperCase();
-      if (st in counts) counts[st as keyof typeof counts]++;
-      else counts.PENDING++;
+      if (st === "CANCELLED") {
+        cancelled++;
+        return;
+      }
+      const simple = toSimpleTrainTicketState(t);
+      if (simple === "DONE") done++;
+      else if (simple === "NOT_REQUIRED") notRequired++;
+      else notDone++;
     });
-
-    return counts;
+    return { done, notDone, notRequired, cancelled };
   };
 
   const getTravelerPhone = (travelerName: string) => {
@@ -568,16 +521,10 @@ export default function TrainTicketsPanel({
     booking?.numberOfTravelers || 1,
     tickets.length || 1,
   );
-  const depCounts = getSummaryCounts(departureTickets);
-  const retCounts = getSummaryCounts(returnTickets);
-  const totalCounts = getSummaryCounts(tickets);
+  const depCounts = getSimpleCounts(departureTickets);
+  const retCounts = getSimpleCounts(returnTickets);
   const requirementLabel = trainTicketRequirementLabel(booking);
   const groupTicketingDone = isGroupTrainTicketingDone(booking, tickets);
-  const tripTitle =
-    booking?.tripTitle ||
-    booking?.tripRef?.title ||
-    booking?.tripName ||
-    "";
 
   const handleAutoGenerate = async () => {
     setActionBusy(true);
@@ -594,6 +541,32 @@ export default function TrainTicketsPanel({
     }
   };
 
+  const buildApiPayload = () => {
+    const ticketStatus = simpleTrainTicketStateToApi(
+      form.simpleStatus,
+      editingOriginalStatus,
+    );
+    return {
+      travelerName: form.travelerName,
+      passengerReference: form.passengerReference || "DEPARTURE",
+      pnr: form.pnr || "",
+      trainName: form.trainName || "",
+      trainNumber: form.trainNumber || "",
+      journeyDate: form.journeyDate || "",
+      sourceStation: form.sourceStation || "",
+      destinationStation: form.destinationStation || "",
+      coach: form.coach || "",
+      seatNumber: form.seatNumber || "",
+      berthType: form.berthType || "",
+      ticketAmount: parseFloat(form.ticketAmount) || 0,
+      paidBy: form.paidBy || "COMPANY",
+      amountMode: form.amountMode || "PAYMENT_LINK",
+      internalNote: form.internalNote || "",
+      ticketBookingPerson: form.ticketBookingPerson || "",
+      ticketStatus,
+    };
+  };
+
   const handleSaveTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.travelerName.trim()) {
@@ -603,21 +576,17 @@ export default function TrainTicketsPanel({
 
     setActionBusy(true);
     try {
+      const payload = buildApiPayload();
       if (editingId) {
-        await trainTicketService.updateTicket(editingId, {
-          ...form,
-          ticketAmount: parseFloat(form.ticketAmount) || 0,
-        });
+        await trainTicketService.updateTicket(editingId, payload);
         toast.success("Ticket updated successfully");
       } else {
-        await trainTicketService.createTicket(bookingId, {
-          ...form,
-          ticketAmount: parseFloat(form.ticketAmount) || 0,
-        });
+        await trainTicketService.createTicket(bookingId, payload);
         toast.success("Ticket created successfully");
       }
       setShowForm(false);
       setEditingId(null);
+      setEditingOriginalStatus(null);
       setForm(emptyForm("DEPARTURE"));
       loadTickets();
     } catch (err: any) {
@@ -627,64 +596,39 @@ export default function TrainTicketsPanel({
     }
   };
 
-  const handleOpenAddDeparture = () => {
-    setEditingId(null);
-    const tmpl = getMatchingLegTemplate("DEPARTURE");
-    const init = emptyForm("DEPARTURE");
-    if (tmpl) {
-      init.sourceStation = tmpl.boardingStation || "";
-      init.destinationStation = tmpl.destination || "";
-      init.trainName = tmpl.trainName || "";
-      init.trainNumber = tmpl.trainNumber || "";
-      init.coach = tmpl.class || "";
-      init.berthType = tmpl.quota || "";
-      init.ticketAmount = tmpl.expectedCost ? String(tmpl.expectedCost) : "";
-    }
-    if (booking?.departureDate) {
-      init.journeyDate = new Date(booking.departureDate)
-        .toISOString()
-        .split("T")[0];
-    }
+  const seedTravelerName = (init: TicketFormPayload) => {
     if (passengers && passengers.length > 0) {
       const p = normalizePassenger(booking, passengers[0], 0);
       init.travelerName = p.name || booking?.fullName || "";
     } else {
       init.travelerName = booking?.fullName || booking?.name || "";
     }
+    return init;
+  };
+
+  const handleOpenAddDeparture = () => {
+    setEditingId(null);
+    setEditingOriginalStatus(null);
+    let init = emptyForm("DEPARTURE");
+    init = applyTemplateDefaults(init, "DEPARTURE");
+    init = seedTravelerName(init);
     setForm(init);
     setShowForm(true);
   };
 
   const handleOpenAddReturn = () => {
     setEditingId(null);
-    const tmpl = getMatchingLegTemplate("RETURN");
-    const init = emptyForm("RETURN");
-    if (tmpl) {
-      init.sourceStation = tmpl.boardingStation || "";
-      init.destinationStation = tmpl.destination || "";
-      init.trainName = tmpl.trainName || "";
-      init.trainNumber = tmpl.trainNumber || "";
-      init.coach = tmpl.class || "";
-      init.berthType = tmpl.quota || "";
-      init.ticketAmount = tmpl.expectedCost ? String(tmpl.expectedCost) : "";
-    }
-    if (booking?.returnDate) {
-      init.journeyDate = new Date(booking.returnDate)
-        .toISOString()
-        .split("T")[0];
-    }
-    if (passengers && passengers.length > 0) {
-      const p = normalizePassenger(booking, passengers[0], 0);
-      init.travelerName = p.name || booking?.fullName || "";
-    } else {
-      init.travelerName = booking?.fullName || booking?.name || "";
-    }
+    setEditingOriginalStatus(null);
+    let init = emptyForm("RETURN");
+    init = applyTemplateDefaults(init, "RETURN");
+    init = seedTravelerName(init);
     setForm(init);
     setShowForm(true);
   };
 
   const handleEdit = (ticket: TrainTicket) => {
     setEditingId(ticket.id);
+    setEditingOriginalStatus(ticket.ticketStatus || "PENDING");
     setForm({
       travelerName: ticket.travelerName || "",
       passengerReference:
@@ -705,7 +649,7 @@ export default function TrainTicketsPanel({
       amountMode: ticket.amountMode || "PAYMENT_LINK",
       internalNote: ticket.internalNote || "",
       ticketBookingPerson: ticket.ticketBookingPerson || "",
-      ticketStatus: (ticket.ticketStatus as any) || "PENDING",
+      simpleStatus: toSimpleTrainTicketState(ticket),
     });
     setShowForm(true);
   };
@@ -758,7 +702,7 @@ export default function TrainTicketsPanel({
     setReticketDate(
       ticket.journeyDate
         ? new Date(ticket.journeyDate).toISOString().split("T")[0]
-        : ""
+        : "",
     );
     setReticketSource(ticket.sourceStation || "");
     setReticketDest(ticket.destinationStation || "");
@@ -846,24 +790,7 @@ export default function TrainTicketsPanel({
     }
   };
 
-  const handleDelete = async (ticketId: string, travelerName: string) => {
-    if (!confirm(`Cancel/Delete ticket for ${travelerName}?`)) return;
-    setActionBusy(true);
-    try {
-      await trainTicketService.cancelTicket(ticketId, {
-        reason: "Deleted by user",
-      });
-      toast.success("Ticket cancelled");
-      loadTickets();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to delete ticket");
-    } finally {
-      setActionBusy(false);
-    }
-  };
-
   const renderTicketRow = (t: TrainTicket) => {
-    const trainBrief = formatTrainBrief(t, tripTitle);
     const ticketDone =
       requirementLabel === "non-req" || isTrainTicketDone(t);
     const approval = (t.approvalStatus || "").toUpperCase();
@@ -879,13 +806,7 @@ export default function TrainTicketsPanel({
         </td>
         <td className="px-4 py-2.5 space-y-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <RequirementPill booking={booking} />
             <StatusPill status={t.ticketStatus} />
-            {t.paidBy === "CUSTOMER" ? (
-              <span className="px-1.5 py-0.5 rounded text-[8px] font-semibold border bg-slate-50 text-slate-700 border-slate-200">
-                Customer Paid
-              </span>
-            ) : null}
           </div>
           <ApprovalHint status={t.approvalStatus} />
           {t.ticketStatus === "CANCELLED" && (
@@ -910,31 +831,6 @@ export default function TrainTicketsPanel({
               )}
             </div>
           )}
-          {t.supersedesTicketId && (
-            <div className="text-[9px] font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded w-fit">
-              ↳ Reticketed from #{t.supersedesTicketId.slice(-6)}
-            </div>
-          )}
-          {t.supersededByTicketId && (
-            <div className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
-              ↳ Replaced by #{t.supersededByTicketId.slice(-6)}
-            </div>
-          )}
-        </td>
-        <td className="px-4 py-2.5 text-slate-700 min-w-0">
-          {t.pnr ? (
-            <div className="font-mono text-[#0B1528] font-semibold text-[11px] mb-0.5">
-              {t.pnr}
-            </div>
-          ) : null}
-          <div className="font-medium text-slate-900 truncate max-w-[220px]" title={trainBrief.primary}>
-            {trainBrief.primary}
-          </div>
-          {trainBrief.secondary ? (
-            <span className="block text-[10px] text-slate-400 truncate max-w-[220px]" title={trainBrief.secondary}>
-              {trainBrief.secondary}
-            </span>
-          ) : null}
         </td>
         <td className="px-4 py-2.5 text-right whitespace-nowrap">
           {canManage && (
@@ -1053,7 +949,6 @@ export default function TrainTicketsPanel({
               <tr className="bg-[#F8FAFC] border-b border-[#E8EEF4] text-[11px] font-semibold text-slate-400 whitespace-nowrap">
                 <th className="px-4 py-2.5">Traveller</th>
                 <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5">Ticket</th>
                 <th className="px-4 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -1066,9 +961,24 @@ export default function TrainTicketsPanel({
     </div>
   );
 
+  const renderSimpleCountBadges = (counts: ReturnType<typeof getSimpleCounts>) => (
+    <div className="flex flex-wrap gap-1.5">
+      <span className="bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+        {counts.done} done
+      </span>
+      <span className="bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+        {counts.notDone} not done
+      </span>
+      {counts.notRequired > 0 ? (
+        <span className="bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+          {counts.notRequired} not required
+        </span>
+      ) : null}
+    </div>
+  );
+
   return (
     <div className="space-y-3 text-xs min-w-0">
-      {/* ─── GROUP TICKET SUMMARY CARD (REQUIREMENT 4) ─── */}
       <div className="bg-white border border-[#E8EEF4] rounded-xl shadow-sm overflow-hidden min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#F8FAFC] border-b border-[#E8EEF4]">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -1082,7 +992,7 @@ export default function TrainTicketsPanel({
               title={
                 groupTicketingDone
                   ? "Ticketing done / not required"
-                  : "Ticket is not done"
+                  : "Not done"
               }
             >
               <Train
@@ -1105,10 +1015,7 @@ export default function TrainTicketsPanel({
                   {groupSize} travellers
                 </span>
                 {!groupTicketingDone && requirementLabel === "req" ? (
-                  <span className="text-red-600 font-medium">
-                    {" "}
-                    · ticket is not done
-                  </span>
+                  <span className="text-red-600 font-medium"> · Not done</span>
                 ) : null}
               </p>
             </div>
@@ -1157,11 +1064,7 @@ export default function TrainTicketsPanel({
             {canManage && (
               <Button
                 size="sm"
-                onClick={() => {
-                  setEditingId(null);
-                  setForm(emptyForm("DEPARTURE"));
-                  setShowForm(true);
-                }}
+                onClick={handleOpenAddDeparture}
                 className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white gap-1.5 cursor-pointer shadow-sm shadow-[#FF4D00]/20"
               >
                 <Plus className="w-3.5 h-3.5" /> Add ticket
@@ -1170,9 +1073,7 @@ export default function TrainTicketsPanel({
           </div>
         </div>
 
-        {/* Departure & Return Quick Status Badges */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
-          {/* Departure Summary */}
           <div className="bg-[#F8FAFC] rounded-lg p-3 border border-[#E8EEF4] space-y-2 min-w-0">
             <div className="flex justify-between items-center gap-2 text-[11px] font-semibold">
               <span className="flex items-center gap-1.5 truncate text-[#0B1528]">
@@ -1183,23 +1084,9 @@ export default function TrainTicketsPanel({
                 {departureTickets.length} tickets
               </span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              <span className="bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[11px] font-semibold">
-                {depCounts.CONFIRMED} confirmed
-              </span>
-              <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold">
-                {depCounts.WAITLISTED} waitlisted
-              </span>
-              <span className="bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded text-[11px] font-semibold">
-                {depCounts.RAC} RAC
-              </span>
-              <span className="bg-white text-slate-600 border border-[#E8EEF4] px-2 py-0.5 rounded text-[11px] font-semibold">
-                {depCounts.PENDING} pending
-              </span>
-            </div>
+            {renderSimpleCountBadges(depCounts)}
           </div>
 
-          {/* Return Summary */}
           <div className="bg-[#F8FAFC] rounded-lg p-3 border border-[#E8EEF4] space-y-2 min-w-0">
             <div className="flex justify-between items-center gap-2 text-[11px] font-semibold">
               <span className="flex items-center gap-1.5 truncate text-[#0B1528]">
@@ -1210,32 +1097,18 @@ export default function TrainTicketsPanel({
                 {returnTickets.length} tickets
               </span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              <span className="bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[11px] font-semibold">
-                {retCounts.CONFIRMED} confirmed
-              </span>
-              <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold">
-                {retCounts.WAITLISTED} waitlisted
-              </span>
-              <span className="bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded text-[11px] font-semibold">
-                {retCounts.RAC} RAC
-              </span>
-              <span className="bg-white text-slate-600 border border-[#E8EEF4] px-2 py-0.5 rounded text-[11px] font-semibold">
-                {retCounts.PENDING} pending
-              </span>
-            </div>
+            {renderSimpleCountBadges(retCounts)}
           </div>
         </div>
 
-        {/* Expandable Passenger Matrix */}
         {isSummaryExpanded && (
           <div className="border-t border-[#E8EEF4] px-4 py-3 overflow-x-auto min-w-0">
             <table className="w-full text-left text-[11px]">
               <thead>
                 <tr className="text-slate-400 uppercase border-b border-[#E8EEF4] text-[9px] font-semibold">
                   <th className="py-1.5 px-2">Passenger</th>
-                  <th className="py-1.5 px-2">Departure Ticket</th>
-                  <th className="py-1.5 px-2">Return Ticket</th>
+                  <th className="py-1.5 px-2">Departure</th>
+                  <th className="py-1.5 px-2">Return</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8EEF4] text-slate-700">
@@ -1295,14 +1168,7 @@ export default function TrainTicketsPanel({
                       </td>
                       <td className="py-2 px-2">
                         {depT ? (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <StatusPill status={depT.ticketStatus} />
-                            {depT.pnr ? (
-                              <span className="font-mono font-semibold text-[#0B1528]">
-                                PNR {depT.pnr}
-                              </span>
-                            ) : null}
-                          </div>
+                          <StatusPill status={depT.ticketStatus} />
                         ) : (
                           <span className="text-slate-400 italic">
                             Not issued
@@ -1311,14 +1177,7 @@ export default function TrainTicketsPanel({
                       </td>
                       <td className="py-2 px-2">
                         {retT ? (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <StatusPill status={retT.ticketStatus} />
-                            {retT.pnr ? (
-                              <span className="font-mono font-semibold text-[#0B1528]">
-                                PNR {retT.pnr}
-                              </span>
-                            ) : null}
-                          </div>
+                          <StatusPill status={retT.ticketStatus} />
                         ) : (
                           <span className="text-slate-400 italic">
                             Not issued
@@ -1334,43 +1193,35 @@ export default function TrainTicketsPanel({
         )}
       </div>
 
-      {/* ─── ADD/EDIT TICKET FORM ─── */}
+      {/* Add / Edit — traveler + Done / Not done / Not required only */}
       {showForm && (
         <form
           onSubmit={handleSaveTicket}
           className="p-4 bg-slate-50 border border-[#E8EEF4] rounded-xl space-y-3"
         >
-          <div className="flex justify-between items-center border-b pb-2 flex-wrap gap-2">
+          <div className="flex justify-between items-center border-b border-[#E8EEF4] pb-2 flex-wrap gap-2">
             <h4 className="font-semibold text-[#0B1528] text-xs">
-              {editingId ? "Edit Train Ticket" : "Create New Train Ticket"}
+              {editingId ? "Edit train ticket" : "Add train ticket"}
             </h4>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleFillFromTemplate()}
-                className="h-6 text-[10px] font-semibold text-[#FF4D00] border-[#FF4D00]/30 bg-[#FF4D00]/5 hover:bg-[#FF4D00]/10 gap-1 cursor-pointer"
-              >
-                <RefreshCw className="w-2.5 h-2.5" />
-                Fill from Trip Template
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowForm(false)}
-                className="h-6 text-[10px]"
-              >
-                Cancel
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowForm(false);
+                setEditingId(null);
+                setEditingOriginalStatus(null);
+              }}
+              className="h-6 text-[10px]"
+            >
+              Cancel
+            </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <div className="space-y-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1 sm:col-span-2">
               <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Traveler Name *
+                Traveler
               </label>
               <Input
                 required
@@ -1380,184 +1231,42 @@ export default function TrainTicketsPanel({
                 }
                 placeholder="Full name"
                 className="h-8 text-xs"
+                readOnly={Boolean(editingId)}
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 sm:col-span-2">
               <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Journey Type *
+                Ticket status
               </label>
               <Select
-                value={form.passengerReference}
-                onValueChange={(val: any) =>
-                  setForm({ ...form, passengerReference: val })
+                value={form.simpleStatus}
+                onValueChange={(val: SimpleTrainTicketState) =>
+                  setForm({ ...form, simpleStatus: val })
                 }
               >
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DEPARTURE">Departure Journey</SelectItem>
-                  <SelectItem value="RETURN">Return Journey</SelectItem>
+                  <SelectItem value="NOT_DONE">Not done</SelectItem>
+                  <SelectItem value="DONE">Done</SelectItem>
+                  <SelectItem value="NOT_REQUIRED">Not required</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Ticket Status *
-              </label>
-              <Select
-                value={form.ticketStatus}
-                onValueChange={(val: any) =>
-                  setForm({ ...form, ticketStatus: val })
-                }
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING">PENDING</SelectItem>
-                  <SelectItem value="CONFIRMED">CONFIRMED</SelectItem>
-                  <SelectItem value="WAITLISTED">WAITLISTED</SelectItem>
-                  <SelectItem value="RAC">RAC</SelectItem>
-                  <SelectItem value="BOOKED">BOOKED</SelectItem>
-                  <SelectItem value="SELF_BOOKED">SELF BOOKED</SelectItem>
-                  <SelectItem value="CANCELLED">CANCELLED</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Paid By *
-              </label>
-              <Select
-                value={form.paidBy}
-                onValueChange={(val: any) =>
-                  setForm({ ...form, paidBy: val })
-                }
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="COMPANY">Company Paid (Included in Package)</SelectItem>
-                  <SelectItem value="CUSTOMER">Customer Paid (Addon / Direct)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Internal Ticket Cost (₹)
-              </label>
-              <Input
-                type="number"
-                value={form.ticketAmount}
-                onChange={(e) => setForm({ ...form, ticketAmount: e.target.value })}
-                placeholder="e.g. 1850"
-                className="h-8 text-xs font-semibold text-green-600"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                PNR Number
-              </label>
-              <Input
-                value={form.pnr}
-                onChange={(e) => setForm({ ...form, pnr: e.target.value })}
-                placeholder="10-digit PNR"
-                className="h-8 text-xs font-mono"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Train Name / No.
-              </label>
-              <Input
-                value={form.trainName}
-                onChange={(e) =>
-                  setForm({ ...form, trainName: e.target.value })
-                }
-                placeholder="e.g. Rajdhani Exp (12951)"
-                className="h-8 text-xs"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Journey Date
-              </label>
-              <Input
-                type="date"
-                value={form.journeyDate}
-                onChange={(e) =>
-                  setForm({ ...form, journeyDate: e.target.value })
-                }
-                className="h-8 text-xs"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Coach / Seat
-              </label>
-              <div className="grid grid-cols-2 gap-1">
-                <Input
-                  value={form.coach}
-                  onChange={(e) => setForm({ ...form, coach: e.target.value })}
-                  placeholder="Coach (e.g. B2)"
-                  className="h-8 text-xs font-mono"
-                />
-                <Input
-                  value={form.seatNumber}
-                  onChange={(e) =>
-                    setForm({ ...form, seatNumber: e.target.value })
-                  }
-                  placeholder="Seat (e.g. 36)"
-                  className="h-8 text-xs font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Source Station
-              </label>
-              <Input
-                value={form.sourceStation}
-                onChange={(e) =>
-                  setForm({ ...form, sourceStation: e.target.value })
-                }
-                placeholder="e.g. ADI"
-                className="h-8 text-xs"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] font-semibold uppercase text-slate-500">
-                Destination Station
-              </label>
-              <Input
-                value={form.destinationStation}
-                onChange={(e) =>
-                  setForm({ ...form, destinationStation: e.target.value })
-                }
-                placeholder="e.g. NDLS"
-                className="h-8 text-xs"
-              />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-1">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setShowForm(false);
+                setEditingId(null);
+                setEditingOriginalStatus(null);
+              }}
               className="h-8 text-xs"
             >
               Cancel
@@ -1571,14 +1280,13 @@ export default function TrainTicketsPanel({
               {actionBusy
                 ? "Saving..."
                 : editingId
-                  ? "Update Ticket"
-                  : "Save Ticket"}
+                  ? "Update"
+                  : "Save"}
             </Button>
           </div>
         </form>
       )}
 
-      {/* ─── TWO-WAY JOURNEY SECTIONS ─── */}
       <div className="space-y-3">
         {renderJourneySection(
           "Departure journey",
@@ -1598,7 +1306,7 @@ export default function TrainTicketsPanel({
         )}
       </div>
 
-      {/* ─── CANCELLATION DIALOG ─── */}
+      {/* Advanced ops dialogs (overflow menu only) */}
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
@@ -1609,16 +1317,14 @@ export default function TrainTicketsPanel({
           {ticketToCancel && (
             <div className="space-y-3 py-2 text-xs">
               <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] space-y-1">
-                <div className="flex justify-between font-semibold text-[#0B1528]">
-                  <span>{ticketToCancel.travelerName}</span>
-                  <span className="font-mono">PNR: {ticketToCancel.pnr || "N/A"}</span>
+                <div className="font-semibold text-[#0B1528]">
+                  {ticketToCancel.travelerName}
                 </div>
                 <div className="text-[11px] text-slate-500">
-                  {ticketToCancel.trainName} ({ticketToCancel.trainNumber}) • Coach {ticketToCancel.coach || "-"}-{ticketToCancel.seatNumber || "-"}
-                </div>
-                <div className="text-[11px] font-semibold text-green-700 pt-1 border-t border-[#E8EEF4] mt-1 flex justify-between">
-                  <span>Current Ticket Internal Cost:</span>
-                  <span>₹{Number(ticketToCancel.ticketAmount || 0).toLocaleString("en-IN")}</span>
+                  {trainTicketProgressLabel(ticketToCancel)}
+                  {Number(ticketToCancel.ticketAmount || 0) > 0
+                    ? ` · ₹${Number(ticketToCancel.ticketAmount).toLocaleString("en-IN")}`
+                    : ""}
                 </div>
               </div>
 
@@ -1631,7 +1337,6 @@ export default function TrainTicketsPanel({
                     type="number"
                     value={cancelRailwayCharge}
                     onChange={(e) => setCancelRailwayCharge(e.target.value)}
-                    placeholder="e.g. 500"
                     className="h-8 text-xs font-mono font-semibold text-red-600"
                   />
                 </div>
@@ -1643,17 +1348,18 @@ export default function TrainTicketsPanel({
                     type="number"
                     value={cancelYcCharge}
                     onChange={(e) => setCancelYcCharge(e.target.value)}
-                    placeholder="e.g. 100"
                     className="h-8 text-xs font-mono font-semibold text-slate-700"
                   />
                 </div>
               </div>
 
-              {/* Real-time refund due calculation */}
               <div className="p-2.5 bg-green-50 border border-green-200 rounded flex justify-between items-center">
-                <span className="font-semibold text-green-700 text-[11px]">Net Refund Due / Credit:</span>
+                <span className="font-semibold text-green-700 text-[11px]">
+                  Net Refund Due / Credit:
+                </span>
                 <span className="font-semibold text-sm text-green-700 font-mono">
-                  ₹{Math.max(
+                  ₹
+                  {Math.max(
                     0,
                     Number(ticketToCancel.ticketAmount || 0) -
                       (parseFloat(cancelRailwayCharge) || 0) -
@@ -1669,7 +1375,7 @@ export default function TrainTicketsPanel({
                 <Input
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="e.g. Customer requested date change / IRCTC confirmed WL cancellation"
+                  placeholder="e.g. Customer requested date change"
                   className="h-8 text-xs"
                   required
                 />
@@ -1682,7 +1388,7 @@ export default function TrainTicketsPanel({
                 <Textarea
                   value={cancelNotes}
                   onChange={(e) => setCancelNotes(e.target.value)}
-                  placeholder="Optional notes for finance and operations logs"
+                  placeholder="Optional notes"
                   rows={2}
                   className="text-xs"
                 />
@@ -1712,7 +1418,6 @@ export default function TrainTicketsPanel({
         </DialogContent>
       </Dialog>
 
-      {/* ─── RETICKETING DIALOG ─── */}
       <Dialog open={reticketModalOpen} onOpenChange={setReticketModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -1722,13 +1427,9 @@ export default function TrainTicketsPanel({
           </DialogHeader>
           {ticketToReticket && (
             <div className="space-y-3 py-2 text-xs max-h-[70vh] overflow-y-auto pr-1">
-              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] space-y-1">
-                <div className="flex justify-between font-semibold text-[#0B1528]">
-                  <span>{ticketToReticket.travelerName}</span>
-                  <span>Old Cost: ₹{Number(ticketToReticket.ticketAmount || 0)}</span>
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  Old: {ticketToReticket.trainName} ({ticketToReticket.trainNumber}) • PNR {ticketToReticket.pnr || "N/A"}
+              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4]">
+                <div className="font-semibold text-[#0B1528]">
+                  {ticketToReticket.travelerName}
                 </div>
               </div>
 
@@ -1741,101 +1442,19 @@ export default function TrainTicketsPanel({
                     type="number"
                     value={reticketRailwayCharge}
                     onChange={(e) => setReticketRailwayCharge(e.target.value)}
-                    placeholder="0"
                     className="h-8 text-xs font-mono font-semibold text-red-600"
                   />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold uppercase text-slate-500">
-                    New Ticket Fare / Cost (₹) *
+                    New Ticket Fare / Cost (₹)
                   </label>
                   <Input
                     type="number"
                     value={reticketNewCost}
                     onChange={(e) => setReticketNewCost(e.target.value)}
-                    placeholder="e.g. 2100"
                     className="h-8 text-xs font-mono font-semibold text-green-700"
                   />
-                </div>
-              </div>
-
-              {/* Net financial difference preview */}
-              {(() => {
-                const oldCost = Number(ticketToReticket.ticketAmount || 0);
-                const rCharge = parseFloat(reticketRailwayCharge) || 0;
-                const oldRefund = Math.max(0, oldCost - rCharge);
-                const newCost = parseFloat(reticketNewCost) || 0;
-                const netDiff = newCost - oldRefund;
-                return (
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded flex justify-between items-center">
-                    <div>
-                      <div className="font-semibold text-[#0B1528] text-[11px]">Net Financial Adjustment:</div>
-                      <div className="text-[9px] text-slate-700">
-                        New Fare (₹{newCost}) - Old Refund Due (₹{oldRefund})
-                      </div>
-                    </div>
-                    <span className="font-semibold text-sm text-[#0B1528] font-mono">
-                      {netDiff >= 0 ? `+₹${netDiff.toLocaleString("en-IN")}` : `-₹${Math.abs(netDiff).toLocaleString("en-IN")}`}
-                    </span>
-                  </div>
-                );
-              })()}
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-semibold uppercase text-slate-500">
-                    New Train Name
-                  </label>
-                  <Input
-                    value={reticketTrainName}
-                    onChange={(e) => setReticketTrainName(e.target.value)}
-                    placeholder="Train Name"
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] font-semibold uppercase text-slate-500">
-                    New Train Number
-                  </label>
-                  <Input
-                    value={reticketTrainNumber}
-                    onChange={(e) => setReticketTrainNumber(e.target.value)}
-                    placeholder="Train Number"
-                    className="h-8 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-semibold uppercase text-slate-500">
-                    New Journey Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={reticketDate}
-                    onChange={(e) => setReticketDate(e.target.value)}
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] font-semibold uppercase text-slate-500">
-                    Coach & Seat
-                  </label>
-                  <div className="grid grid-cols-2 gap-1">
-                    <Input
-                      value={reticketCoach}
-                      onChange={(e) => setReticketCoach(e.target.value)}
-                      placeholder="Coach"
-                      className="h-8 text-xs"
-                    />
-                    <Input
-                      value={reticketSeat}
-                      onChange={(e) => setReticketSeat(e.target.value)}
-                      placeholder="Seat"
-                      className="h-8 text-xs"
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -1846,7 +1465,6 @@ export default function TrainTicketsPanel({
                 <Input
                   value={reticketReason}
                   onChange={(e) => setReticketReason(e.target.value)}
-                  placeholder="e.g. Flight delay, preferred early departure"
                   className="h-8 text-xs"
                 />
               </div>
@@ -1875,21 +1493,27 @@ export default function TrainTicketsPanel({
         </DialogContent>
       </Dialog>
 
-      {/* ─── RECORD REFUND DIALOG ─── */}
       <Dialog open={refundModalOpen} onOpenChange={setRefundModalOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-green-600" /> Record Refund in Finance
+              <Receipt className="w-4 h-4 text-green-600" /> Record Refund
             </DialogTitle>
           </DialogHeader>
           {ticketForRefund && (
             <div className="space-y-3 py-2 text-xs">
-              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] space-y-1">
-                <div className="font-semibold text-[#0B1528]">{ticketForRefund.travelerName}</div>
-                <div className="flex justify-between font-semibold text-green-700">
+              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4]">
+                <div className="font-semibold text-[#0B1528]">
+                  {ticketForRefund.travelerName}
+                </div>
+                <div className="flex justify-between font-semibold text-green-700 mt-1">
                   <span>Refund Due:</span>
-                  <span>₹{Number(ticketForRefund.refundAmount || 0).toLocaleString("en-IN")}</span>
+                  <span>
+                    ₹
+                    {Number(ticketForRefund.refundAmount || 0).toLocaleString(
+                      "en-IN",
+                    )}
+                  </span>
                 </div>
               </div>
 
@@ -1916,7 +1540,6 @@ export default function TrainTicketsPanel({
                 <Input
                   value={refundTxRef}
                   onChange={(e) => setRefundTxRef(e.target.value)}
-                  placeholder="e.g. UTR194829482 or IRCTC-REF-992"
                   className="h-8 text-xs font-mono"
                 />
               </div>
@@ -1930,19 +1553,6 @@ export default function TrainTicketsPanel({
                   value={refundCustomAmount}
                   onChange={(e) => setRefundCustomAmount(e.target.value)}
                   className="h-8 text-xs font-mono font-semibold text-green-700"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-semibold uppercase text-slate-500">
-                  Internal Notes
-                </label>
-                <Textarea
-                  value={refundNotes}
-                  onChange={(e) => setRefundNotes(e.target.value)}
-                  placeholder="Bank details or credit notes reference"
-                  rows={2}
-                  className="text-xs"
                 />
               </div>
             </div>
@@ -1970,7 +1580,6 @@ export default function TrainTicketsPanel({
         </DialogContent>
       </Dialog>
 
-      {/* ─── AUDIT HISTORY DIALOG ─── */}
       <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -1980,12 +1589,19 @@ export default function TrainTicketsPanel({
           </DialogHeader>
           <div className="py-2 max-h-[60vh] overflow-y-auto space-y-2 text-xs">
             {historyLoading ? (
-              <div className="py-8 text-center text-slate-400">Loading audit history...</div>
+              <div className="py-8 text-center text-slate-400">
+                Loading audit history...
+              </div>
             ) : ticketHistory.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 italic">No history logged yet.</div>
+              <div className="py-8 text-center text-slate-400 italic">
+                No history logged yet.
+              </div>
             ) : (
               ticketHistory.map((item, i) => (
-                <div key={i} className="p-2.5 bg-slate-50 border border-[#E8EEF4] rounded space-y-1">
+                <div
+                  key={i}
+                  className="p-2.5 bg-slate-50 border border-[#E8EEF4] rounded space-y-1"
+                >
                   <div className="flex justify-between items-center text-[10px] font-semibold">
                     <span className="px-1.5 py-0.5 rounded bg-slate-200 text-[#0B1528]">
                       {item.action}
@@ -1994,11 +1610,8 @@ export default function TrainTicketsPanel({
                       {new Date(item.createdAt).toLocaleString("en-IN")}
                     </span>
                   </div>
-                  {item.notes && <div className="text-[11px] text-slate-700">{item.notes}</div>}
-                  {item.changedByAdmin?.name && (
-                    <div className="text-[9px] text-slate-400">
-                      By: {item.changedByAdmin.name} ({item.changedByAdmin.email})
-                    </div>
+                  {item.notes && (
+                    <div className="text-[11px] text-slate-700">{item.notes}</div>
                   )}
                 </div>
               ))
@@ -2017,7 +1630,7 @@ export default function TrainTicketsPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* ─── REJECTION DIALOG ─── */}
+
       <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
@@ -2027,15 +1640,9 @@ export default function TrainTicketsPanel({
           </DialogHeader>
           {ticketToReject && (
             <div className="space-y-3 py-2 text-xs">
-              <div className="bg-red-50 border border-red-200 p-2.5 rounded text-red-900 space-y-0.5">
-                <div className="font-semibold">
-                  {ticketToReject.travelerName} • PNR: {ticketToReject.pnr || "—"}
-                </div>
-                <div className="text-[11px] text-red-700">
-                  {ticketToReject.trainName} ({ticketToReject.trainNumber || "N/A"})
-                </div>
+              <div className="bg-red-50 border border-red-200 p-2.5 rounded text-red-900">
+                <div className="font-semibold">{ticketToReject.travelerName}</div>
               </div>
-
               <div className="space-y-1">
                 <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Reason for Rejection *
@@ -2043,7 +1650,7 @@ export default function TrainTicketsPanel({
                 <Textarea
                   value={rejectionNotes}
                   onChange={(e) => setRejectionNotes(e.target.value)}
-                  placeholder="e.g. Incorrect train route, PNR mismatch, or wrong journey date..."
+                  placeholder="Why is this ticket being rejected?"
                   rows={3}
                   className="text-xs"
                 />
@@ -2075,5 +1682,3 @@ export default function TrainTicketsPanel({
     </div>
   );
 }
-
-

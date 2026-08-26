@@ -104,10 +104,12 @@ export function formatDate(dateVal: any, fallback: string = "N/A"): string {
 export const TRAIN_TICKET_STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-amber-100 text-amber-700",
   BOOKED: "bg-green-100 text-green-700",
+  ISSUED: "bg-green-100 text-green-700",
   WAITLISTED: "bg-[#FF4D00]/10 text-[#C2410C]",
   CONFIRMED: "bg-green-100 text-green-700",
   RAC: "bg-pink-100 text-pink-700",
   SELF_BOOKED: "bg-[#FF4D00]/10 text-[#C2410C]",
+  NOT_REQUIRED: "bg-slate-100 text-slate-600",
   CANCELLED: "bg-red-100 text-red-700",
 };
 

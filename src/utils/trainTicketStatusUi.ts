@@ -37,11 +37,54 @@ const DONE_STATUSES = new Set([
   "WAITLISTED",
 ]);
 
+/** Ultra-simple ops states shown in Ticketing UI. */
+export type SimpleTrainTicketState = "DONE" | "NOT_DONE" | "NOT_REQUIRED";
+
 export function normalizeTrainTicketStatus(status?: string | null): string {
   return String(status || "")
     .trim()
     .toUpperCase()
     .replace(/\s+/g, "_");
+}
+
+/** Map API ticketStatus → Done / Not done / Not required. */
+export function toSimpleTrainTicketState(ticket: {
+  ticketStatus?: string | null;
+  status?: string | null;
+} | null | undefined): SimpleTrainTicketState {
+  const st = normalizeTrainTicketStatus(
+    ticket?.ticketStatus || (ticket as any)?.status,
+  );
+  if (st === "NOT_REQUIRED" || st === "NOT_BOOKED") return "NOT_REQUIRED";
+  if (DONE_STATUSES.has(st)) return "DONE";
+  return "NOT_DONE";
+}
+
+export function simpleTrainTicketStateLabel(
+  state: SimpleTrainTicketState,
+): string {
+  if (state === "DONE") return "Done";
+  if (state === "NOT_REQUIRED") return "Not required";
+  return "Not done";
+}
+
+/**
+ * Map simple UI state → API ticketStatus.
+ * When the simple bucket is unchanged, keep the previous API value
+ * (e.g. ISSUED stays ISSUED instead of forcing CONFIRMED).
+ */
+export function simpleTrainTicketStateToApi(
+  state: SimpleTrainTicketState,
+  previousApiStatus?: string | null,
+): string {
+  const prev = normalizeTrainTicketStatus(previousApiStatus);
+  const prevSimple = toSimpleTrainTicketState({ ticketStatus: prev || null });
+  if (prev && prevSimple === state && prev !== "CANCELLED") {
+    return prev;
+  }
+  if (state === "DONE") return "CONFIRMED";
+  if (state === "NOT_REQUIRED") return "NOT_REQUIRED";
+  return "PENDING";
 }
 
 /**
@@ -88,19 +131,17 @@ export function isTrainTicketDone(ticket: {
   return DONE_STATUSES.has(st);
 }
 
-/** Human label for row status — clearer than bare PENDING. */
+/** Human label for row status — Done / Not done / Not required (or Cancelled). */
 export function trainTicketProgressLabel(ticket: {
   ticketStatus?: string | null;
   status?: string | null;
 } | null | undefined): string {
-  if (!ticket) return "ticket is not done";
+  if (!ticket) return "Not done";
   const st = normalizeTrainTicketStatus(
     ticket.ticketStatus || (ticket as any).status,
   );
-  if (!st || st === "PENDING" || st === "PENDING_VERIFICATION" || st === "DRAFT") {
-    return "ticket is not done";
-  }
-  return st.replace(/_/g, " ");
+  if (st === "CANCELLED") return "Cancelled";
+  return simpleTrainTicketStateLabel(toSimpleTrainTicketState(ticket));
 }
 
 /**
