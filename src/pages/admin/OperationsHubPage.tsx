@@ -1,5 +1,8 @@
 ﻿import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { calculateReadinessScore } from "@/utils/readinessUtils";
+import {
+  computeOperationalReadinessScore,
+  readinessInputFromOpsSummary,
+} from "@/utils/readinessUtils";
 import ReportsConsole from "@/components/admin/ReportsConsole";
 import { useAuthStore } from "@/store/auth.store";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -80,6 +83,37 @@ const getTodayString = () => new Date().toISOString().split("T")[0];
 
 const formatOpsStatus = (status: string) =>
   status ? status.charAt(0) + status.slice(1).toLowerCase() : "";
+
+function decorateReadinessMeta(
+  readiness: number,
+  diffDays: number,
+): {
+  status: string;
+  statusColor: string;
+  readinessColor: string;
+  reason: string;
+} {
+  let status = "PLANNING";
+  let statusColor = "bg-amber-50 text-amber-700 border-amber-100";
+  let readinessColor = "#F59E0B";
+  let reason = "Planning stages";
+
+  if (readiness >= 90) {
+    status = "READY";
+    statusColor = "bg-green-50 text-green-700 border-green-100";
+    readinessColor = "#10B981";
+    reason = "Ready to depart";
+  } else if (diffDays <= 3) {
+    status = "IN PROGRESS";
+    statusColor = "bg-blue-50 text-blue-750 border-blue-100";
+    readinessColor = "#3B82F6";
+    reason = "Departure imminent";
+  } else if (readiness > 50) {
+    reason = "Ops in progress";
+  }
+
+  return { status, statusColor, readinessColor, reason };
+}
 
 export default function OperationsHubPage() {
   const navigate = useNavigate();
@@ -279,6 +313,30 @@ export default function OperationsHubPage() {
           (sum, b) => sum + (Number(b.remainingAmount) || 0),
           0,
         );
+        const totalRevenue = depBookings.reduce(
+          (sum, b) =>
+            sum +
+            (Number(b.totalAmount) ||
+              Number(b.amount) ||
+              Number(b.finalAmount) ||
+              0),
+          0,
+        );
+        const customerPaid = depBookings.reduce((sum, b) => {
+          const total =
+            Number(b.totalAmount) ||
+            Number(b.amount) ||
+            Number(b.finalAmount) ||
+            0;
+          const remaining = Number(b.remainingAmount) || 0;
+          const paidField =
+            Number(b.paidAmount) ||
+            Number(b.amountPaid) ||
+            Number(b.advancePaid) ||
+            0;
+          if (paidField > 0) return sum + paidField;
+          return sum + Math.max(0, total - remaining);
+        }, 0);
         const balanceFormatted = `₹ ${totalOutstanding.toLocaleString("en-IN")}`;
         const pendingCount = depBookings.filter(
           (b) => {
@@ -333,33 +391,17 @@ export default function OperationsHubPage() {
         const dd = String(depDate.getDate()).padStart(2, "0");
         const code = `${cleanCode}-${mm}${dd}`;
 
-        const readiness = calculateReadinessScore({
-          stats: {
-            totalParticipants: booked,
-            totalRevenue: 1,
-            customerOutstanding: 0,
-          },
-          vendors: [],
-          fleet: [],
-        });
-        let status = "PLANNING";
-        let statusColor = "bg-amber-50 text-amber-700 border-amber-100";
-        let readinessColor = "#F59E0B";
-        let reason = "Planning stages";
-
-        if (readiness >= 90) {
-          status = "READY";
-          statusColor = "bg-green-50 text-green-700 border-green-100";
-          readinessColor = "#10B981";
-          reason = "Ready to depart";
-        } else if (diffDays <= 3) {
-          status = "IN PROGRESS";
-          statusColor = "bg-blue-50 text-blue-750 border-blue-100";
-          readinessColor = "#3B82F6";
-          reason = "Departure imminent";
-        } else if (readiness > 50) {
-          reason = "Min group size reached";
-        }
+        // Payment-aware interim score (ops summary enrichment overwrites when loaded)
+        const readiness = computeOperationalReadinessScore(
+          readinessInputFromOpsSummary({
+            summary: null,
+            totalRevenue,
+            customerOutstanding: totalOutstanding,
+            customerPaid,
+            participantCount: booked,
+          }),
+        ).score;
+        const meta = decorateReadinessMeta(readiness, diffDays);
 
         list.push({
           code,
@@ -375,13 +417,17 @@ export default function OperationsHubPage() {
           balanceSub,
           balanceColor,
           readiness,
-          readinessColor,
-          reason,
-          status,
-          statusColor,
+          readinessColor: meta.readinessColor,
+          reason: meta.reason,
+          status: meta.status,
+          statusColor: meta.statusColor,
           tripId: trip.id,
           departureDateStr: d.date,
           isLive,
+          totalRevenue,
+          totalOutstanding,
+          customerPaid,
+          diffDays,
         });
       });
     });
@@ -398,13 +444,113 @@ export default function OperationsHubPage() {
     [computedDepartures],
   );
 
+  // Live ops readiness enrichment — same operational weights as Departure Workspace overview
+  const [opsReadinessByKey, setOpsReadinessByKey] = useState<
+    Record<string, number>
+  >({});
+
+  useEffect(() => {
+    const toDateKey = (val: unknown) => {
+      if (!val) return "";
+      const s = String(val).trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+      try {
+        const dt = new Date(s);
+        if (!isNaN(dt.getTime())) return dt.toISOString().split("T")[0];
+      } catch {
+        /* ignore */
+      }
+      return s.substring(0, 10);
+    };
+
+    const targets = bookedComputedDepartures
+      .filter((d) => d.tripId && d.departureDateStr)
+      .map((d) => ({
+        key: `${d.tripId}|${toDateKey(d.departureDateStr)}`,
+        tripId: d.tripId as string,
+        date: toDateKey(d.departureDateStr),
+        totalRevenue: Number(d.totalRevenue) || 0,
+        totalOutstanding: Number(d.totalOutstanding) || 0,
+        customerPaid: Number(d.customerPaid) || 0,
+        participantCount: Number(d.participantCount) || 0,
+      }));
+
+    if (targets.length === 0) {
+      setOpsReadinessByKey({});
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      const settled = await Promise.allSettled(
+        targets.map(async (t) => {
+          const summary = await opsService.getWorkspaceSummary(t.tripId, t.date);
+          const score = computeOperationalReadinessScore(
+            readinessInputFromOpsSummary({
+              summary,
+              totalRevenue: t.totalRevenue,
+              customerOutstanding: t.totalOutstanding,
+              customerPaid: t.customerPaid,
+              participantCount: t.participantCount,
+            }),
+          ).score;
+          return { key: t.key, score };
+        }),
+      );
+      if (cancelled) return;
+      const next: Record<string, number> = {};
+      settled.forEach((r) => {
+        if (r.status === "fulfilled" && r.value?.key) {
+          next[r.value.key] = r.value.score;
+        }
+      });
+      setOpsReadinessByKey(next);
+    })().catch(() => {
+      if (!cancelled) setOpsReadinessByKey({});
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    bookedComputedDepartures
+      .map(
+        (d) =>
+          `${d.tripId}|${d.departureDateStr}|${d.participantCount}|${d.totalOutstanding}|${d.customerPaid}`,
+      )
+      .join(","),
+  ]);
+
+  const displayDepartures = useMemo(() => {
+    return computedDepartures.map((d) => {
+      const key = `${d.tripId}|${String(d.departureDateStr || "").substring(0, 10)}`;
+      const live = opsReadinessByKey[key];
+      if (live == null || live === d.readiness) return d;
+      const meta = decorateReadinessMeta(live, Number(d.diffDays) || 0);
+      return {
+        ...d,
+        readiness: live,
+        readinessColor: meta.readinessColor,
+        reason: meta.reason,
+        status: meta.status,
+        statusColor: meta.statusColor,
+      };
+    });
+  }, [computedDepartures, opsReadinessByKey]);
+
+  const displayBookedDepartures = useMemo(
+    () => displayDepartures.filter((d) => (d.participantCount || 0) > 0),
+    [displayDepartures],
+  );
+
   const noBookingComputedDepartures = useMemo(
-    () => computedDepartures.filter((d) => (d.participantCount || 0) === 0),
-    [computedDepartures],
+    () => displayDepartures.filter((d) => (d.participantCount || 0) === 0),
+    [displayDepartures],
   );
 
   const filteredDepartures = useMemo(() => {
-    return computedDepartures.filter((d) => {
+    return displayDepartures.filter((d) => {
       const hasBookings = (d.participantCount || 0) > 0;
       if (filterBookingStatus === "booked" && !hasBookings) return false;
       if (filterBookingStatus === "no_bookings" && hasBookings) return false;
@@ -418,7 +564,7 @@ export default function OperationsHubPage() {
       if (filterDateRange === "oct2026" && !d.departureDateStr?.startsWith("2026-10")) return false;
       return true;
     });
-  }, [computedDepartures, filterBookingStatus, filterTripId, filterStatus, filterDateRange]);
+  }, [displayDepartures, filterBookingStatus, filterTripId, filterStatus, filterDateRange]);
 
   useEffect(() => {
     setMobileVisibleCounts({});
@@ -435,7 +581,7 @@ export default function OperationsHubPage() {
 
   // Separate list for "No Bookings Yet" collapsible section when viewing "booked"
   const noBookingFilteredDepartures = useMemo(() => {
-    return computedDepartures.filter((d) => {
+    return displayDepartures.filter((d) => {
       if ((d.participantCount || 0) > 0) return false;
       if (filterTripId !== "all" && d.tripId !== filterTripId) return false;
       if (filterDateRange === "aug2026" && !d.departureDateStr?.startsWith("2026-08")) return false;
@@ -443,7 +589,7 @@ export default function OperationsHubPage() {
       if (filterDateRange === "oct2026" && !d.departureDateStr?.startsWith("2026-10")) return false;
       return true;
     });
-  }, [computedDepartures, filterTripId, filterDateRange]);
+  }, [displayDepartures, filterTripId, filterDateRange]);
 
   const renderDeparturesTable = (
     departuresList: any[],
@@ -1672,10 +1818,10 @@ export default function OperationsHubPage() {
                 Departures Hub
               </h1>
               <p className="hidden md:block text-[12px] text-slate-500 mt-0.5">
-                {bookedComputedDepartures.length} active departures with bookings · {noBookingComputedDepartures.length} dates without bookings.
+                {displayBookedDepartures.length} active departures with bookings · {noBookingComputedDepartures.length} dates without bookings.
               </p>
               <p className="md:hidden text-[12px] text-slate-500 mt-0.5">
-                {bookedComputedDepartures.length} active departures tracked
+                {displayBookedDepartures.length} active departures tracked
               </p>
             </div>
             <Button
@@ -1697,10 +1843,10 @@ export default function OperationsHubPage() {
               {(() => {
                 const kpiTargetList =
                   filterBookingStatus === "all"
-                    ? computedDepartures
+                    ? displayDepartures
                     : filterBookingStatus === "no_bookings"
                       ? noBookingComputedDepartures
-                      : bookedComputedDepartures;
+                      : displayBookedDepartures;
                 return [
                   {
                     label: filterBookingStatus === "all" ? "All Departures" : "Active Departures",
@@ -1744,13 +1890,13 @@ export default function OperationsHubPage() {
 
             <div className="md:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar px-3 py-2 border-t border-[#E8EEF4]">
               {[
-                { id: "booked", label: `Booked (${bookedComputedDepartures.length})`, isBookingFilter: true },
+                { id: "booked", label: `Booked (${displayBookedDepartures.length})`, isBookingFilter: true },
                 { id: "all", label: "All Status", isBookingFilter: false },
                 { id: "live", label: "Live", isBookingFilter: false },
                 { id: "upcoming", label: "Upcoming", isBookingFilter: false },
                 { id: "ready", label: "Ready", isBookingFilter: false },
                 { id: "no_bookings", label: `No Bookings (${noBookingComputedDepartures.length})`, isBookingFilter: true },
-                { id: "all_dates", label: `All Dates (${computedDepartures.length})`, isBookingFilter: true },
+                { id: "all_dates", label: `All Dates (${displayDepartures.length})`, isBookingFilter: true },
               ].map((chip) => {
                 const isActive = chip.isBookingFilter
                   ? (chip.id === "all_dates" ? filterBookingStatus === "all" : filterBookingStatus === chip.id)
@@ -1785,9 +1931,9 @@ export default function OperationsHubPage() {
                   <SelectValue placeholder="Bookings" />
                 </SelectTrigger>
                 <SelectContent className="rounded-md">
-                  <SelectItem value="booked">With Bookings ({bookedComputedDepartures.length})</SelectItem>
+                  <SelectItem value="booked">With Bookings ({displayBookedDepartures.length})</SelectItem>
                   <SelectItem value="no_bookings">No Bookings Yet ({noBookingComputedDepartures.length})</SelectItem>
-                  <SelectItem value="all">All Departures ({computedDepartures.length})</SelectItem>
+                  <SelectItem value="all">All Departures ({displayDepartures.length})</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filterDateRange} onValueChange={setFilterDateRange}>

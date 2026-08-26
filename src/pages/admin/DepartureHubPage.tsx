@@ -3,7 +3,8 @@ import {
   normalizeGenderFull,
   normalizeGenderCode,
 } from "@/utils/passengerUtils";
-import { calculateReadinessScore } from "@/utils/readinessUtils";
+import { computeOperationalReadinessScore } from "@/utils/readinessUtils";
+import { canViewProfit } from "@/config/permissions.config";
 import {
   isSameDepartureDate,
 } from "@/utils/departureDate";
@@ -246,6 +247,7 @@ const Avatar = ({
 
 export default function DepartureHubPage() {
   const { admin } = useAuthStore();
+  const canSeeProfit = canViewProfit(admin);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -3801,16 +3803,6 @@ useEffect(() => {
     return list;
   }, [bookings, tripVendors]);
 
-  // Dynamic Readiness Calculation via dedicated helper
-  const calculatedReadinessScore = useMemo(() => {
-    return calculateReadinessScore({
-      stats,
-      vendors: tripVendors,
-      fleet: allocFleet,
-      documents: computedDocuments,
-    });
-  }, [stats, tripVendors, allocFleet, computedDocuments]);
-
   const computedTasks = useMemo(() => {
     if (checklistTasks.length === 0) {
       return [];
@@ -5334,14 +5326,17 @@ useEffect(() => {
                 const tasksDone = computedTasks.filter((t) => t.status === "COMPLETED").length;
                 const tasksTotal = computedTasks.length;
 
-                // Accurate dynamic readiness calculation
-                const hotelsScore = hotelsTarget > 0 ? (Math.min(confirmedHotelCount, hotelsTarget) / hotelsTarget) * 25 : 25;
-                const transportScore = (Math.min(1, transportAssignedCount / transportRequiredCount)) * 25;
-                const guidesScore = (guideCount > 0 ? 1 : 0) * 20;
-                const tasksScore = tasksTotal > 0 ? (tasksDone / tasksTotal) * 15 : 15;
-                const paymentsScore = (Math.min(100, Number(stats.customerPaidPercent) || 0) / 100) * 15;
-                const rScore = Math.min(100, Math.round(hotelsScore + transportScore + guidesScore + tasksScore + paymentsScore));
-                const isReady = rScore >= 90;
+                // Shared operational readiness (same weights as Operations list)
+                const { score: rScore, isReady } = computeOperationalReadinessScore({
+                  hotelsAssigned: confirmedHotelCount,
+                  hotelsTarget,
+                  transportAssigned: transportAssignedCount,
+                  transportRequired: transportRequiredCount,
+                  guideCount,
+                  tasksDone,
+                  tasksTotal,
+                  paymentsCollectedPercent: Number(stats.customerPaidPercent) || 0,
+                });
 
                 const missingList: string[] = [];
                 if (!isHotelsConfirmed && hotelsTarget > 0) missingList.push(`${Math.max(0, hotelsTarget - confirmedHotelCount)} hotel stay(s) pending assignment.`);
@@ -5451,7 +5446,12 @@ useEffect(() => {
                     View finance
                   </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E8EEF4]">
+                <div
+                  className={cn(
+                    "grid grid-cols-1 divide-y sm:divide-y-0 sm:divide-x divide-[#E8EEF4]",
+                    canSeeProfit ? "sm:grid-cols-3" : "sm:grid-cols-2",
+                  )}
+                >
                   <div className="px-4 py-3 min-w-0">
                     <p className="text-[11px] text-slate-500 font-medium truncate">
                       Outstanding
@@ -5474,22 +5474,24 @@ useEffect(() => {
                       Total pending
                     </p>
                   </div>
-                  <div className="px-4 py-3 min-w-0">
-                    <p className="text-[11px] text-slate-500 font-medium truncate">
-                      Profit
-                    </p>
-                    <p
-                      className={cn(
-                        "text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight",
-                        (stats?.estProfit || 0) >= 0 ? "text-[#0B1528]" : "text-[#FF4D00]",
-                      )}
-                    >
-                      ₹ {Number(stats?.estProfit || 0).toLocaleString("en-IN")}
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                      {stats?.profitPercent || 0}% of revenue
-                    </p>
-                  </div>
+                  {canSeeProfit && (
+                    <div className="px-4 py-3 min-w-0">
+                      <p className="text-[11px] text-slate-500 font-medium truncate">
+                        Profit
+                      </p>
+                      <p
+                        className={cn(
+                          "text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight",
+                          (stats?.estProfit || 0) >= 0 ? "text-[#0B1528]" : "text-[#FF4D00]",
+                        )}
+                      >
+                        ₹ {Number(stats?.estProfit || 0).toLocaleString("en-IN")}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                        {stats?.profitPercent || 0}% of revenue
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
