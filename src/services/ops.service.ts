@@ -740,11 +740,28 @@ export const opsService = {
   },
 
   // Documents Endpoints
-  async getDocuments(tripId: string, departureDate: string): Promise<any[]> {
+  async getDocuments(
+    tripId: string,
+    departureDate: string,
+  ): Promise<{
+    documents: any[];
+    passengers: any[];
+    summary: {
+      totalPassengers: number;
+      withIdentityDoc: number;
+      missingIdentityDoc: number;
+      withPaymentProof: number;
+      missingPaymentProof: number;
+    } | null;
+  }> {
     const res = await api.get(
       `/ops/tasks-docs-comm/documents/${tripId}?departureDate=${encodeURIComponent(departureDate)}`,
     );
-    return res.data?.data || [];
+    return {
+      documents: res.data?.data || [],
+      passengers: res.data?.passengers || [],
+      summary: res.data?.summary || null,
+    };
   },
   async createDocument(
     tripId: string,
