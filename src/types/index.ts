@@ -566,6 +566,7 @@ export interface Payment {
   transactionId?: string | null;
   proofUrl?: string | null;
   proofFileUrl?: string | null;
+  proofUrls?: string[] | null;
   proofFileName?: string | null;
   proofFileType?: string | null;
   proofUploadedAt?: string | null;

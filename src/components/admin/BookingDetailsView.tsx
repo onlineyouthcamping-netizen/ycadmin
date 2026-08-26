@@ -1,4 +1,5 @@
 import DocumentManager from "@/components/admin/DocumentManager";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import { PassengerDrawer } from "./PassengerDrawer";
 import { PassengerTimeline } from "./PassengerTimeline";
 import api from "@/services/api";
@@ -91,7 +92,7 @@ import { paymentsService } from "@/services/payments.service";
 import {
   formatProofDisplayUrl,
   isProofUploadPersisted,
-  resolvePaymentProofUrl,
+  resolvePaymentProofUrls,
 } from "@/utils/paymentProof";
 import { tripsService } from "@/services/trips.service";
 import { settingsService } from "@/services/settings.service";
@@ -324,8 +325,7 @@ export default function BookingDetailsView({
     Array<{ name: string; content: string }>
   >([]);
   const [confirmUtr, setConfirmUtr] = useState("");
-  const [confirmProofFile, setConfirmProofFile] = useState<File | null>(null);
-  const [confirmProofFileName, setConfirmProofFileName] = useState("");
+  const [confirmProofUrls, setConfirmProofUrls] = useState<string[]>([]);
   const [revertingLoading, setRevertingLoading] = useState(false);
 
   // Manual payment recording inline form
@@ -372,6 +372,11 @@ export default function BookingDetailsView({
   const [payAmount, setPayAmount] = useState("");
   const [payMode, setPayMode] = useState("UPI");
   const [payComments, setPayComments] = useState("");
+  const [payTransactionId, setPayTransactionId] = useState("");
+  const [payPaymentDate, setPayPaymentDate] = useState(
+    () => new Date().toISOString().substring(0, 10),
+  );
+  const [payProofUrls, setPayProofUrls] = useState<string[]>([]);
   const [payCollectedByAdminId, setPayCollectedByAdminId] = useState("");
   const [staffList, setStaffList] = useState<any[]>([]);
 
@@ -1009,20 +1014,34 @@ export default function BookingDetailsView({
 
   const handleAttachPaymentProof = async (
     paymentId: string,
-    file: File | undefined,
+    files: FileList | File[] | null | undefined,
   ) => {
-    if (!file) return;
+    const list = files
+      ? Array.from(files instanceof FileList ? Array.from(files) : files)
+      : [];
+    if (list.length === 0) return;
     try {
-      toast.loading("Uploading payment proof...", { id: "upload-proof" });
-      const result = await paymentsService.uploadProof(paymentId, file);
+      toast.loading(
+        list.length > 1
+          ? `Uploading ${list.length} payment proofs...`
+          : "Uploading payment proof...",
+        { id: "upload-proof" },
+      );
+      const result =
+        list.length === 1
+          ? await paymentsService.uploadProof(paymentId, list[0])
+          : await paymentsService.uploadProofs(paymentId, list);
       if (!isProofUploadPersisted(result)) {
         throw new Error("Proof was not persisted on the payment record");
       }
       await fetchPayments();
       if (onRefresh) onRefresh();
-      toast.success("Payment proof uploaded successfully!", {
-        id: "upload-proof",
-      });
+      toast.success(
+        list.length > 1
+          ? `${list.length} payment proofs uploaded successfully!`
+          : "Payment proof uploaded successfully!",
+        { id: "upload-proof" },
+      );
     } catch (uErr: any) {
       console.error("Payment proof upload failed:", uErr);
       toast.error(
@@ -1871,7 +1890,7 @@ export default function BookingDetailsView({
       (confirmMode === "UPI" || confirmMode === "Bank Transfer") &&
       adv > 0 &&
       !confirmUtr.trim() &&
-      !confirmProofFile
+      confirmProofUrls.length === 0
     ) {
       return toast.error(
         `Please provide a UTR reference number or upload a Payment Proof screenshot for ${confirmMode} payment.`
@@ -1889,19 +1908,13 @@ export default function BookingDetailsView({
         trainTicketStatus: confirmTrainStatus,
         collectionAccountId: confirmCollectionAccountId || undefined,
         transactionId: confirmUtr.trim() || undefined,
+        ...(confirmProofUrls.length > 0
+          ? {
+              proofUrl: confirmProofUrls[0],
+              proofUrls: confirmProofUrls,
+            }
+          : {}),
       });
-
-      if (confirmProofFile) {
-        try {
-          await bookingsService.uploadDocument(
-            booking.id,
-            "PAYMENT_PROOF",
-            confirmProofFile
-          );
-        } catch (proofErr) {
-          console.warn("Payment proof upload notice:", proofErr);
-        }
-      }
 
       // Auto create or update train tickets for passengers in this booking with the selected status
       const passengersList =
@@ -1945,6 +1958,7 @@ export default function BookingDetailsView({
 
       toast.success("Booking confirmed successfully!");
       setIsConfirming(false);
+      setConfirmProofUrls([]);
       try {
         const singleFile =
           confirmTicketFilesList[0]?.content || confirmTicketFile;
@@ -2222,12 +2236,47 @@ export default function BookingDetailsView({
     }
   };
 
+  const resetCreatePaymentForm = (amountSeed?: string | number) => {
+    setPaymentSource("collected");
+    setPayAmount(
+      amountSeed !== undefined && amountSeed !== null
+        ? String(amountSeed)
+        : "",
+    );
+    setPayMode("UPI");
+    setPayComments("");
+    setPayTransactionId("");
+    setPayPaymentDate(new Date().toISOString().substring(0, 10));
+    setPayProofUrls([]);
+  };
+
+  const openCreatePaymentModal = (amountSeed?: string | number) => {
+    resetCreatePaymentForm(amountSeed);
+    handlePayModeChange("UPI");
+    setShowCreatePayment(true);
+  };
+
   const handleCreatePaymentSave = async () => {
     if (paymentSource === "collected") {
       const amt = parseFloat(payAmount);
       if (isNaN(amt) || amt <= 0)
         return toast.error("Please enter a valid amount");
       if (!payMode) return toast.error("Please select a payment mode");
+      if (!payCollectionAccountId) {
+        return toast.error("Please select a collection account");
+      }
+      const modeUpper = payMode.toUpperCase();
+      const needsProofOrUtr =
+        modeUpper.includes("UPI") || modeUpper.includes("BANK");
+      if (
+        needsProofOrUtr &&
+        !payTransactionId.trim() &&
+        payProofUrls.length === 0
+      ) {
+        return toast.error(
+          `Please provide a UTR / transaction ID or upload payment proof for ${payMode}.`,
+        );
+      }
       setSavingPayment(true);
       try {
         await paymentsService.add({
@@ -2235,7 +2284,13 @@ export default function BookingDetailsView({
           amount: amt,
           paymentMode: payMode,
           collectionAccountId: payCollectionAccountId || undefined,
+          reference: payTransactionId.trim() || undefined,
+          paymentDate: payPaymentDate
+            ? new Date(payPaymentDate).toISOString()
+            : undefined,
           notes: payComments,
+          proofUrl: payProofUrls[0] || undefined,
+          proofUrls: payProofUrls.length > 0 ? payProofUrls : undefined,
           collectedByAdminId: currentAdmin?.id || booking.salesAdminId,
         });
 
@@ -2249,8 +2304,10 @@ export default function BookingDetailsView({
           toast.success("Payment recorded & mapped to Collection Account!");
         }
         setShowCreatePayment(false);
-        setPayComments("");
-        onRefresh();
+        resetCreatePaymentForm();
+        setAdminActiveTab("payments");
+        await fetchPayments();
+        if (onRefresh) onRefresh();
       } catch (err) {
         toast.error("Failed to record payment");
       } finally {
@@ -2270,7 +2327,8 @@ export default function BookingDetailsView({
         });
         toast.success("Payment configured to be collected at venue!");
         setShowCreatePayment(false);
-        onRefresh();
+        resetCreatePaymentForm();
+        if (onRefresh) onRefresh();
       } catch (e) {
         toast.error("Failed to update payment directives");
       }
@@ -2878,11 +2936,9 @@ export default function BookingDetailsView({
           <div className="flex items-center gap-2 overflow-x-auto">
           <button
             onClick={() => {
-              setPayAmount(booking.remainingAmount.toString());
-              setPaymentSource("collected");
-              setPayMode("UPI");
-              setPayComments("");
-              setShowCreatePayment(true);
+              openCreatePaymentModal(
+                financeDue || booking.remainingAmount || "",
+              );
             }}
             className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#FF4D00] px-3 text-xs font-semibold text-white shadow-[0_1px_2px_rgba(255,77,0,0.35)] transition-colors hover:bg-[#E04400] cursor-pointer"
           >
@@ -3041,6 +3097,8 @@ export default function BookingDetailsView({
                 setConfirmTotal((booking.totalAmount || 0).toString());
                 setConfirmAdvance((booking.advancePaid || 0).toString());
                 setConfirmEmail(booking.email || "");
+                setConfirmUtr("");
+                setConfirmProofUrls([]);
                 setIsConfirming(true);
               }}
               className="h-8 shrink-0 inline-flex items-center justify-center bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs px-3.5 rounded-lg transition-colors cursor-pointer"
@@ -3186,23 +3244,18 @@ export default function BookingDetailsView({
                   <label className="text-[9px] font-semibold uppercase text-slate-400 block mb-0.5">
                     Payment Proof (Screenshot / Receipt) *
                   </label>
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setConfirmProofFile(file);
-                        setConfirmProofFileName(file.name);
-                      }
-                    }}
-                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-[#FF4D00] file:text-white hover:file:bg-[#E04400] cursor-pointer"
+                  <ImageUpload
+                    label="Upload Payment Screenshots"
+                    value={confirmProofUrls}
+                    onChange={setConfirmProofUrls}
+                    multiple
+                    maxFiles={8}
+                    accept="image/*,.pdf,application/pdf"
+                    compact
                   />
-                  {confirmProofFileName && (
-                    <p className="text-[10px] text-green-600 font-semibold truncate mt-0.5">
-                      ✓ {confirmProofFileName}
-                    </p>
-                  )}
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    You can attach multiple screenshots or PDFs (JPG/PNG/PDF).
+                  </p>
                 </div>
               </>
             )}
@@ -4901,11 +4954,9 @@ export default function BookingDetailsView({
                     </button>
                   <button
                     onClick={() => {
-                      setPayAmount(String(financeDue || booking.remainingAmount || ""));
-                      setPaymentSource("collected");
-                      setPayMode("UPI");
-                      setPayComments("");
-                      setShowCreatePayment(true);
+                      openCreatePaymentModal(
+                        financeDue || booking.remainingAmount || "",
+                      );
                     }}
                     className="bg-[#0B1528] hover:bg-[#182741] text-white font-semibold text-[10px] uppercase px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1"
                   >
@@ -5111,42 +5162,63 @@ export default function BookingDetailsView({
                                             </span>
                                             <div className="col-span-2">
                                               {(() => {
-                                                const proofUrl = resolvePaymentProofUrl(p);
-                                                const proofName = p.proofFileName || "Receipt";
-                                                if (proofUrl) {
+                                                const proofUrls =
+                                                  resolvePaymentProofUrls(p);
+                                                const proofName =
+                                                  p.proofFileName || "Receipt";
+                                                if (proofUrls.length > 0) {
                                                   return (
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                      <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                          e.stopPropagation();
-                                                          window.open(
-                                                            formatProofDisplayUrl(
-                                                              proofUrl,
-                                                              ENV.API_BASE_URL,
-                                                            ),
-                                                            "_blank",
-                                                            "noopener,noreferrer",
-                                                          );
-                                                        }}
-                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 rounded-md font-semibold text-[11px] transition-colors cursor-pointer"
-                                                      >
-                                                        <Eye className="w-3.5 h-3.5" />
-                                                        <span>View Proof ({proofName})</span>
-                                                        <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
-                                                      </button>
+                                                      {proofUrls.map(
+                                                        (proofUrl, idx) => (
+                                                          <button
+                                                            key={`${proofUrl}-${idx}`}
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              window.open(
+                                                                formatProofDisplayUrl(
+                                                                  proofUrl,
+                                                                  ENV.API_BASE_URL,
+                                                                ),
+                                                                "_blank",
+                                                                "noopener,noreferrer",
+                                                              );
+                                                            }}
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 rounded-md font-semibold text-[11px] transition-colors cursor-pointer"
+                                                          >
+                                                            <Eye className="w-3.5 h-3.5" />
+                                                            <span>
+                                                              {proofUrls.length >
+                                                              1
+                                                                ? `View #${idx + 1}`
+                                                                : `View Proof (${proofName})`}
+                                                            </span>
+                                                            <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+                                                          </button>
+                                                        ),
+                                                      )}
                                                       <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 bg-[#FF4D00]/10 text-[#FF4D00] hover:bg-[#FF4D00]/20 rounded text-[10px] font-semibold transition-colors">
                                                         <Upload className="w-3 h-3" />
-                                                        Replace
+                                                        Add more
                                                         <input
                                                           type="file"
+                                                          multiple
                                                           accept="image/jpeg,image/png,image/jpg,application/pdf"
                                                           className="hidden"
-                                                          onClick={(e) => e.stopPropagation()}
-                                                          onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
+                                                          onClick={(e) =>
+                                                            e.stopPropagation()
+                                                          }
+                                                          onChange={async (
+                                                            e,
+                                                          ) => {
+                                                            const files =
+                                                              e.target.files;
                                                             e.target.value = "";
-                                                            await handleAttachPaymentProof(p.id, file);
+                                                            await handleAttachPaymentProof(
+                                                              p.id,
+                                                              files,
+                                                            );
                                                           }}
                                                         />
                                                       </label>
@@ -5155,19 +5227,28 @@ export default function BookingDetailsView({
                                                 }
                                                 return (
                                                   <div className="flex items-center gap-2">
-                                                    <span className="text-slate-400 italic text-[11px]">No proof file attached</span>
+                                                    <span className="text-slate-400 italic text-[11px]">
+                                                      No proof file attached
+                                                    </span>
                                                     <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 bg-[#FF4D00]/10 text-[#FF4D00] hover:bg-[#FF4D00]/20 rounded text-[10px] font-semibold transition-colors">
                                                       <Upload className="w-3 h-3" />
                                                       + Attach Proof
                                                       <input
                                                         type="file"
+                                                        multiple
                                                         accept="image/jpeg,image/png,image/jpg,application/pdf"
                                                         className="hidden"
-                                                        onClick={(e) => e.stopPropagation()}
+                                                        onClick={(e) =>
+                                                          e.stopPropagation()
+                                                        }
                                                         onChange={async (e) => {
-                                                          const file = e.target.files?.[0];
+                                                          const files =
+                                                            e.target.files;
                                                           e.target.value = "";
-                                                          await handleAttachPaymentProof(p.id, file);
+                                                          await handleAttachPaymentProof(
+                                                            p.id,
+                                                            files,
+                                                          );
                                                         }}
                                                       />
                                                     </label>
@@ -5298,11 +5379,7 @@ export default function BookingDetailsView({
                         </p>
                         <button
                           onClick={() => {
-                            setPayAmount(String(financeDue || ""));
-                            setPaymentSource("collected");
-                            setPayMode("UPI");
-                            setPayComments("");
-                            setShowCreatePayment(true);
+                            openCreatePaymentModal(financeDue || "");
                           }}
                           className="bg-primary hover:bg-primary/95 text-white font-semibold text-[9px] uppercase px-4 py-1.5 rounded transition-all"
                         >
@@ -7859,9 +7936,9 @@ export default function BookingDetailsView({
       <Dialog open={showCreatePayment} onOpenChange={setShowCreatePayment}>
         <DialogContent
           hideClose
-          className="sm:max-w-[500px] p-0 border border-[#E8EEF4] rounded-lg overflow-hidden shadow-premium bg-white"
+          className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto p-0 border border-[#E8EEF4] rounded-lg shadow-premium bg-white"
         >
-          <div className="bg-slate-900 px-4 py-3 text-white flex justify-between items-center">
+          <div className="bg-slate-900 px-4 py-3 text-white flex justify-between items-center sticky top-0 z-10">
             <DialogTitle className="text-xs font-semibold text-white">
               Create a payment
             </DialogTitle>
@@ -7976,14 +8053,71 @@ export default function BookingDetailsView({
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold uppercase text-slate-550">
+                      Payment Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={payPaymentDate}
+                      onChange={(e) => setPayPaymentDate(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold uppercase text-slate-550">
+                      Transaction ID / UTR
+                      {(payMode === "UPI" || payMode === "Bank Transfer") && (
+                        <span className="text-red-500 normal-case font-medium">
+                          {" "}
+                          (or proof)
+                        </span>
+                      )}
+                    </label>
+                    <Input
+                      value={payTransactionId}
+                      onChange={(e) => setPayTransactionId(e.target.value)}
+                      placeholder="e.g. UTR928102910"
+                      className="h-8 text-xs rounded"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1">
                   <label className="text-[10px] font-semibold uppercase text-slate-550">
-                    Comments / Reference UTR
+                    Payment Screenshot / Receipt Proof
+                    {(payMode === "UPI" || payMode === "Bank Transfer") &&
+                      !payTransactionId.trim() && (
+                        <span className="text-red-500 normal-case font-medium">
+                          {" "}
+                          *
+                        </span>
+                      )}
+                  </label>
+                  <ImageUpload
+                    label="Upload Payment Screenshots"
+                    value={payProofUrls}
+                    onChange={setPayProofUrls}
+                    multiple
+                    maxFiles={8}
+                    accept="image/*,.pdf,application/pdf"
+                    compact
+                  />
+                  <p className="text-[10px] text-slate-400">
+                    Multiple images/PDFs supported. UPI / Bank Transfer need a
+                    UTR or proof. Cash can skip.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold uppercase text-slate-550">
+                    Comments / Remarks
                   </label>
                   <Input
                     value={payComments}
                     onChange={(e) => setPayComments(e.target.value)}
-                    placeholder="e.g. YAC 26/05/2026 / UTR928102910"
+                    placeholder="e.g. payer name if different, YAC note…"
                     className="h-8 text-xs rounded"
                   />
                 </div>

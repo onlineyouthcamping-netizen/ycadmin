@@ -3,6 +3,7 @@ import {
   formatProofDisplayUrl,
   isProofUploadPersisted,
   resolvePaymentProofUrl,
+  resolvePaymentProofUrls,
 } from "./paymentProof";
 
 describe("resolvePaymentProofUrl", () => {
@@ -28,6 +29,31 @@ describe("resolvePaymentProofUrl", () => {
     expect(resolvePaymentProofUrl({})).toBeNull();
     expect(resolvePaymentProofUrl({ proofUrl: "  " })).toBeNull();
     expect(resolvePaymentProofUrl(null)).toBeNull();
+  });
+});
+
+describe("resolvePaymentProofUrls", () => {
+  it("merges primary and proofUrls without duplicates", () => {
+    expect(
+      resolvePaymentProofUrls({
+        proofFileUrl: "/uploads/payment-proofs/a.jpg",
+        proofUrl: "/uploads/payment-proofs/a.jpg",
+        proofUrls: [
+          "/uploads/payment-proofs/a.jpg",
+          "/uploads/payment-proofs/b.jpg",
+          "https://cdn.example.com/c.png",
+        ],
+      }),
+    ).toEqual([
+      "/uploads/payment-proofs/a.jpg",
+      "/uploads/payment-proofs/b.jpg",
+      "https://cdn.example.com/c.png",
+    ]);
+  });
+
+  it("returns empty array when nothing is persisted", () => {
+    expect(resolvePaymentProofUrls({})).toEqual([]);
+    expect(resolvePaymentProofUrls(null)).toEqual([]);
   });
 });
 
@@ -61,6 +87,17 @@ describe("isProofUploadPersisted", () => {
       isProofUploadPersisted({
         success: true,
         payment: { proofFileUrl: "/uploads/payment-proofs/a.jpg" },
+      }),
+    ).toBe(true);
+    expect(
+      isProofUploadPersisted({
+        success: true,
+        payment: {
+          proofUrls: [
+            "/uploads/payment-proofs/a.jpg",
+            "/uploads/payment-proofs/b.jpg",
+          ],
+        },
       }),
     ).toBe(true);
   });

@@ -27,7 +27,8 @@ export interface DashboardWidget {
   id: string;
   title: string;
   category: DashboardCategory;
-  permission: string; // Specific PERMISSIONS constant required
+  /** When set, widget is hidden unless the user has this permission. Omit for all authenticated dashboard users. */
+  permission?: string;
   order: number;
   colSpanDesktop: string; // Tailwind grid span
   component: React.ComponentType<DashboardWidgetContextProps>;

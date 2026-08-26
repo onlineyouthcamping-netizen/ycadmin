@@ -17,7 +17,13 @@ import { normalizeDepartureHubTab } from "@/utils/departure/departureHubTab";
 import { fetchAllDepartureBookings } from "@/utils/departure/fetchDepartureBookings";
 import { mergeOpsVendorPayments, opsRecordedPaymentStatus } from "@/utils/departure/vendorIdentity";
 import { mapBookingsToDeparturePassengers, isTransportAllocatedForPassenger } from "@/utils/departure/departurePassengers";
-import { matchPassengerForOpsRow, isActualVehicleAllocated } from "@/utils/departure/passengerIdentity";
+import { matchPassengerForOpsRow, isActualVehicleAllocated, resolvePassengerAlloc } from "@/utils/departure/passengerIdentity";
+import {
+  computeHotelStayCoverage,
+  computeSeatsFilledPercent,
+  countBookingTravelers,
+  countOutstandingParticipants,
+} from "@/utils/departure/overviewMetrics";
 import { printTripTitle } from "@/utils/inquiryCounts";
 import {
   isGuideExpenseType,
@@ -455,13 +461,16 @@ export default function DepartureHubPage() {
 
       // Map passengerAllocations to proper DB format
       allPassengers.forEach((p: any) => {
-        const alloc = (p.id && passengerAllocations[p.id]) || null;
+        const alloc =
+          resolvePassengerAlloc(passengerAllocations, p) ||
+          (p.id && passengerAllocations[p.id]) ||
+          null;
         if (!alloc) return;
         const bookingId =
           p.bookingId ||
+          p.rawBooking?.id ||
           p.rawBooking?.bookingId ||
           p.bookingRef ||
-          p.rawBooking?.id ||
           `BK-${(p.name || "PAX").replace(/\s+/g, "").toUpperCase()}`;
 
         if (
@@ -500,6 +509,17 @@ export default function DepartureHubPage() {
           });
         }
       });
+
+      if (
+        !clearExisting &&
+        target === "rooms" &&
+        roomAllocations.length === 0
+      ) {
+        toast.error(
+          "No room assignments to save. Auto-allocate or drag passengers into rooms first.",
+        );
+        return;
+      }
 
       // If saving vehicles and none were explicitly set, fallback-assign to fleet
       if ((target === "all" || target === "vehicles") && vehicleAllocations.length === 0 && !clearExisting && allocFleet.length > 0) {
@@ -1010,6 +1030,7 @@ export default function DepartureHubPage() {
       const nextErrors: Record<string, string> = {};
 
       let bookingsIncompleteFlag = false;
+      let loadedBookings: any[] = [];
       try {
         const loaded = await fetchAllDepartureBookings({
           pageSize: 100,
@@ -1027,6 +1048,7 @@ export default function DepartureHubPage() {
             b.tripId === tripId &&
             isSameDepartureDate(b.departureDate, departureDateStr),
         );
+        loadedBookings = filtered;
         setBookings(filtered);
         bookingsIncompleteFlag = loaded.incomplete;
         setBookingsIncomplete(loaded.incomplete);
@@ -1373,54 +1395,13 @@ export default function DepartureHubPage() {
         const { rooms = [], vehicles = [] } = allocRes.data.data;
         console.log("[HYDRATE] Will hydrate", vehicles.length, "vehicles,", rooms.length, "rooms");
         if (rooms.length > 0 || vehicles.length > 0) {
-          // Extract passengers directly from allBookings for immediate synchronous resolution
-          const currentPassengersList: any[] = [];
-          const hydrateBookings = (
-            bookingsRes.status === "fulfilled" && bookingsRes.value?.data?.data
-              ? bookingsRes.value.data.data
-              : []
-          ).filter(
-            (b: any) =>
-              b.tripId === tripId &&
-              isSameDepartureDate(b.departureDate, departureDateStr),
+          // Use the same passenger identity scheme as the rest of the hub
+          // (UUID bookingId + bookingRef + co-pax ids) so room/tempo rows rematch.
+          const currentPassengersList = mapBookingsToDeparturePassengers(
+            loadedBookings,
+            departureDateStr,
+            {},
           );
-          hydrateBookings.forEach((b: any) => {
-            let rawPax: any[] = [];
-            try {
-              if (Array.isArray(b.passengers)) {
-                rawPax = b.passengers;
-              } else if (typeof b.passengers === "string") {
-                const parsed = JSON.parse(b.passengers || "[]");
-                rawPax = Array.isArray(parsed?.persons) ? parsed.persons : (Array.isArray(parsed) ? parsed : []);
-              } else if (b.passengers?.persons && Array.isArray(b.passengers.persons)) {
-                rawPax = b.passengers.persons;
-              }
-            } catch {
-              rawPax = [];
-            }
-            if (rawPax.length > 0) {
-              rawPax.forEach((p: any, idx: number) => {
-                const pName = typeof p === "string" ? p : (p?.name || p?.fullName || p?.travelerName || b.name || b.fullName);
-                currentPassengersList.push({
-                  id: (typeof p === "object" && p?.id) ? p.id : `${b.id}-${idx}`,
-                  name: pName,
-                  gender: (typeof p === "object" && p?.gender) ? p.gender : b.gender,
-                });
-              });
-            } else {
-              currentPassengersList.push({
-                id: b.id,
-                name: b.name || b.fullName || "Traveler",
-                gender: b.gender,
-              });
-            }
-          });
-
-          // Build name→passenger map
-          const nameToPassenger: Record<string, any> = {};
-          currentPassengersList.forEach((p: any) => {
-            if (p.name) nameToPassenger[p.name] = p;
-          });
 
           // Build fleetId-to-name map from initialFleet
           const fleetNameMap: Record<string, string> = {};
@@ -2613,48 +2594,14 @@ useEffect(() => {
         0,
       );
       const totalParticipants =
-        confirmedBookings.reduce((sum: number, b: any) => {
-          let count = 0;
-          if (b.numberOfTravelers && Number(b.numberOfTravelers) > 0) {
-            count = Number(b.numberOfTravelers);
-          } else if (b.numberOfPersons && Number(b.numberOfPersons) > 0) {
-            count = Number(b.numberOfPersons);
-          } else if (Array.isArray(b.passengers) && b.passengers.length > 0) {
-            count = b.passengers.length;
-          } else if (typeof b.passengers === "string") {
-            try {
-              const p = JSON.parse(b.passengers);
-              count = Array.isArray(p) && p.length > 0 ? p.length : 1;
-            } catch {
-              count = 1;
-            }
-          } else {
-            count = 1;
-          }
-          return sum + count;
-        }, 0) || (confirmedBookings.length > 0 ? confirmedBookings.length : 0);
-      const outstandingParticipantsCount = confirmedBookings
-        .filter((b: any) => (b.remainingAmount || 0) > 0)
-        .reduce((sum: number, b: any) => {
-          let count = 0;
-          if (b.numberOfTravelers && Number(b.numberOfTravelers) > 0) {
-            count = Number(b.numberOfTravelers);
-          } else if (b.numberOfPersons && Number(b.numberOfPersons) > 0) {
-            count = Number(b.numberOfPersons);
-          } else if (Array.isArray(b.passengers) && b.passengers.length > 0) {
-            count = b.passengers.length;
-          } else if (typeof b.passengers === "string") {
-            try {
-              const p = JSON.parse(b.passengers);
-              count = Array.isArray(p) && p.length > 0 ? p.length : 1;
-            } catch {
-              count = 1;
-            }
-          } else {
-            count = 1;
-          }
-          return sum + count;
-        }, 0);
+        confirmedBookings.reduce(
+          (sum: number, b: any) => sum + countBookingTravelers(b),
+          0,
+        ) || (confirmedBookings.length > 0 ? confirmedBookings.length : 0);
+      const outstandingParticipantsCount = countOutstandingParticipants({
+        bookings: confirmedBookings,
+        activePassengers: allPassengers.filter((p: any) => !p.isCancelled),
+      });
 
       // Vendor Payments (filtered from opsHotels, allocFleet, dbGuides, and tripVendors)
       const calculateHotelCost = (h: any) => {
@@ -2807,7 +2754,7 @@ useEffect(() => {
         totalExpenses: totalVendorPaid,
       };
     },
-    [bookings, tripVendors, opsHotels, allocFleet, dbGuides],
+    [bookings, tripVendors, opsHotels, allocFleet, dbGuides, allPassengers],
   ) as {
     totalRevenue: number;
     customerPaid: number;
@@ -3000,8 +2947,12 @@ useEffect(() => {
       : "TBD";
 
     const capacity = tripDetails?.maxGroupSize;
-    const filledPercentage =
-      capacity > 0 ? (stats.totalParticipants / capacity) * 100 : 0;
+    const participantCount =
+      activeDeparturePassengers.length || stats.totalParticipants || 0;
+    const filledPercentage = computeSeatsFilledPercent(
+      participantCount,
+      capacity,
+    );
     const seats50PercentStr = sortedBookings[
       Math.floor(sortedBookings.length / 2)
     ]
@@ -3098,7 +3049,7 @@ useEffect(() => {
         pending: !isDeparted,
       },
     ];
-  }, [bookings, tripVendors, tripDetails, departureDateStr, stats]);
+  }, [bookings, tripVendors, tripDetails, departureDateStr, stats, activeDeparturePassengers]);
 
   const getDayDateAndWd = (startStr: string, offsetDays: number) => {
     try {
@@ -5346,27 +5297,13 @@ useEffect(() => {
           {activeTab === "overview" && (
             <div className="space-y-3 min-w-0">
               {(() => {
-                const stayDays = (computedItinerary || []).filter((d: any, idx: number, arr: any[]) => {
-                  const dest = (d.destination || d.location || d.sub || d.plan || "").toLowerCase();
-                  const day = (d.day || "").toLowerCase();
-                  const isEnroute =
-                    dest.includes("train") ||
-                    dest.includes("night journey") ||
-                    dest.includes("arrival in your city") ||
-                    dest.includes("your city") ||
-                    dest.includes("departure to your") ||
-                    day.includes("no stay") ||
-                    idx === 0 ||
-                    idx === arr.length - 1;
-                  return !d.isNoStay && !isEnroute;
+                const hotelCoverage = computeHotelStayCoverage({
+                  itinerary: computedItinerary,
+                  hotelBookings: opsHotels,
                 });
-                const hotelsTarget = stayDays.length;
-                const realOpsHotels = (opsHotels || []).filter((h: any) => {
-                  const name = String(h?.hotelName || h?.name || "").trim().toUpperCase();
-                  return name && name !== "NO_STAY" && name !== "NO STAY" && name !== "—";
-                });
-                const confirmedHotelCount = realOpsHotels.length;
-                const isHotelsConfirmed = confirmedHotelCount >= hotelsTarget && hotelsTarget > 0;
+                const hotelsTarget = hotelCoverage.target;
+                const confirmedHotelCount = hotelCoverage.covered;
+                const isHotelsConfirmed = hotelCoverage.isComplete;
 
                 const transportAssignedCount = allocFleet.length;
                 const transportRequiredCount = Math.max(1, Math.ceil((activeDeparturePassengers.length || 1) / 17));
@@ -5380,16 +5317,16 @@ useEffect(() => {
                 const tasksTotal = computedTasks.length;
 
                 // Accurate dynamic readiness calculation
-                const hotelsScore = hotelsTarget > 0 ? (confirmedHotelCount / hotelsTarget) * 25 : 25;
+                const hotelsScore = hotelsTarget > 0 ? (Math.min(confirmedHotelCount, hotelsTarget) / hotelsTarget) * 25 : 25;
                 const transportScore = (Math.min(1, transportAssignedCount / transportRequiredCount)) * 25;
                 const guidesScore = (guideCount > 0 ? 1 : 0) * 20;
                 const tasksScore = tasksTotal > 0 ? (tasksDone / tasksTotal) * 15 : 15;
-                const paymentsScore = (Math.min(100, stats.customerPaidPercent) / 100) * 15;
+                const paymentsScore = (Math.min(100, Number(stats.customerPaidPercent) || 0) / 100) * 15;
                 const rScore = Math.min(100, Math.round(hotelsScore + transportScore + guidesScore + tasksScore + paymentsScore));
                 const isReady = rScore >= 90;
 
                 const missingList: string[] = [];
-                if (!isHotelsConfirmed && hotelsTarget > 0) missingList.push(`${hotelsTarget - confirmedHotelCount} hotel stay(s) pending assignment.`);
+                if (!isHotelsConfirmed && hotelsTarget > 0) missingList.push(`${Math.max(0, hotelsTarget - confirmedHotelCount)} hotel stay(s) pending assignment.`);
                 if (!isTransportConfirmed) missingList.push(`${transportRequiredCount - transportAssignedCount} vehicle(s) pending assignment.`);
                 if (!isGuideAssigned) missingList.push("Lead guide not yet assigned to departure.");
                 if (stats.customerOutstanding > 0) missingList.push(`₹${stats.customerOutstanding.toLocaleString("en-IN")} customer balance payment outstanding.`);
@@ -5404,8 +5341,8 @@ useEffect(() => {
                   },
                   {
                     label: "Hotels",
-                    value: `${confirmedHotelCount} / ${hotelsTarget}`,
-                    hint: isHotelsConfirmed ? "Confirmed" : "Pending",
+                    value: hotelCoverage.displayValue.replace("/", " / "),
+                    hint: isHotelsConfirmed ? "Assigned" : "Pending",
                     tone: isHotelsConfirmed ? "text-[#0B1528]" : "text-[#FF4D00]",
                   },
                   {

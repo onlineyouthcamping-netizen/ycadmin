@@ -167,6 +167,8 @@ export const bookingsService = {
       collectionAccountId?: string;
       transactionId?: string;
       notes?: string;
+      proofUrl?: string;
+      proofUrls?: string[];
     },
   ): Promise<Booking> {
     const res = await api.put(`/bookings/${id}/confirm`, data);

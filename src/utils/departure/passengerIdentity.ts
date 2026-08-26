@@ -28,6 +28,15 @@ export function resolvePassengerAlloc(
   return null;
 }
 
+function passengerBookingKeys(
+  passenger: { bookingId?: string; bookingRef?: string; id?: string },
+): string[] {
+  return [passenger.bookingId, passenger.bookingRef, passenger.id]
+    .filter(Boolean)
+    .map((v) => String(v).trim());
+}
+
+/** Match ops allocation rows (display bookingId or UUID) to departure passengers. */
 export function matchPassengerForOpsRow(
   passengers: Array<{ id?: string; name?: string; bookingId?: string; bookingRef?: string }>,
   row: { passengerId?: string; bookingId?: string; travelerName?: string },
@@ -40,8 +49,8 @@ export function matchPassengerForOpsRow(
   const bookingId = String(row.bookingId || "").trim();
   if (bookingId) {
     const inBooking = passengers.filter((p) => {
-      const bid = String(p.bookingId || p.bookingRef || "");
-      return bid === bookingId && p.id && !claimedIds.has(String(p.id));
+      if (!p.id || claimedIds.has(String(p.id))) return false;
+      return passengerBookingKeys(p).includes(bookingId);
     });
     if (row.travelerName) {
       const nameMatch = inBooking.filter(

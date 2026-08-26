@@ -241,7 +241,7 @@ export const generalWidgets: DashboardWidget[] = [
     id: "announcements",
     title: "Announcements",
     category: "management",
-    permission: PERMISSIONS.ANNOUNCEMENTS_VIEW,
+    // Visible to every authenticated dashboard user; + Add stays gated on settings.view.
     order: 80,
     colSpanDesktop: "col-span-12 md:col-span-6 lg:col-span-3",
     component: AnnouncementsWidget,

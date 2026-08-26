@@ -1,16 +1,46 @@
 import { describe, expect, it } from "vitest";
 import { hasPermission, PERMISSIONS, ROLE_PERMISSIONS } from "./permissions";
 import { generalWidgets } from "@/modules/general/general.widgets";
+import { DASHBOARD_WIDGET_REGISTRY } from "@/config/dashboardWidgetRegistry";
+
+/** Mirrors DashboardPage visibleWidgets filter. */
+function visibleDashboardWidgets(
+  userPerms: readonly string[],
+  userRole?: string,
+) {
+  return DASHBOARD_WIDGET_REGISTRY.filter(
+    (w) => !w.permission || hasPermission(userPerms, w.permission, userRole),
+  );
+}
 
 describe("announcements dashboard widget permissions", () => {
   const announcementsWidget = generalWidgets.find((w) => w.id === "announcements");
 
-  it("registers the announcements widget behind announcements.view", () => {
+  it("registers announcements without a view-permission gate", () => {
     expect(announcementsWidget).toBeDefined();
-    expect(announcementsWidget?.permission).toBe(PERMISSIONS.ANNOUNCEMENTS_VIEW);
+    expect(announcementsWidget?.permission).toBeUndefined();
   });
 
-  it("grants announcements.view to staff roles so the widget is visible", () => {
+  it("shows announcements to operations even when customPermissions omit announcements.view", () => {
+    const customWithoutAnnouncements = [
+      "dashboard.view",
+      "operations.view",
+      "bookings.view",
+    ];
+    const visible = visibleDashboardWidgets(
+      customWithoutAnnouncements,
+      "operations",
+    );
+    expect(visible.some((w) => w.id === "announcements")).toBe(true);
+  });
+
+  it("shows announcements for unknown role names with no announcements.view grant", () => {
+    // Role alias / legacy labels that miss ROLE_PERMISSIONS still see the widget.
+    const visible = visibleDashboardWidgets([], "ops");
+    expect(visible.some((w) => w.id === "announcements")).toBe(true);
+  });
+
+  it("still grants announcements.view on staff role maps (API / legacy callers)", () => {
     const staffRoles = [
       "operations",
       "sales",

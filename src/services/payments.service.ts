@@ -39,8 +39,17 @@ export const paymentsService = {
     notes?: string;
     status?: string;
     remarks?: string;
+    proofUrl?: string;
+    proofUrls?: string[];
   }): Promise<any> {
     try {
+      const proofUrls = Array.isArray(data.proofUrls)
+        ? data.proofUrls.filter((u) => typeof u === "string" && u.trim())
+        : [];
+      const primaryProof =
+        (typeof data.proofUrl === "string" && data.proofUrl.trim()) ||
+        proofUrls[0] ||
+        undefined;
       // Primary backend endpoint: POST /payments/client/add/:bookingId
       const res = await api.post(`/payments/client/add/${data.bookingId}`, {
         amount: data.amount,
@@ -51,6 +60,8 @@ export const paymentsService = {
         paymentDate: data.paymentDate || new Date().toISOString(),
         status: data.status || "Pending Verification",
         remarks: data.notes || data.remarks || "Collected Payment",
+        ...(primaryProof ? { proofUrl: primaryProof } : {}),
+        ...(proofUrls.length > 0 ? { proofUrls } : {}),
       });
       return res.data?.data || res.data;
     } catch (e: any) {
@@ -111,6 +122,40 @@ export const paymentsService = {
     formData.append("document", file);
     formData.append("proofFileName", file.name);
     formData.append("proofFileType", file.type || "application/octet-stream");
+    const res = await api.post(
+      `/finance/collections/${paymentId}/upload-proof`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+    const payload = res.data || {};
+    if (!payload.success) {
+      throw new Error(payload.message || "Failed to upload payment proof");
+    }
+    const persistedUrl =
+      payload.payment?.proofFileUrl ||
+      payload.payment?.proofUrl ||
+      payload.proof_url;
+    if (!persistedUrl) {
+      throw new Error("Proof was not persisted on the payment record");
+    }
+    return payload;
+  },
+
+  async uploadProofs(paymentId: string, files: File[]): Promise<any> {
+    if (!files?.length) {
+      throw new Error("No proof files provided");
+    }
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("document", file);
+    });
+    formData.append("proofFileName", files[0].name);
+    formData.append(
+      "proofFileType",
+      files[0].type || "application/octet-stream",
+    );
     const res = await api.post(
       `/finance/collections/${paymentId}/upload-proof`,
       formData,

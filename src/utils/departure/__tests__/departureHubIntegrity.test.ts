@@ -196,6 +196,37 @@ describe("duplicate identity matching", () => {
     expect(first?.id).toBe("bk1");
     expect(second?.id).toBe("bk1-co-0");
   });
+
+  it("matches ops room rows that store display bookingId against UUID passenger bookingId + bookingRef", () => {
+    const passengers = [
+      {
+        id: "uuid-lead",
+        name: "Sanjay Vasaiya",
+        bookingId: "uuid-lead",
+        bookingRef: "YC-1001",
+      },
+      {
+        id: "uuid-lead-co-0",
+        name: "Meet Asheshkumar Gandhi",
+        bookingId: "uuid-lead",
+        bookingRef: "YC-1001",
+      },
+    ];
+    const claimed = new Set<string>();
+    const first = matchPassengerForOpsRow(
+      passengers,
+      { bookingId: "YC-1001", travelerName: "Sanjay Vasaiya" },
+      claimed,
+    );
+    claimed.add(String(first?.id));
+    const second = matchPassengerForOpsRow(
+      passengers,
+      { bookingId: "YC-1001", travelerName: "Meet Asheshkumar Gandhi" },
+      claimed,
+    );
+    expect(first?.id).toBe("uuid-lead");
+    expect(second?.id).toBe("uuid-lead-co-0");
+  });
 });
 
 describe("hotel-for-day matching", () => {
