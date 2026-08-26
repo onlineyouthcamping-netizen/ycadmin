@@ -8,7 +8,7 @@ import {
   normalizeGenderFull,
 } from "@/utils/passengerUtils";
 import {
-  allocatePassengerAmountsForBooking,
+  allocatePassengerMoneyForBookingWithTotals,
   normalizeCompareName,
 } from "./passengerAmounts";
 
@@ -192,13 +192,13 @@ export function mapBookingsToDeparturePassengers(
         });
       }
 
-      const money = allocatePassengerAmountsForBooking(b, draftRows, {
+      const money = allocatePassengerMoneyForBookingWithTotals(b, draftRows, {
         totalAmount: fin.totalAmount,
         netPaidAmount: fin.netPaidAmount,
         remainingAmount: due,
       });
       draftRows.forEach((row, i) => {
-        const share = money[i];
+        const share = money.shares[i];
         arr.push({
           ...row,
           amount: share?.amount ?? null,
@@ -206,6 +206,7 @@ export function mapBookingsToDeparturePassengers(
           balance: share?.balance ?? null,
           amountFromLineItems: share?.amountFromLineItems ?? false,
           paidIsBookingShare: share?.paidIsBookingShare ?? true,
+          bookingBalance: money.remainingAmount,
         });
       });
     });

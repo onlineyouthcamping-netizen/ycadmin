@@ -210,6 +210,74 @@ function scaleToTotal(raw: number[], totalAmount: number, activeIdx: number[]): 
   return out;
 }
 
+function activePassengerIndexes(
+  passengers: Array<{ isCancelled?: boolean }>,
+): number[] {
+  const activeIdx: number[] = [];
+  passengers.forEach((p, i) => {
+    if (!p?.isCancelled) activeIdx.push(i);
+  });
+  return activeIdx;
+}
+
+/**
+ * When co-travelers are cancelled, booking.totalAmount may still include their
+ * seat (e.g. stale sync 95k for Khushi). Prefer active per-person line items.
+ * Do not proportionally shrink totals without line items — the stored total may
+ * already exclude cancelled seats.
+ */
+export function resolveCancellationAdjustedTotals(params: {
+  totalAmount: number;
+  netPaidAmount: number;
+  remainingAmount: number;
+  passengers: Array<{ name: string; isCancelled?: boolean; id?: string | null }>;
+  bookingItems?: any[] | null;
+}): {
+  totalAmount: number;
+  netPaidAmount: number;
+  remainingAmount: number;
+  adjustedFromLineItems: boolean;
+  fromItems: number[] | null;
+  activeIdx: number[];
+} {
+  const netPaidAmount = Math.max(0, Math.round(safeNum(params.netPaidAmount)));
+  const storedTotal = Math.max(0, Math.round(safeNum(params.totalAmount)));
+  const storedRemaining = Math.max(0, Math.round(safeNum(params.remainingAmount)));
+  const passengers = params.passengers || [];
+  const activeIdx = activePassengerIndexes(passengers);
+  const items = Array.isArray(params.bookingItems) ? params.bookingItems : [];
+  const fromItems = amountsFromBookingItems(items, passengers);
+  const hasCancelled = activeIdx.length < passengers.length;
+
+  if (fromItems && hasCancelled && activeIdx.length > 0) {
+    const itemSum = activeIdx.reduce(
+      (s, i) => s + Math.round(safeNum(fromItems[i])),
+      0,
+    );
+    const covered = activeIdx.every((i) => Math.round(safeNum(fromItems[i])) !== 0);
+    // Stale booking.totalAmount still includes cancelled seat — trust line items.
+    if (covered && itemSum > 0 && itemSum < storedTotal) {
+      return {
+        totalAmount: itemSum,
+        netPaidAmount,
+        remainingAmount: Math.max(0, itemSum - netPaidAmount),
+        adjustedFromLineItems: true,
+        fromItems,
+        activeIdx,
+      };
+    }
+  }
+
+  return {
+    totalAmount: storedTotal,
+    netPaidAmount,
+    remainingAmount: storedRemaining,
+    adjustedFromLineItems: false,
+    fromItems,
+    activeIdx,
+  };
+}
+
 export function allocateBookingPassengerAmounts(params: {
   totalAmount: number;
   netPaidAmount: number;
@@ -217,21 +285,18 @@ export function allocateBookingPassengerAmounts(params: {
   passengers: Array<{ name: string; isCancelled?: boolean; id?: string | null }>;
   bookingItems?: any[] | null;
 }): PassengerMoneyShare[] {
+  const { passengers } = params;
+  const n = passengers.length;
+  if (n === 0) return [];
+
+  const adjusted = resolveCancellationAdjustedTotals(params);
   const {
     totalAmount,
     netPaidAmount,
     remainingAmount,
-    passengers,
-    bookingItems,
-  } = params;
-
-  const n = passengers.length;
-  if (n === 0) return [];
-
-  const activeIdx: number[] = [];
-  passengers.forEach((p, i) => {
-    if (!p?.isCancelled) activeIdx.push(i);
-  });
+    fromItems,
+    activeIdx,
+  } = adjusted;
 
   const result: PassengerMoneyShare[] = passengers.map((p) =>
     p?.isCancelled
@@ -253,11 +318,11 @@ export function allocateBookingPassengerAmounts(params: {
 
   if (activeIdx.length === 0) return result;
 
-  const items = Array.isArray(bookingItems) ? bookingItems : [];
-  const fromItems = amountsFromBookingItems(items, passengers);
   let amountParts: number[];
 
   if (fromItems) {
+    // When we already trusted item sums for a cancelled booking, keep those
+    // bases (scaleToTotal is a no-op when sums match).
     amountParts = scaleToTotal(fromItems, totalAmount, activeIdx);
     activeIdx.forEach((i) => {
       result[i].amount = amountParts[i];
@@ -298,6 +363,34 @@ export function allocateBookingPassengerAmounts(params: {
   return result;
 }
 
+export type BookingPassengerMoneyAllocation = {
+  shares: PassengerMoneyShare[];
+  totalAmount: number;
+  netPaidAmount: number;
+  remainingAmount: number;
+  adjustedFromLineItems: boolean;
+};
+
+/** Allocate + return cancellation-adjusted group totals for Departure Hub headers. */
+export function allocatePassengerMoneyWithGroupTotals(params: {
+  totalAmount: number;
+  netPaidAmount: number;
+  remainingAmount: number;
+  passengers: Array<{ name: string; isCancelled?: boolean; id?: string | null }>;
+  bookingItems?: any[] | null;
+}): BookingPassengerMoneyAllocation {
+  const adjusted = resolveCancellationAdjustedTotals(params);
+  // Pass original params — allocate resolves cancellation once internally.
+  const shares = allocateBookingPassengerAmounts(params);
+  return {
+    shares,
+    totalAmount: adjusted.totalAmount,
+    netPaidAmount: adjusted.netPaidAmount,
+    remainingAmount: adjusted.remainingAmount,
+    adjustedFromLineItems: adjusted.adjustedFromLineItems,
+  };
+}
+
 /** Convenience: allocate using booking.sourceMeta.bookingItems + financial summary. */
 export function allocatePassengerAmountsForBooking(
   booking: any,
@@ -309,6 +402,22 @@ export function allocatePassengerAmountsForBooking(
   },
 ): PassengerMoneyShare[] {
   return allocateBookingPassengerAmounts({
+    ...financials,
+    passengers,
+    bookingItems: getBookingItems(booking),
+  });
+}
+
+export function allocatePassengerMoneyForBookingWithTotals(
+  booking: any,
+  passengers: Array<{ name: string; isCancelled?: boolean; id?: string | null }>,
+  financials: {
+    totalAmount: number;
+    netPaidAmount: number;
+    remainingAmount: number;
+  },
+): BookingPassengerMoneyAllocation {
+  return allocatePassengerMoneyWithGroupTotals({
     ...financials,
     passengers,
     bookingItems: getBookingItems(booking),

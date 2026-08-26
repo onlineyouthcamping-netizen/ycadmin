@@ -18,7 +18,7 @@ import { fetchAllDepartureBookings } from "@/utils/departure/fetchDepartureBooki
 import { mergeOpsVendorPayments, opsRecordedPaymentStatus } from "@/utils/departure/vendorIdentity";
 import { mapBookingsToDeparturePassengers, isTransportAllocatedForPassenger } from "@/utils/departure/departurePassengers";
 import {
-  allocatePassengerAmountsForBooking,
+  allocatePassengerMoneyForBookingWithTotals,
   normalizeCompareName,
 } from "@/utils/departure/passengerAmounts";
 import { matchPassengerForOpsRow, isActualVehicleAllocated, resolvePassengerAlloc } from "@/utils/departure/passengerIdentity";
@@ -4686,13 +4686,13 @@ useEffect(() => {
         });
       }
 
-      const moneyShares = allocatePassengerAmountsForBooking(b, personsList, {
+      const money = allocatePassengerMoneyForBookingWithTotals(b, personsList, {
         totalAmount: fin.totalAmount,
         netPaidAmount: fin.netPaidAmount,
         remainingAmount: due,
       });
       personsList.forEach((p, i) => {
-        const share = moneyShares[i];
+        const share = money.shares[i];
         p.amount = share?.amount ?? null;
         p.paidAmount = share?.paidAmount ?? null;
         p.balance = share?.balance ?? null;
@@ -4775,9 +4775,11 @@ useEffect(() => {
         rawPassengerCount: personsList.length,
         coupleCount,
         roomRequirement,
-        totalAmount: b.totalAmount || 0,
-        paidAmount: fin.netPaidAmount,
-        balance: due,
+        // Use cancellation-adjusted totals (stale booking.totalAmount may still
+        // include a cancelled co-traveler's seat).
+        totalAmount: money.totalAmount,
+        paidAmount: money.netPaidAmount,
+        balance: money.remainingAmount,
         paymentStatus: paymentLabel,
         paymentStatusShort,
         trainTicketStatus: b.trainTicketStatus || "—",

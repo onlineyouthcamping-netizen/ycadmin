@@ -1584,7 +1584,11 @@ export default function BookingDetailsView({
     try {
       const newQty =
         updatedPassengers && Array.isArray(updatedPassengers)
-          ? updatedPassengers.length
+          ? updatedPassengers.filter(
+              (p: any) =>
+                !p?.isCancelled &&
+                String(p?.status || "").toUpperCase() !== "CANCELLED",
+            ).length || 1
           : 1;
 
       const currentItems = generatePerPersonBookingItems(

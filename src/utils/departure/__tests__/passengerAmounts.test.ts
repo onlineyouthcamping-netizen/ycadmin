@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   allocateBookingPassengerAmounts,
+  allocatePassengerMoneyWithGroupTotals,
   amountsFromBookingItems,
   personNameFromItemLabel,
   splitEvenly,
@@ -224,5 +225,54 @@ describe("group → passenger amount distribution", () => {
         (shares[1].balance || 0) +
         (shares[3].balance || 0),
     ).toBe(52500);
+  });
+
+  it("does not inflate active shares when stale total still includes cancelled seat", () => {
+    // Stale sync wrote totalAmount=95000 (4 seats) while Umangiben is cancelled
+    // and active line items already sum to the Excel package 73500.
+    const items = [
+      {
+        name: "3 TIER AC TRAIN (Ahmedabad) [Khushi]",
+        rate: 25500,
+        qty: 1,
+        category: "transport",
+      },
+      {
+        name: "3 TIER AC TRAIN (Ahmedabad) [Rushvi]",
+        rate: 25500,
+        qty: 1,
+        category: "transport",
+      },
+      {
+        name: "3 TIER AC TRAIN (Ahmedabad) [Khushbuben]",
+        rate: 22500,
+        qty: 1,
+        category: "transport",
+      },
+    ];
+    const money = allocatePassengerMoneyWithGroupTotals({
+      totalAmount: 95000,
+      netPaidAmount: 21000,
+      remainingAmount: 74000,
+      passengers: [
+        { name: "Khushi" },
+        { name: "Rushvi" },
+        { name: "Umangiben", isCancelled: true },
+        { name: "Khushbuben" },
+      ],
+      bookingItems: items,
+    });
+
+    expect(money.totalAmount).toBe(73500);
+    expect(money.netPaidAmount).toBe(21000);
+    expect(money.remainingAmount).toBe(52500);
+    expect(money.adjustedFromLineItems).toBe(true);
+    expect(money.shares[0].balance).toBe(18500);
+    expect(money.shares[1].balance).toBe(18500);
+    expect(money.shares[2].amount).toBeNull();
+    expect(money.shares[3].balance).toBe(15500);
+    // Must NOT scale 73500 line items up to stale 95000 (~31667 equal rem).
+    expect(money.shares[0].balance).not.toBe(31667);
+    expect(money.shares[0].amount).toBe(25500);
   });
 });
