@@ -2584,17 +2584,20 @@ useEffect(() => {
         (b: any) => b.status !== "cancelled",
       );
 
-      // Revenue & Customer Payments
-      const totalRevenue = confirmedBookings.reduce(
-        (sum: number, b: any) => sum + (b.totalAmount || b.amount || 0),
+      // Revenue & Customer Payments — use same CLEARED rules as passenger rows
+      const bookingFins = confirmedBookings.map((b: any) =>
+        calculateBookingFinancialStatus(b),
+      );
+      const totalRevenue = bookingFins.reduce(
+        (sum, fin) => sum + fin.totalAmount,
         0,
       );
-      const customerPaid = confirmedBookings.reduce(
-        (sum: number, b: any) => sum + (b.advancePaid || 0),
+      const customerPaid = bookingFins.reduce(
+        (sum, fin) => sum + fin.netPaidAmount,
         0,
       );
-      const customerOutstanding = confirmedBookings.reduce(
-        (sum: number, b: any) => sum + (b.remainingAmount || 0),
+      const customerOutstanding = bookingFins.reduce(
+        (sum, fin) => sum + fin.remainingAmount,
         0,
       );
       const totalParticipants =

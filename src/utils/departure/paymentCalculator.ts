@@ -1,9 +1,11 @@
 /**
  * Financial & Payment Status Calculator Utility
- * Departure Hub collected money = Finance-verified receipts only (APPROVED_FOUNDER).
+ * Departure Hub collected money matches booking Payments CLEARED rules
+ * (isClearedReceipt): founder-approved ops receipts, or legacy Payment rows
+ * with success status and no approval workflow.
  */
 
-import { isCollectionVerified } from "@/utils/collectionVerification";
+import { isClearedReceipt } from "@/utils/paymentUtils";
 
 export type CanonicalPaymentStatus =
   | "UNPAID"
@@ -75,7 +77,8 @@ export function calculateBookingFinancialStatus(booking: any): BookingFinancialS
     const key = String(p?.id || `${p?.amount}-${p?.approvalStatus}-${p?.createdAt || ""}`);
     if (seen.has(key)) return;
     seen.add(key);
-    if (!isCollectionVerified(p?.approvalStatus)) return;
+    // Same clearance rule as BookingDetailsView Payments CLEARED tab.
+    if (!isClearedReceipt(p)) return;
     const pAmt = safeNumber(p.amount || p.paidAmount);
     const pType = String(p.type || p.entryType || "").toUpperCase();
     if (pType.includes("REFUND") || pAmt < 0) {

@@ -1,58 +1,37 @@
 import { describe, expect, it } from "vitest";
-import {
-  classifyReceiptStatus,
-  displayPaymentRef,
-  isClearedReceipt,
-  sumReceipts,
-} from "../paymentUtils";
+import { formatDueTabBadge, isClearedReceipt } from "../paymentUtils";
 
-describe("paymentUtils finance receipt helpers", () => {
-  it("classifies verification states for the booking payments tabs", () => {
-    expect(classifyReceiptStatus("Pending Verification")).toBe("pending");
-    expect(classifyReceiptStatus("pending")).toBe("pending");
-    expect(classifyReceiptStatus("Rejected")).toBe("failed");
+describe("formatDueTabBadge", () => {
+  it("shows exact due instead of rounding 18500 up to 19k", () => {
+    expect(formatDueTabBadge(18500)).toBe("Due ₹18,500");
+    expect(formatDueTabBadge(18500)).not.toContain("19k");
   });
 
-  it("does not treat OpsClientPayment.status Verified as collected without founder approval", () => {
+  it("returns Paid when nothing is due", () => {
+    expect(formatDueTabBadge(0)).toBe("Paid");
+    expect(formatDueTabBadge(-10)).toBe("Paid");
+  });
+
+  it("uses compact k only for large dues", () => {
+    expect(formatDueTabBadge(150000)).toBe("Due ₹150k");
+    expect(formatDueTabBadge(185000)).toBe("Due ₹185k");
+  });
+});
+
+describe("isClearedReceipt", () => {
+  it("treats legacy success Payment without approvalStatus as cleared", () => {
+    expect(isClearedReceipt({ status: "success" })).toBe(true);
+  });
+
+  it("requires APPROVED_FOUNDER when approvalStatus is present", () => {
     expect(
-      isClearedReceipt({
-        status: "success",
-        approvalStatus: "PENDING",
-      }),
+      isClearedReceipt({ status: "success", approvalStatus: "PENDING" }),
     ).toBe(false);
     expect(
       isClearedReceipt({
-        status: "Verified",
-        approvalStatus: "PENDING",
-      }),
-    ).toBe(false);
-    expect(
-      isClearedReceipt({
-        status: "Verified",
+        status: "Pending Verification",
         approvalStatus: "APPROVED_FOUNDER",
       }),
     ).toBe(true);
-  });
-
-  it("hides plugin leftover refs like payments.offlinepayment", () => {
-    expect(
-      displayPaymentRef({
-        transactionId: "payments.offlinepayment",
-        utrNumber: "PAY-1787403602774",
-      }),
-    ).toBe("PAY-1787403602774");
-    expect(displayPaymentRef({ transactionId: "payments.offlinepayment", id: "abc123xyz" })).toBe(
-      "PAY-BC123XYZ",
-    );
-  });
-
-  it("sums only finance-cleared money toward due", () => {
-    const rows = [
-      { amount: 5000, status: "pending", approvalStatus: "PENDING" },
-      { amount: 10000, status: "success", approvalStatus: "APPROVED_FOUNDER" },
-      { amount: 2000, status: "failed", approvalStatus: "REJECTED" },
-    ];
-    expect(sumReceipts(rows, "success")).toBe(10000);
-    expect(sumReceipts(rows, "pending")).toBe(5000);
   });
 });

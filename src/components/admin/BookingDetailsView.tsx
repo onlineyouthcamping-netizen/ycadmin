@@ -9,6 +9,7 @@ import {
   getPaymentReceivedColorHex,
   classifyReceiptStatus,
   displayPaymentRef,
+  formatDueTabBadge,
   isClearedReceipt,
   sumReceipts,
 } from "@/utils/paymentUtils";
@@ -3578,10 +3579,7 @@ export default function BookingDetailsView({
               {
                 id: "payments",
                 label: "Payments",
-                badge:
-                  financeDue > 0
-                    ? `Due ₹${Math.round(financeDue / 1000)}k`
-                    : "Paid",
+                badge: formatDueTabBadge(financeDue),
                 tone: financeDue > 0 ? "amber" : "emerald",
               },
               {

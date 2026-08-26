@@ -12,6 +12,20 @@ describe("splitEvenly", () => {
     expect(splitEvenly(7, 2)).toEqual([3, 4]);
     expect(splitEvenly(42000, 2)).toEqual([21000, 21000]);
   });
+
+  it("keeps 7-way paid/due/total shares summing exactly (Prince-style)", () => {
+    const paid = splitEvenly(40000, 7);
+    const due = splitEvenly(144000, 7);
+    const total = splitEvenly(184000, 7);
+    expect(paid.reduce((s, n) => s + n, 0)).toBe(40000);
+    expect(due.reduce((s, n) => s + n, 0)).toBe(144000);
+    expect(total.reduce((s, n) => s + n, 0)).toBe(184000);
+    // Early rows show floor; remainder lands on the last seats.
+    expect(paid.slice(0, 5)).toEqual([5714, 5714, 5714, 5714, 5714]);
+    expect(paid.slice(5)).toEqual([5715, 5715]);
+    expect(due.slice(0, 4)).toEqual([20571, 20571, 20571, 20571]);
+    expect(due.slice(4)).toEqual([20572, 20572, 20572]);
+  });
 });
 
 describe("personNameFromItemLabel", () => {

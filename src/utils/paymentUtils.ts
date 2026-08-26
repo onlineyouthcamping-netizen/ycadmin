@@ -148,3 +148,22 @@ export function sumReceipts(
   }, 0);
 }
 
+/**
+ * Compact "Due …" label for tight tab badges.
+ * Avoid Math.round(amount/1000) which turns ₹18,500 into misleading "₹19k".
+ */
+export function formatDueTabBadge(amount: unknown): string {
+  const due = Math.max(0, Math.round(Number(amount) || 0));
+  if (due <= 0) return "Paid";
+  // Exact amount fits tab badges for typical booking dues; avoids k-rounding drift.
+  if (due < 100000) {
+    return `Due ₹${due.toLocaleString("en-IN")}`;
+  }
+  const thousands = due / 1000;
+  const compact =
+    Number.isInteger(thousands) || due % 1000 === 0
+      ? String(Math.round(thousands))
+      : thousands.toFixed(1).replace(/\.0$/, "");
+  return `Due ₹${compact}k`;
+}
+

@@ -145,6 +145,30 @@ describe("finance-verified passenger money", () => {
     expect(fin.remainingAmount).toBe(15000);
     expect(fin.paymentStatus).toBe("PARTIAL");
   });
+
+  it("counts legacy Payment success (no approvalStatus) like booking CLEARED", () => {
+    // Sanjay-style: website/UPI row in Payment table, not OpsClientPayment
+    const fin = calculateBookingFinancialStatus({
+      totalAmount: 23500,
+      advancePaid: 5000,
+      payments: [{ id: "cmszrz2im0043ncbb614sxsfo", amount: 5000, status: "success" }],
+      opsClientPayments: [],
+    });
+    expect(fin.netPaidAmount).toBe(5000);
+    expect(fin.remainingAmount).toBe(18500);
+    expect(fin.paymentStatus).toBe("PARTIAL");
+  });
+
+  it("does not treat advancePaid alone as collected", () => {
+    const fin = calculateBookingFinancialStatus({
+      totalAmount: 23500,
+      advancePaid: 5000,
+      remainingAmount: 18500,
+    });
+    expect(fin.netPaidAmount).toBe(0);
+    expect(fin.remainingAmount).toBe(23500);
+    expect(fin.paymentStatus).toBe("UNPAID");
+  });
 });
 
 describe("pagination", () => {
