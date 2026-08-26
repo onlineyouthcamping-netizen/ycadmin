@@ -40,6 +40,8 @@ import {
 import { cn, safeFormatDate } from "@/lib/utils";
 import { financeControllerService } from "@/services/financeController.service";
 import { financeApprovalsService } from "@/services/financeApprovals.service";
+import { bookingsService } from "@/services/bookings.service";
+import BookingDetailsModal from "@/components/admin/BookingDetailsModal";
 import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner";
 import {
@@ -99,6 +101,54 @@ export default function IncomingPaymentsApprovalPage({
   const [actionNotes, setActionNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedBookingDetails, setSelectedBookingDetails] = useState<any>(null);
+  const [openingBookingKey, setOpeningBookingKey] = useState<string | null>(null);
+
+  const openBookingDetails = async (item: {
+    bookingId?: string | null;
+    bookingDbId?: string | null;
+    raw?: any;
+  }) => {
+    const displayId = String(item.bookingId || "").trim();
+    if (!displayId || displayId === "—") {
+      toast.error("No booking linked to this payment");
+      return;
+    }
+
+    const candidates = [
+      item.bookingDbId,
+      item.raw?.booking?.id,
+      item.raw?.bookingId,
+      item.raw?.booking?.bookingId,
+      displayId,
+    ]
+      .map((v) => String(v || "").trim())
+      .filter((v, idx, arr) => v && v !== "—" && arr.indexOf(v) === idx);
+
+    setOpeningBookingKey(displayId);
+    try {
+      let booking: any = null;
+      let lastError: unknown = null;
+      for (const id of candidates) {
+        try {
+          booking = await bookingsService.getById(id);
+          if (booking) break;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      if (!booking) {
+        console.warn("openBookingDetails failed", lastError);
+        toast.error("Could not open this booking");
+        return;
+      }
+      setSelectedBookingDetails(booking);
+      setBookingModalOpen(true);
+    } finally {
+      setOpeningBookingKey(null);
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -218,6 +268,7 @@ export default function IncomingPaymentsApprovalPage({
       id: cp.id,
       type: "OPS_CLIENT_PAYMENT",
       bookingId: cp.booking?.bookingId || cp.bookingId || "—",
+      bookingDbId: cp.booking?.id || null,
       customerName: cp.booking?.fullName || cp.booking?.name || cp.clientName || "Customer",
       amount: cp.amount,
       paymentMode: cp.paymentMode || cp.method || "PAYMENT_LINK",
@@ -243,6 +294,7 @@ export default function IncomingPaymentsApprovalPage({
       id: p.id,
       type: "ONLINE_OR_BANK",
       bookingId: p.bookingId,
+      bookingDbId: (p as any).booking?.id || (p as any).bookingDbId || null,
       customerName: p.customerName || "Customer",
       amount: p.amount,
       paymentMode: p.paymentMode || "PAYMENT_LINK",
@@ -262,6 +314,7 @@ export default function IncomingPaymentsApprovalPage({
       id: c.id,
       type: "CASH_HANDOVER",
       bookingId: c.bookingId,
+      bookingDbId: (c as any).booking?.id || (c as any).bookingDbId || null,
       customerName: c.customerName || "Traveler",
       amount: c.submittedAmount || c.expectedAmount,
       paymentMode: "CASH_HANDOVER",
@@ -285,6 +338,7 @@ export default function IncomingPaymentsApprovalPage({
       id: sc.id,
       type: "STATION_COLLECTION",
       bookingId: sc.bookingId || "—",
+      bookingDbId: sc.booking?.id || null,
       customerName: sc.collectedFrom || sc.booking?.fullName || sc.booking?.name || "Station Passenger",
       amount: sc.amount,
       paymentMode: "STATION_CASH",
@@ -865,7 +919,15 @@ export default function IncomingPaymentsApprovalPage({
                                     {sg.items.map((item: any) => (
                                       <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors">
                                         <td className="px-3.5 py-2 font-mono font-bold text-[#E84712]">
-                                          {item.bookingId}
+                                          <button
+                                            type="button"
+                                            onClick={() => openBookingDetails(item)}
+                                            disabled={openingBookingKey === item.bookingId}
+                                            className="hover:underline cursor-pointer text-left disabled:opacity-60"
+                                            title="Open booking"
+                                          >
+                                            {item.bookingId}
+                                          </button>
                                         </td>
                                         <td className="px-3.5 py-2">
                                           <div className="font-bold text-[#13283F]">{item.collectedFrom}</div>
@@ -1005,8 +1067,20 @@ export default function IncomingPaymentsApprovalPage({
 
                       return (
                         <tr key={item.id} className="hover:bg-[#F8FAFC] transition-colors h-[44px]">
-                          <td className="px-4 py-2 font-mono text-[12px] font-semibold text-[#FF4D00] hover:underline cursor-pointer">
-                            {item.bookingId || "—"}
+                          <td className="px-4 py-2 font-mono text-[12px] font-semibold text-[#FF4D00]">
+                            <button
+                              type="button"
+                              onClick={() => openBookingDetails(item)}
+                              disabled={
+                                !item.bookingId ||
+                                item.bookingId === "—" ||
+                                openingBookingKey === item.bookingId
+                              }
+                              className="hover:underline cursor-pointer text-left disabled:cursor-default disabled:no-underline disabled:opacity-70"
+                              title="Open booking"
+                            >
+                              {item.bookingId || "—"}
+                            </button>
                           </td>
                           <td className="px-4 py-2 font-bold text-[#162B45]">
                             {item.customerName}
@@ -1193,7 +1267,19 @@ export default function IncomingPaymentsApprovalPage({
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="truncate font-mono text-[11px] font-bold text-[#E84712]">
-                            {item.bookingId || "—"}
+                            <button
+                              type="button"
+                              onClick={() => openBookingDetails(item)}
+                              disabled={
+                                !item.bookingId ||
+                                item.bookingId === "—" ||
+                                openingBookingKey === item.bookingId
+                              }
+                              className="hover:underline cursor-pointer text-left disabled:cursor-default disabled:no-underline disabled:opacity-70"
+                              title="Open booking"
+                            >
+                              {item.bookingId || "—"}
+                            </button>
                           </div>
                           <div className="mt-0.5 truncate text-[13px] font-bold text-[#13283F]">
                             {item.customerName}
@@ -1620,6 +1706,17 @@ export default function IncomingPaymentsApprovalPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BookingDetailsModal
+        open={bookingModalOpen}
+        onOpenChange={(open) => {
+          setBookingModalOpen(open);
+          if (!open) setSelectedBookingDetails(null);
+        }}
+        booking={selectedBookingDetails}
+        onRefresh={loadData}
+        defaultTab="payments"
+      />
     </div>
   );
 }

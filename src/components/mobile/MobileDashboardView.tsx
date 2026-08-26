@@ -2,7 +2,6 @@
 import { useNavigate } from "react-router-dom";
 import {
   TrendingUp,
-  Ticket,
   Wallet,
   Calendar,
   ChevronRight,
@@ -32,15 +31,6 @@ const PERIOD_OPTIONS: { value: string; label: string }[] = [
   { value: "month", label: "Month" },
   { value: "all", label: "All" },
 ];
-
-/** Prefix used on period-scoped metric labels so the number always matches the filter. */
-const PERIOD_PREFIX: Record<string, string> = {
-  today: "Today's",
-  week: "This week's",
-  month: "This month's",
-  year: "This year's",
-  all: "Total",
-};
 
 const formatInr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
@@ -131,7 +121,6 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
     userRole,
   );
   const canViewTrips = hasPermission(userPerms, PERMISSIONS.TRIPS_VIEW, userRole);
-  const periodPrefix = PERIOD_PREFIX[dateFilter] || "TOTAL";
 
   const upcomingDepartures = stats?.tripsDepartingNext7Days || [];
   const nextDeparture = upcomingDepartures[0];
@@ -227,34 +216,37 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-2.5">
+        {canViewBookings && (
+          <MetricCard
+            label="Today's bookings"
+            icon={<Users className="h-3.5 w-3.5" strokeWidth={1.75} />}
+            onClick={() => navigate("/admin/bookings")}
+            loading={loading}
+            value={stats?.todayBookings ?? stats?.totalBookings}
+            caption="Created today"
+          />
+        )}
+
         {canViewAccounting && (
           <MetricCard
-            label={`${periodPrefix} payments`}
+            label="Monthly revenue"
             icon={<TrendingUp className="h-3.5 w-3.5" strokeWidth={1.75} />}
             onClick={() => navigate("/admin/finance")}
             loading={loading}
-            value={stats?.totalRevenue}
+            value={stats?.currentMonthRevenue ?? stats?.totalRevenue}
             format={formatInr}
-            caption={
-              stats?.collectionRate !== undefined
-                ? `${stats.collectionRate}% collected`
-                : "Paid & confirmed"
-            }
+            caption="Verified this month"
           />
         )}
 
         {canViewBookings && (
           <MetricCard
-            label={`${periodPrefix} bookings`}
-            icon={<Users className="h-3.5 w-3.5" strokeWidth={1.75} />}
+            label="Bookings this month"
+            icon={<Calendar className="h-3.5 w-3.5" strokeWidth={1.75} />}
             onClick={() => navigate("/admin/bookings")}
             loading={loading}
-            value={stats?.totalBookings}
-            caption={
-              stats?.totalTravelers
-                ? `${stats.totalTravelers} travelers`
-                : "Bookings recorded"
-            }
+            value={stats?.bookingsThisMonth ?? stats?.totalBookings}
+            caption="Created this month"
           />
         )}
 

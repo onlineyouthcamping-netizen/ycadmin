@@ -71,6 +71,23 @@ export function safeFormatDateTime(
   );
 }
 
+/** Booking created stamp like "27 Jun, 5:40 pm" */
+export function formatBookingCreatedAt(
+  dateVal: any,
+  fallback: string = "",
+): string {
+  if (!dateVal) return fallback;
+  const date = new Date(dateVal);
+  if (isNaN(date.getTime())) return fallback;
+  const day = date.getDate();
+  const month = date.toLocaleString("en-GB", { month: "short" });
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12 || 12;
+  return `${day} ${month}, ${hours}:${minutes} ${ampm}`;
+}
+
 export function formatDate(dateVal: any, fallback: string = "N/A"): string {
   if (!dateVal) return fallback;
   const clean =

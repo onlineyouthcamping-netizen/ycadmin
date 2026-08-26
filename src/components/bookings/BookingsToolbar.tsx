@@ -73,12 +73,12 @@ export function BookingsToolbar({
   return (
     <div className="flex flex-col shrink-0 border-b border-[#E8EEF4]">
       <div className="admin-toolbar-row items-center gap-3 px-4 md:px-5 h-12">
-        <div className="hidden md:block relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-sm min-w-0">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
           <Input
             type="text"
             className="w-full h-8 pl-8 pr-3 bg-[#F8FAFC] border-[#E8EEF4] rounded-md text-[12px] shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/30"
-            placeholder="Search guest, phone, trip…"
+            placeholder="Search booking ID, guest, phone…"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />

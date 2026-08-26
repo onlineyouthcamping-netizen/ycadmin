@@ -465,6 +465,54 @@ export function calculateAccommodationCost(params: {
 // ─────────────────────────────────────────────
 
 /**
+ * Stay total from OpsHotelBooking room counts + rates.
+ * Prefer this over a possibly stale totalAmount when rates are present.
+ * Does not invent rates — returns 0 if no rate/room inputs yield a cost.
+ */
+export function calculateHotelStayTotalFromBooking(booking: {
+  pricingMethod?: string | null;
+  doubleRoomsCount?: number | null;
+  tripleRoomsCount?: number | null;
+  quadRoomsCount?: number | null;
+  extraPersonsCount?: number | null;
+  nightsCount?: number | null;
+  doubleRate?: number | null;
+  tripleRate?: number | null;
+  quadRate?: number | null;
+  extraBedRate?: number | null;
+  totalAmount?: number | null;
+}): number {
+  if (!booking) return 0;
+  if (String(booking.pricingMethod || "").toLowerCase() === "manual") {
+    return Number(booking.totalAmount) > 0 ? Number(booking.totalAmount) : 0;
+  }
+
+  const dRooms = Math.max(0, Math.trunc(Number(booking.doubleRoomsCount) || 0));
+  const tRooms = Math.max(0, Math.trunc(Number(booking.tripleRoomsCount) || 0));
+  const qRooms = Math.max(0, Math.trunc(Number(booking.quadRoomsCount) || 0));
+  const exPax = Math.max(0, Math.trunc(Number(booking.extraPersonsCount) || 0));
+  const nights = Math.max(1, Math.trunc(Number(booking.nightsCount) || 1));
+
+  const dRate = Number(booking.doubleRate) || 0;
+  const tRate = Number(booking.tripleRate) || 0;
+  const qRate = Number(booking.quadRate) || 0;
+  const exRate = Number(booking.extraBedRate) || 0;
+
+  const mode = normalisePricingMode(booking.pricingMethod);
+  const daily =
+    mode === "PER_PAX"
+      ? dRooms * 2 * dRate +
+        tRooms * 3 * tRate +
+        qRooms * 4 * qRate +
+        exPax * exRate
+      : dRooms * dRate + tRooms * tRate + qRooms * qRate + exPax * exRate;
+
+  if (daily > 0) return daily * nights;
+
+  return Number(booking.totalAmount) > 0 ? Number(booking.totalAmount) : 0;
+}
+
+/**
  * Determine the primary room rate from an OpsHotelBooking record.
  *
  * The DB stores doubleRate/tripleRate/quadRate for legacy billing breakdowns.

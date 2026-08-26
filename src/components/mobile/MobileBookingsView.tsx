@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Phone, MessageSquare, CreditCard, Edit2, Search } from "lucide-react";
-import { cn, formatINR } from "@/lib/utils";
+import { cn, formatINR, formatBookingCreatedAt } from "@/lib/utils";
 
 interface BookingItem {
   id: string;
@@ -9,6 +9,7 @@ interface BookingItem {
   phone: string;
   tripName: string;
   departureDate: string;
+  createdAtLabel: string;
   totalPrice: number;
   paidAmount: number;
   balance: number;
@@ -50,6 +51,7 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
             year: "numeric",
           })
         : "Flexible",
+      createdAtLabel: formatBookingCreatedAt(b.createdAt),
       totalPrice: total,
       paidAmount: paid,
       balance,
@@ -113,6 +115,7 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
                 <div className="min-w-0 flex-1">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider truncate block">
                     {b.bookingId}
+                    {b.createdAtLabel ? ` · ${b.createdAtLabel}` : ""}
                   </span>
                   <h3 className="text-[13px] font-bold text-slate-900 leading-tight mt-0.5 truncate">
                     {b.customerName}

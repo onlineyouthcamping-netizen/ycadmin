@@ -12,7 +12,7 @@
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn, safeFormatDate } from "@/lib/utils";
+import { cn, safeFormatDate, formatBookingCreatedAt } from "@/lib/utils";
 import { normalizePassenger } from "@/utils/passengerUtils";
 import type { Booking, Admin } from "@/types";
 import type { Dispatch, SetStateAction } from "react";
@@ -179,11 +179,18 @@ export function BookingsTable({
                           <div className="min-w-0">
                             <p className="font-semibold text-[#0B1528] truncate leading-tight">{b.fullName}</p>
                             <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                              {b.bookingId ? `# ${b.bookingId}` : ""}
+                              {b.bookingId && b.mobile ? " · " : ""}
                               {b.mobile}
                               {normalizePassenger(b).formattedAgeGender
                                 ? ` · ${normalizePassenger(b).formattedAgeGender}`
                                 : ""}
                             </p>
+                            {b.createdAt && (
+                              <p className="text-[11px] text-slate-400 mt-0.5 tabular-nums">
+                                {formatBookingCreatedAt(b.createdAt)}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </td>

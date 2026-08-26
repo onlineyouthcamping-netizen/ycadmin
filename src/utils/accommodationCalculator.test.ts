@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { findHotelForDay } from "./accommodationCalculator";
+import {
+  calculateHotelStayTotalFromBooking,
+  findHotelForDay,
+} from "./accommodationCalculator";
 
 const jalandharBooking = {
   id: "gulshan-day-1",
@@ -40,5 +43,36 @@ describe("findHotelForDay", () => {
       kazaBooking,
     );
     expect(findHotelForDay("2026-08-07", "Kaza", [kazaBooking])).toBeNull();
+  });
+});
+
+describe("calculateHotelStayTotalFromBooking", () => {
+  it("uses per-person occupancy so Day-7 style allocation totals 37000 not 14800", () => {
+    expect(
+      calculateHotelStayTotalFromBooking({
+        pricingMethod: "per-person",
+        doubleRoomsCount: 1,
+        tripleRoomsCount: 4,
+        quadRoomsCount: 1,
+        extraPersonsCount: 2,
+        doubleRate: 1850,
+        tripleRate: 1850,
+        quadRate: 1850,
+        extraBedRate: 1850,
+        nightsCount: 1,
+        // Stale wrong total previously written by room-wise backend bug
+        totalAmount: 14800,
+      }),
+    ).toBe(37000);
+  });
+
+  it("falls back to totalAmount when rates are missing", () => {
+    expect(
+      calculateHotelStayTotalFromBooking({
+        pricingMethod: "per-person",
+        doubleRoomsCount: 2,
+        totalAmount: 9000,
+      }),
+    ).toBe(9000);
   });
 });

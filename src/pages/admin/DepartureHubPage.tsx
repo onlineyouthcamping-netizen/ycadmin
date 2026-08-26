@@ -2658,10 +2658,37 @@ useEffect(() => {
 
       // Vendor Payments (filtered from opsHotels, allocFleet, dbGuides, and tripVendors)
       const calculateHotelCost = (h: any) => {
+        const dRooms = Number(h?.doubleRoomsCount || 0);
+        const tRooms = Number(h?.tripleRoomsCount || 0);
+        const qRooms = Number(h?.quadRoomsCount || 0);
+        const exPax = Number(h?.extraPersonsCount || 0);
+        const nights = Math.max(1, Number(h?.nightsCount || 1));
+        const dRate = Number(h?.doubleRate || 0);
+        const tRate = Number(h?.tripleRate || 0);
+        const qRate = Number(h?.quadRate || 0);
+        const exRate = Number(h?.extraBedRate || 0);
+        const method = String(h?.pricingMethod || "").toLowerCase();
+        const isPerPerson =
+          method.includes("person") || method.includes("pax");
+
+        let fromRates = 0;
+        if (isPerPerson) {
+          fromRates =
+            (dRooms * 2 * dRate +
+              tRooms * 3 * tRate +
+              qRooms * 4 * qRate +
+              exPax * exRate) *
+            nights;
+        } else if (dRooms + tRooms + qRooms + exPax > 0 && (dRate || tRate || qRate || exRate)) {
+          fromRates =
+            (dRooms * dRate + tRooms * tRate + qRooms * qRate + exPax * exRate) *
+            nights;
+        }
+
+        if (fromRates > 0) return fromRates;
         if (Number(h?.totalAmount) > 0) return Number(h.totalAmount);
         const rooms = Number(h?.numberOfRooms || h?.roomsCount || 0);
         const rate = Number(h?.doubleRate || h?.roomRate || h?.baseRate || h?.quadRate || 0);
-        const nights = Number(h?.nightsCount || 1);
         if (rooms > 0 && rate > 0) return rooms * rate * nights;
         return 0;
       };

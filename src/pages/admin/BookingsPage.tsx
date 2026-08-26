@@ -66,6 +66,7 @@ import { TripManager } from "@/components/bookings/TripManagerModal";
 import { ConfirmModal } from "@/components/bookings/ConfirmModal";
 import { BookingsToolbar } from "@/components/bookings/BookingsToolbar";
 import { BookingsTable } from "@/components/bookings/BookingsTable";
+import { BookingsFilterSidebar } from "@/components/bookings/BookingsFilterSidebar";
 import { MobileBookingsView } from "@/components/mobile/MobileBookingsView";
 
 // Booking source helper with Sales Executive name resolution
@@ -416,6 +417,7 @@ export default function BookingsPage() {
     setSearchInput("");
     setFilterTrip("all");
     setFilterPayment("all");
+    setFilterSalesAdmin("all");
     setBookingStart("");
     setBookingEnd("");
     setDepStart("");
@@ -867,8 +869,37 @@ export default function BookingsPage() {
 
       {/* MAIN CONTAINER */}
       <div className="zoho-main flex flex-1 md:overflow-hidden">
+        <BookingsFilterSidebar
+          open={showSidebar}
+          onOpenChange={setShowSidebar}
+          searchInput={searchInput}
+          setSearchInput={setSearchInput}
+          filterTrip={filterTrip}
+          setFilterTrip={setFilterTrip}
+          trips={trips}
+          bookingStart={bookingStart}
+          setBookingStart={setBookingStart}
+          bookingEnd={bookingEnd}
+          setBookingEnd={setBookingEnd}
+          depStart={depStart}
+          setDepStart={setDepStart}
+          depEnd={depEnd}
+          setDepEnd={setDepEnd}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          paymentStatusFilter={paymentStatusFilter}
+          setPaymentStatusFilter={setPaymentStatusFilter}
+          balanceOnly={balanceOnly}
+          setBalanceOnly={setBalanceOnly}
+          filterSalesAdmin={filterSalesAdmin}
+          setFilterSalesAdmin={setFilterSalesAdmin}
+          salesOptions={salesOptions}
+          onApply={fetchAll}
+          onClear={clearFilters}
+        />
+
         {/* CONTENT & TABLE AREA */}
-        <div className="zoho-content-left flex-1 flex flex-col md:overflow-hidden bg-white">
+        <div className="zoho-content-left flex-1 flex flex-col md:overflow-hidden bg-white min-w-0">
           {/* MOBILE BOOKINGS VIEW (<768px) */}
           <div className="block md:hidden p-3 pb-28">
             <MobileBookingsView
@@ -902,57 +933,57 @@ export default function BookingsPage() {
             getBookedBy={(b) => getBookingMetaData(b).bookedBy}
           />
 
-            {/* BULK ACTIONS DRAWER */}
-            <div
-              className={cn(
-                "admin-fixed-above-nav fixed bottom-6 left-1/2 z-[60] flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-lg border border-slate-700/50 bg-[#0F172A] px-3 py-3 text-white shadow-xl transition-all duration-350 ease-out md:max-w-none md:flex-nowrap md:gap-3 md:px-6",
-                selectedIds.length > 0
-                  ? "translate-y-0 opacity-100"
-                  : "pointer-events-none translate-y-10 opacity-0",
-              )}
+          {/* BULK ACTIONS DRAWER */}
+          <div
+            className={cn(
+              "admin-fixed-above-nav fixed bottom-6 left-1/2 z-[60] flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-lg border border-slate-700/50 bg-[#0F172A] px-3 py-3 text-white shadow-xl transition-all duration-350 ease-out md:max-w-none md:flex-nowrap md:gap-3 md:px-6",
+              selectedIds.length > 0
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-10 opacity-0",
+            )}
+          >
+            <span className="font-bold text-xs mr-2">
+              {selectedIds.length} Selected
+            </span>
+            <button
+              className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
+              onClick={() => handleBulkAction("assign")}
             >
-              <span className="font-bold text-xs mr-2">
-                {selectedIds.length} Selected
-              </span>
-              <button
-                className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
-                onClick={() => handleBulkAction("assign")}
-              >
-                Assign Executive
-              </button>
-              <button
-                className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
-                onClick={() => handleBulkAction("reminder")}
-              >
-                Send Reminder
-              </button>
-              <button
-                className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
-                onClick={() => handleBulkAction("link")}
-              >
-                Payment Link
-              </button>
-              <button
-                className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
-                onClick={() => handleBulkAction("assign_task")}
-              >
-                Assign Task
-              </button>
-              <button
-                className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
-                onClick={() => handleBulkAction("mark_complete")}
-              >
-                Mark Complete
-              </button>
-              <button
-                className="h-8 px-3 rounded border border-[#FF4D00]/40 bg-[#FF4D00] hover:bg-[#FF4D00] text-white font-bold text-xs transition-colors cursor-pointer"
-                onClick={() => setIsBulkEmailOpen(true)}
-              >
-                Send Email
-              </button>
-            </div>
+              Assign Executive
+            </button>
+            <button
+              className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
+              onClick={() => handleBulkAction("reminder")}
+            >
+              Send Reminder
+            </button>
+            <button
+              className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
+              onClick={() => handleBulkAction("link")}
+            >
+              Payment Link
+            </button>
+            <button
+              className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
+              onClick={() => handleBulkAction("assign_task")}
+            >
+              Assign Task
+            </button>
+            <button
+              className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
+              onClick={() => handleBulkAction("mark_complete")}
+            >
+              Mark Complete
+            </button>
+            <button
+              className="h-8 px-3 rounded border border-[#FF4D00]/40 bg-[#FF4D00] hover:bg-[#FF4D00] text-white font-bold text-xs transition-colors cursor-pointer"
+              onClick={() => setIsBulkEmailOpen(true)}
+            >
+              Send Email
+            </button>
           </div>
         </div>
+      </div>
       </div>
 
       {/* PREVIEW DRAWER SLIDE-OUT */}

@@ -5,7 +5,7 @@ import {
   Building2,
   Compass,
   Calendar,
-  IndianRupee,
+  Ticket,
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
@@ -31,6 +31,14 @@ function kpiMoney(amount: number | undefined | null) {
 function kpiCount(value: number | undefined | null) {
   if (value === undefined || value === null) return "—";
   return String(value);
+}
+
+function currentMonthKey(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+  }).format(now);
 }
 
 function KpiCard({
@@ -79,19 +87,19 @@ function KpiCard({
   );
 }
 
-export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({
+export const TodaysBookingsCard: React.FC<DashboardWidgetContextProps> = ({
   stats,
   loading,
   navigate,
 }) => (
   <KpiCard
-    label="Total revenue"
-    icon={IndianRupee}
+    label="Today's bookings"
+    icon={Ticket}
     loading={loading}
-    value={kpiMoney(stats?.totalRevenue)}
+    value={loading ? "…" : kpiCount(stats?.todayBookings)}
     trend
-    caption="Verified collections"
-    onClick={() => navigate("/admin/finance")}
+    caption="Created today"
+    onClick={() => navigate("/admin/bookings")}
   />
 );
 
@@ -99,20 +107,26 @@ export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({
   stats,
   loading,
   navigate,
-}) => (
-  <KpiCard
-    label="Monthly revenue"
-    icon={BarChart2}
-    loading={loading}
-    value={kpiMoney(
-      stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue ??
-        stats?.totalRevenue,
-    )}
-    trend
-    caption="Verified this month"
-    onClick={() => navigate("/admin/finance")}
-  />
-);
+}) => {
+  const monthKey = currentMonthKey();
+  const monthRow = Array.isArray(stats?.monthlyRevenue)
+    ? stats.monthlyRevenue.find((row: { month: string }) => row.month === monthKey)
+    : null;
+  const monthValue =
+    stats?.currentMonthRevenue ?? monthRow?.revenue;
+
+  return (
+    <KpiCard
+      label="Monthly revenue"
+      icon={BarChart2}
+      loading={loading}
+      value={kpiMoney(monthValue)}
+      trend
+      caption="Verified this month"
+      onClick={() => navigate("/admin/finance")}
+    />
+  );
+};
 
 export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({
   stats,
@@ -124,7 +138,7 @@ export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({
     icon={Users}
     loading={loading}
     value={kpiMoney(stats?.pendingPayments)}
-    caption={`${loading ? "…" : kpiCount(stats?.totalBookings)} bookings`}
+    caption={`${loading ? "…" : kpiCount(stats?.pendingBookingsCount)} bookings due`}
     onClick={() => navigate("/admin/finance?tab=payments")}
   />
 );
@@ -172,22 +186,26 @@ export const BookingsMonthCard: React.FC<DashboardWidgetContextProps> = ({
     label="Bookings this month"
     icon={Calendar}
     loading={loading}
-    value={loading ? "…" : kpiCount(stats?.totalBookings)}
+    value={
+      loading
+        ? "…"
+        : kpiCount(stats?.bookingsThisMonth ?? stats?.totalBookings)
+    }
     trend
-    caption="Overall reservations"
+    caption="Created this month"
     onClick={() => navigate("/admin/bookings")}
   />
 );
 
 export const kpiWidgets: DashboardWidget[] = [
   {
-    id: "total-revenue",
-    title: "Total Revenue",
+    id: "todays-bookings",
+    title: "Today's Bookings",
     category: "kpi",
-    permission: PERMISSIONS.ACCOUNTING_VIEW,
+    permission: PERMISSIONS.BOOKINGS_VIEW,
     order: 10,
     colSpanDesktop: "col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-2",
-    component: TotalRevenueCard,
+    component: TodaysBookingsCard,
   },
   {
     id: "monthly-revenue",
@@ -235,4 +253,3 @@ export const kpiWidgets: DashboardWidget[] = [
     component: BookingsMonthCard,
   },
 ];
-

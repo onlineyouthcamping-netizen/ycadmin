@@ -40,6 +40,7 @@ import {
   buildPhysicalRoomAllocation,
   deriveRoomCountsFromAllocations,
   calculateAccommodationCost,
+  calculateHotelStayTotalFromBooking,
   derivePassengerSharing,
   derivePassengerSharingFromBookings,
   findHotelForDay,
@@ -336,28 +337,30 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
           ? (booking.extraPersonsCount ?? 0)
           : (derivedRooms.totalRooms > 0 ? derivedRooms.extraPersons : 0);
 
-        const dRate = booking.doubleRate ?? 1200;
-        const tRate = booking.tripleRate ?? 1200;
-        const qRate = booking.quadRate ?? 1200;
-        const exRate = booking.extraBedRate ?? 800;
+        const dRate = Number(booking.doubleRate) || 0;
+        const tRate = Number(booking.tripleRate) || 0;
+        const qRate = Number(booking.quadRate) || 0;
+        const exRate = Number(booking.extraBedRate) || 0;
 
-        const isPerPerson = (booking.pricingMethod || "per-person").toLowerCase() === "per-person";
-        const dMult = isPerPerson ? 2 : 1;
-        const tMult = isPerPerson ? 3 : 1;
-        const qMult = isPerPerson ? 4 : 1;
+        // Prefer live calc from rates×rooms so a stale/wrong totalAmount
+        // (e.g. backend previously ignored per-person occupancy) cannot
+        // understate the hotel price in the table/details.
+        const stayTotal = calculateHotelStayTotalFromBooking({
+          pricingMethod: booking.pricingMethod || "per-person",
+          doubleRoomsCount: dRooms,
+          tripleRoomsCount: tRooms,
+          quadRoomsCount: qRooms,
+          extraPersonsCount: exPax,
+          nightsCount: booking.nightsCount || 1,
+          doubleRate: dRate,
+          tripleRate: tRate,
+          quadRate: qRate,
+          extraBedRate: exRate,
+          totalAmount: booking.totalAmount,
+        });
 
-        let dailyCalcTotal =
-          (dRooms * dMult * dRate +
-            tRooms * tMult * tRate +
-            qRooms * qMult * qRate +
-            exPax * exRate) *
-          1;
-
-        const bookingTotal =
-          booking.totalAmount !== undefined && booking.totalAmount !== null && Number(booking.totalAmount) > 0
-            ? Number(booking.totalAmount)
-            : dailyCalcTotal * (booking.nightsCount || 1);
-        totalAmount = bookingTotal / (booking.nightsCount || 1);
+        const nightsForStay = Math.max(1, Number(booking.nightsCount) || 1);
+        totalAmount = stayTotal / nightsForStay;
         status = "configured";
 
         const effectivePaxCount = totalPax > 0 ? totalPax : Math.max(1, authoritativeRooms * 2);
@@ -858,9 +861,28 @@ function DayDetailDrawer({
   const costResult = useMemo(() => {
     if (!booking) return null;
     const rate = getPrimaryRateFromBooking(booking);
-    if (rate <= 0 && (!booking.totalAmount || booking.totalAmount <= 0)) return null;
+    const stayTotal = calculateHotelStayTotalFromBooking({
+      pricingMethod: booking.pricingMethod || "per-person",
+      doubleRoomsCount: booking.doubleRoomsCount,
+      tripleRoomsCount: booking.tripleRoomsCount,
+      quadRoomsCount: booking.quadRoomsCount,
+      extraPersonsCount: booking.extraPersonsCount,
+      nightsCount: booking.nightsCount || 1,
+      doubleRate: booking.doubleRate,
+      tripleRate: booking.tripleRate,
+      quadRate: booking.quadRate,
+      extraBedRate: booking.extraBedRate,
+      totalAmount: booking.totalAmount,
+    });
+    if (rate <= 0 && stayTotal <= 0) return null;
 
-    const effectiveTotal = row.totalAmount > 0 ? row.totalAmount : (booking.totalAmount || 0);
+    const nightsForStay = Math.max(1, Number(booking.nightsCount) || 1);
+    const effectiveTotal =
+      row.totalAmount > 0
+        ? row.totalAmount
+        : stayTotal > 0
+          ? stayTotal / nightsForStay
+          : 0;
 
     if (effectiveTotal > 0 && totalPax > 0) {
       const nights = 1; // Itinerary day row represents exactly 1 night
@@ -925,7 +947,7 @@ function DayDetailDrawer({
       pricingMode: mode,
       taxPercent: booking.taxPercent || 0,
     });
-  }, [booking, totalPax]);
+  }, [booking, totalPax, row.totalAmount]);
 
   // ── Derive day-specific sharing: physical allocation is ground truth ──
   const daySharing = useMemo(() => {

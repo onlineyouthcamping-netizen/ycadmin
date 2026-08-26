@@ -493,7 +493,11 @@ export interface SiteSettings {
 export interface DashboardStats {
   totalTrips: number;
   totalBookings: number;
+  todayBookings?: number;
+  bookingsThisMonth?: number;
+  pendingBookingsCount?: number;
   totalRevenue: number;
+  currentMonthRevenue?: number;
   totalInquiries: number;
   pendingPayments: number;
   totalVendorCost: number;

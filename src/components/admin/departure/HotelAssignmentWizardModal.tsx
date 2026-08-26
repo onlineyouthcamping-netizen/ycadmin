@@ -548,10 +548,14 @@ export default function HotelAssignmentWizardModal({
         setSelectedHotel(matched);
         setIsCustomHotel(false);
         const rates = extractHotelRates(matched, destName);
-        setDoubleRate(existingB.doubleRate ?? rates.doubleRate);
-        setTripleRate(existingB.tripleRate ?? rates.tripleRate);
-        setQuadRate(existingB.quadRate ?? rates.quadRate);
-        setExtraBedRate(existingB.extraBedRate ?? rates.extraBedRate);
+        const pickRate = (saved: any, fallback: number) => {
+          const n = Number(saved);
+          return Number.isFinite(n) && n > 0 ? n : fallback > 0 ? fallback : 0;
+        };
+        setDoubleRate(pickRate(existingB.doubleRate, rates.doubleRate));
+        setTripleRate(pickRate(existingB.tripleRate, rates.tripleRate));
+        setQuadRate(pickRate(existingB.quadRate, rates.quadRate));
+        setExtraBedRate(pickRate(existingB.extraBedRate, rates.extraBedRate));
       } else {
         const customObj = {
           id: `custom-${Date.now()}`,
@@ -561,10 +565,14 @@ export default function HotelAssignmentWizardModal({
         };
         setSelectedHotel(customObj);
         setIsCustomHotel(true);
-        setDoubleRate(existingB.doubleRate ?? 1200);
-        setTripleRate(existingB.tripleRate ?? 900);
-        setQuadRate(existingB.quadRate ?? 750);
-        setExtraBedRate(existingB.extraBedRate ?? 500);
+        const pickSaved = (saved: any) => {
+          const n = Number(saved);
+          return Number.isFinite(n) && n > 0 ? n : 0;
+        };
+        setDoubleRate(pickSaved(existingB.doubleRate));
+        setTripleRate(pickSaved(existingB.tripleRate));
+        setQuadRate(pickSaved(existingB.quadRate));
+        setExtraBedRate(pickSaved(existingB.extraBedRate));
       }
     } else {
       const matched = combinedHotelProperties.find((h) => {
@@ -577,10 +585,10 @@ export default function HotelAssignmentWizardModal({
         setIsCustomHotel(false);
         setCustomHotelName(matched.name);
         const rates = extractHotelRates(matched, destName);
-        setDoubleRate(rates.doubleRate || 1200);
-        setTripleRate(rates.tripleRate || 900);
-        setQuadRate(rates.quadRate || 750);
-        setExtraBedRate(rates.extraBedRate || 500);
+        setDoubleRate(rates.doubleRate || 0);
+        setTripleRate(rates.tripleRate || 0);
+        setQuadRate(rates.quadRate || 0);
+        setExtraBedRate(rates.extraBedRate || 0);
       } else {
         const placeholderHotel = {
           id: `custom-${normDest}`,
@@ -591,10 +599,10 @@ export default function HotelAssignmentWizardModal({
         setSelectedHotel(placeholderHotel);
         setIsCustomHotel(false);
         setCustomHotelName(placeholderHotel.name);
-        setDoubleRate(1200);
-        setTripleRate(900);
-        setQuadRate(750);
-        setExtraBedRate(500);
+        setDoubleRate(0);
+        setTripleRate(0);
+        setQuadRate(0);
+        setExtraBedRate(0);
       }
     }
 
