@@ -75,4 +75,18 @@ describe("announcements dashboard widget permissions", () => {
       true,
     );
   });
+
+  it("scopes tasks.view_all to oversight roles only", () => {
+    expect(hasPermission([], PERMISSIONS.TASKS_VIEW_ALL, "admin")).toBe(true);
+    expect(hasPermission([], PERMISSIONS.TASKS_VIEW_ALL, "founder")).toBe(true);
+    expect(
+      hasPermission([], PERMISSIONS.TASKS_VIEW_ALL, "finance_controller"),
+    ).toBe(true);
+    expect(hasPermission([], PERMISSIONS.TASKS_VIEW_ALL, "sales")).toBe(false);
+    expect(hasPermission([], PERMISSIONS.TASKS_VIEW_ALL, "operations")).toBe(
+      false,
+    );
+    expect(ROLE_PERMISSIONS.admin).toContain("tasks.view_all");
+    expect(ROLE_PERMISSIONS.sales).not.toContain("tasks.view_all");
+  });
 });

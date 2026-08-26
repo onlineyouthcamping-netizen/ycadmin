@@ -18,7 +18,12 @@ import {
   normalizePassenger,
   normalizeBookingPassengers,
 } from "@/utils/passengerUtils";
+import { resolveBookingExecutiveName } from "@/utils/bookingExecutive";
 import { generatePerPersonBookingItems } from "@/utils/bookingCalculations";
+import {
+  applyGroupNameToItems,
+  applyGroupQtyToItems,
+} from "@/utils/bookingItemGrouping";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Calendar,
@@ -1898,6 +1903,45 @@ export default function BookingDetailsView({
       );
     }
 
+    const activePassengers = (
+      Array.isArray(booking.passengers) ? booking.passengers : []
+    ).filter(
+      (p: any) =>
+        !p?.isCancelled && String(p?.status || "").toUpperCase() !== "CANCELLED",
+    );
+    if (activePassengers.length > 0) {
+      const bookingDocs = Array.isArray((booking as any).documents)
+        ? (booking as any).documents
+        : [];
+      const missingAadhaar = activePassengers.filter((p: any, index: number) => {
+        const url =
+          p.aadhaarUrl || p.idProofUrl || p.idProof || p.aadhaar || "";
+        const hasUrl =
+          typeof url === "string" &&
+          url.trim() &&
+          (url.startsWith("http") ||
+            url.startsWith("/") ||
+            url.includes("uploads/") ||
+            url.includes("bookings/"));
+        const hasDocs = Array.isArray(p.documents) && p.documents.length > 0;
+        const pKeys = [p.id, p.passengerId, String(index), `pax-${index}`]
+          .filter(Boolean)
+          .map(String);
+        const hasBookingDoc = bookingDocs.some((d: any) =>
+          pKeys.includes(String(d?.passengerId || "")),
+        );
+        return !hasUrl && !hasDocs && !hasBookingDoc;
+      });
+      if (missingAadhaar.length > 0) {
+        const names = missingAadhaar
+          .map((p: any, i: number) => p.name || `Traveler ${i + 1}`)
+          .join(", ");
+        return toast.error(
+          `Aadhaar / Govt ID proof is required before confirming. Missing for: ${names}`,
+        );
+      }
+    }
+
     setConfirmingLoading(true);
     try {
       await bookingsService.confirm(booking.id, {
@@ -1907,6 +1951,9 @@ export default function BookingDetailsView({
         paymentStatus: adv >= tot ? "Paid" : adv > 0 ? "Partial" : "Pending",
         email: confirmEmail,
         trainTicketStatus: confirmTrainStatus,
+        trainTicketRequired: !["SELF_BOOKED", "NOT_REQUIRED", "NOT_BOOKED"].includes(
+          String(confirmTrainStatus || "").toUpperCase().replace(/\s+/g, "_"),
+        ),
         collectionAccountId: confirmCollectionAccountId || undefined,
         transactionId: confirmUtr.trim() || undefined,
         ...(confirmProofUrls.length > 0
@@ -3912,9 +3959,7 @@ export default function BookingDetailsView({
                             : "—"}
                         </td>
                         <td className="px-4 py-3 font-semibold text-[#0B1528]">
-                          {booking.createdByName ||
-                            (booking as any).assignedSalesPerson?.name ||
-                            "System"}
+                          {resolveBookingExecutiveName(booking)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {safeFormatDate(
@@ -5925,12 +5970,13 @@ export default function BookingDetailsView({
                                       value={row.name}
                                       onChange={(e) => {
                                         const newName = e.target.value;
-                                        const updated = bookingItems.map((x) =>
-                                          row.originalIds.includes(x.id)
-                                            ? { ...x, name: newName }
-                                            : x,
+                                        setBookingItems(
+                                          applyGroupNameToItems(
+                                            bookingItems,
+                                            row.originalIds,
+                                            newName,
+                                          ),
                                         );
-                                        setBookingItems(updated);
                                       }}
                                       className="h-8 text-xs font-semibold text-[#0B1528] border-[#E8EEF4] focus-visible:ring-1 focus-visible:ring-slate-400 w-full bg-white rounded-lg"
                                     />
@@ -5967,32 +6013,13 @@ export default function BookingDetailsView({
                                       onChange={(e) => {
                                         const newQty =
                                           parseInt(e.target.value) || 0;
-                                        if (row.originalIds.length === 1) {
-                                          const updated = bookingItems.map(
-                                            (x) =>
-                                              x.id === row.originalIds[0]
-                                                ? { ...x, qty: newQty }
-                                                : x,
-                                          );
-                                          setBookingItems(updated);
-                                        } else {
-                                          const updated = bookingItems.map(
-                                            (x) => {
-                                              if (x.id === row.originalIds[0])
-                                                return { ...x, qty: newQty };
-                                              if (
-                                                row.originalIds.includes(x.id)
-                                              )
-                                                return { ...x, qty: 0 };
-                                              return x;
-                                            },
-                                          );
-                                          setBookingItems(
-                                            updated.filter(
-                                              (x) => x.qty > 0 || x.rate < 0,
-                                            ),
-                                          );
-                                        }
+                                        setBookingItems(
+                                          applyGroupQtyToItems(
+                                            bookingItems,
+                                            row.originalIds,
+                                            newQty,
+                                          ),
+                                        );
                                       }}
                                       className="h-8 text-xs w-16 font-mono font-semibold border-[#E8EEF4] text-center focus-visible:ring-1 focus-visible:ring-slate-400 bg-white rounded-lg"
                                     />
@@ -6781,9 +6808,55 @@ export default function BookingDetailsView({
                                   GRAND TOTAL
                                 </td>
                                 <td className="px-5 py-4 text-right font-mono font-semibold text-xl text-green-500">
-                                  ₹ {grandTotal.toLocaleString("en-IN")}
+                                  ₹{" "}
+                                  {(
+                                    Number(booking.totalAmount) > 0
+                                      ? Number(booking.totalAmount)
+                                      : grandTotal
+                                  ).toLocaleString("en-IN")}
                                 </td>
                               </tr>
+                              <tr className="bg-slate-800 text-white">
+                                <td
+                                  colSpan={3}
+                                  className="px-5 py-3 text-left font-semibold uppercase tracking-[0.1em] text-[10px] text-slate-400"
+                                >
+                                  Cleared paid / Due
+                                </td>
+                                <td className="px-5 py-3 text-right font-mono font-semibold text-sm">
+                                  <span className="text-emerald-400">
+                                    ₹{clearedPaid.toLocaleString("en-IN")}
+                                  </span>
+                                  <span className="text-slate-500 mx-2">/</span>
+                                  <span
+                                    className={
+                                      financeDue > 0
+                                        ? "text-amber-400"
+                                        : "text-emerald-400"
+                                    }
+                                  >
+                                    ₹{financeDue.toLocaleString("en-IN")}
+                                  </span>
+                                </td>
+                              </tr>
+                              {Number(booking.totalAmount) > 0 &&
+                                Math.abs(grandTotal - Number(booking.totalAmount)) >
+                                  1 && (
+                                  <tr className="bg-amber-950/80 text-amber-100">
+                                    <td
+                                      colSpan={4}
+                                      className="px-5 py-2 text-[10px] font-medium"
+                                    >
+                                      Line items compute ₹
+                                      {grandTotal.toLocaleString("en-IN")} — booking
+                                      total ₹
+                                      {Number(booking.totalAmount).toLocaleString(
+                                        "en-IN",
+                                      )}{" "}
+                                      is used for dues (save items to sync).
+                                    </td>
+                                  </tr>
+                                )}
                             </tfoot>
                           </table>
                         </div>
@@ -7469,9 +7542,7 @@ export default function BookingDetailsView({
                   Booking executive
                 </div>
                 <div className="font-semibold text-[#0B1528] mt-0.5 break-words min-w-0">
-                  {(booking as any).assignedSalesPerson?.name ||
-                    (booking as any).salesPersonName ||
-                    "Web Direct"}
+                  {resolveBookingExecutiveName(booking)}
                 </div>
               </div>
               <div className="rounded-lg bg-green-50/50 border border-green-100 px-3 py-2.5 min-w-0 md:col-span-2 lg:col-span-1">

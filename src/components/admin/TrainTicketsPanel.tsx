@@ -7,7 +7,6 @@ import React, { useState, useEffect } from "react";
 import {
   Train,
   Plus,
-  CheckCircle2,
   XCircle,
   AlertTriangle,
   RotateCcw,
@@ -15,22 +14,12 @@ import {
   RefreshCw,
   History,
   ChevronDown,
-  ChevronUp,
-  Edit3,
   Send,
   Loader2,
-  Mail,
-  Users,
-  ArrowRightLeft,
   ArrowRight,
   Check,
-  Wand2,
   Phone,
-  DollarSign,
-  Receipt,
-  Undo2,
-  Split,
-  Eye,
+  MoreHorizontal,
 } from "lucide-react";
 import { normalizePassenger } from "@/utils/passengerUtils";
 import { Button } from "@/components/ui/button";
@@ -43,6 +32,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -61,15 +57,24 @@ import { toast } from "sonner";
 import {
   cn,
   TRAIN_TICKET_STATUS_COLORS,
-  TRAIN_TICKET_APPROVAL_COLORS,
 } from "@/lib/utils";
+import {
+  isGroupTrainTicketingDone,
+  isTrainTicketDone,
+  trainTicketProgressLabel,
+  trainTicketRequirementLabel,
+} from "@/utils/trainTicketStatusUi";
 import EmailComposerDrawer from "./EmailComposerDrawer";
 
 const STATUS_COLORS = TRAIN_TICKET_STATUS_COLORS;
 
 function StatusPill({ status }: { status: string }) {
   const s = (status || "PENDING").toUpperCase();
-  const colorClass = STATUS_COLORS[s] || "bg-slate-100 text-slate-700";
+  const label = trainTicketProgressLabel({ ticketStatus: s });
+  const colorClass =
+    label === "ticket is not done"
+      ? "bg-red-50 text-red-700 border-red-200"
+      : STATUS_COLORS[s] || "bg-slate-100 text-slate-700";
   return (
     <span
       className={cn(
@@ -77,51 +82,145 @@ function StatusPill({ status }: { status: string }) {
         colorClass,
       )}
     >
-      {s.replace(/_/g, " ")}
+      {label === "ticket is not done" ? "ticket is not done" : s.replace(/_/g, " ")}
     </span>
   );
 }
 
-function ApprovalPill({ status }: { status?: string }) {
-  const s = (status || "DRAFT").toUpperCase();
-  if (s === "APPROVED") {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-green-50 text-green-700 border border-green-200">
-        <CheckCircle2 className="w-2.5 h-2.5 text-green-600" />
-        Approved
+function RequirementPill({ booking }: { booking?: any }) {
+  const req = trainTicketRequirementLabel(booking);
+  return (
+    <span
+      className={cn(
+        "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide border",
+        req === "req"
+          ? "bg-amber-50 text-amber-800 border-amber-200"
+          : "bg-slate-50 text-slate-600 border-slate-200",
+      )}
+      title={
+        req === "req"
+          ? "Train ticket required (set at booking confirmation)"
+          : "Train ticket not required (set at booking confirmation)"
+      }
+    >
+      {req}
+    </span>
+  );
+}
+
+function TravellerCell({
+  name,
+  phone,
+  ticketDone,
+}: {
+  name: string;
+  phone?: string | null;
+  ticketDone: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-2 min-w-0">
+      <span
+        className={cn(
+          "flex items-center justify-center w-7 h-7 rounded-lg shrink-0 border",
+          ticketDone
+            ? "bg-green-50 border-green-200"
+            : "bg-red-50 border-red-200",
+        )}
+        title={ticketDone ? "Ticket done" : "Ticket is not done"}
+      >
+        <Train
+          className={cn(
+            "w-3.5 h-3.5",
+            ticketDone ? "text-green-600" : "text-red-600",
+          )}
+        />
       </span>
-    );
+      <div className="min-w-0">
+        <div className="text-sm font-bold text-[#0B1528] leading-tight truncate">
+          {name || "—"}
+        </div>
+        {phone && phone !== "N/A" ? (
+          <a
+            href={`tel:${phone}`}
+            className="text-[10px] font-normal font-mono text-slate-500 hover:text-[#FF4D00] hover:underline flex items-center gap-1 mt-0.5"
+          >
+            <Phone className="w-3 h-3 text-slate-400 shrink-0 inline" />
+            <span>{phone}</span>
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** True when a station/name field is actually the trip title (bad template fill). */
+function looksLikeTripTitle(
+  value: string | null | undefined,
+  tripTitle?: string | null,
+): boolean {
+  const v = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!v) return false;
+  if (v.length > 48) return true;
+  const trip = String(tripTitle || "")
+    .trim()
+    .toLowerCase();
+  if (!trip) return false;
+  return v === trip || (trip.length >= 12 && v.includes(trip.slice(0, 24)));
+}
+
+/** Short train/route line — skip empty PNR placeholders and trip-title destinations. */
+function formatTrainBrief(
+  t: Pick<
+    TrainTicket,
+    "trainName" | "trainNumber" | "sourceStation" | "destinationStation"
+  >,
+  tripTitle?: string | null,
+): { primary: string; secondary?: string } {
+  const num = String(t.trainNumber || "").trim();
+  const name = String(t.trainName || "").trim();
+  const src = String(t.sourceStation || "").trim();
+  const dest = String(t.destinationStation || "").trim();
+  const nameOk = name && !looksLikeTripTitle(name, tripTitle);
+  const destOk = dest && !looksLikeTripTitle(dest, tripTitle);
+
+  const parts: string[] = [];
+  if (num) parts.push(num);
+  if (nameOk) parts.push(name);
+
+  if (parts.length > 0) {
+    return {
+      primary: parts.join(" · "),
+      secondary:
+        src && destOk ? `${src} → ${dest}` : src && !destOk ? src : undefined,
+    };
   }
+
+  if (src && destOk) return { primary: `${src} → ${dest}` };
+  if (src) return { primary: src };
+  return { primary: "—" };
+}
+
+function ApprovalHint({ status }: { status?: string }) {
+  const s = (status || "").toUpperCase();
   if (s === "SUBMITTED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-        <AlertTriangle className="w-2.5 h-2.5 text-amber-600" />
-        Pending Approval
+      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-amber-700">
+        <AlertTriangle className="w-2.5 h-2.5" />
+        Awaiting approval
       </span>
     );
   }
   if (s === "REJECTED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-red-50 text-red-700 border border-red-200">
-        <XCircle className="w-2.5 h-2.5 text-red-600" />
+      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-red-600">
+        <XCircle className="w-2.5 h-2.5" />
         Rejected
       </span>
     );
   }
-  if (s === "REOPENED") {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-[#FF4D00]/5 text-[#C2410C] border border-[#FF4D00]/30">
-        <RefreshCw className="w-2.5 h-2.5 text-[#FF4D00]" />
-        Reopened
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-600 border border-[#E8EEF4]">
-      <Edit3 className="w-2.5 h-2.5 text-slate-500" />
-      Draft
-    </span>
-  );
+  return null;
 }
 
 const emptyForm = (defaultType: "DEPARTURE" | "RETURN" = "DEPARTURE") => ({
@@ -471,6 +570,13 @@ export default function TrainTicketsPanel({
   const depCounts = getSummaryCounts(departureTickets);
   const retCounts = getSummaryCounts(returnTickets);
   const totalCounts = getSummaryCounts(tickets);
+  const requirementLabel = trainTicketRequirementLabel(booking);
+  const groupTicketingDone = isGroupTrainTicketingDone(booking, tickets);
+  const tripTitle =
+    booking?.tripTitle ||
+    booking?.tripRef?.title ||
+    booking?.tripName ||
+    "";
 
   const handleAutoGenerate = async () => {
     setActionBusy(true);
@@ -755,87 +861,310 @@ export default function TrainTicketsPanel({
     }
   };
 
+  const renderTicketRow = (t: TrainTicket) => {
+    const trainBrief = formatTrainBrief(t, tripTitle);
+    const ticketDone =
+      requirementLabel === "non-req" || isTrainTicketDone(t);
+    const approval = (t.approvalStatus || "").toUpperCase();
+
+    return (
+      <tr key={t.id} className="hover:bg-[#F8FAFC]">
+        <td className="px-4 py-2.5">
+          <TravellerCell
+            name={t.travelerName}
+            phone={getTravelerPhone(t.travelerName)}
+            ticketDone={ticketDone}
+          />
+        </td>
+        <td className="px-4 py-2.5 space-y-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <RequirementPill booking={booking} />
+            <StatusPill status={t.ticketStatus} />
+            {t.paidBy === "CUSTOMER" ? (
+              <span className="px-1.5 py-0.5 rounded text-[8px] font-semibold border bg-slate-50 text-slate-700 border-slate-200">
+                Customer Paid
+              </span>
+            ) : null}
+          </div>
+          <ApprovalHint status={t.approvalStatus} />
+          {t.ticketStatus === "CANCELLED" && (
+            <div className="text-[10px] text-red-600 font-semibold space-y-0.5">
+              <div>Cancelled: {t.cancellationReason || "No reason"}</div>
+              {Number(t.refundAmount || 0) > 0 && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="font-semibold text-green-700">
+                    Refund: ₹{Number(t.refundAmount)}
+                  </span>
+                  <span
+                    className={cn(
+                      "px-1 py-0.2 rounded text-[8px] font-semibold uppercase",
+                      t.refundStatus === "COMPLETED"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-amber-100 text-amber-800",
+                    )}
+                  >
+                    {t.refundStatus || "PENDING"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          {t.supersedesTicketId && (
+            <div className="text-[9px] font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded w-fit">
+              ↳ Reticketed from #{t.supersedesTicketId.slice(-6)}
+            </div>
+          )}
+          {t.supersededByTicketId && (
+            <div className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
+              ↳ Replaced by #{t.supersededByTicketId.slice(-6)}
+            </div>
+          )}
+        </td>
+        <td className="px-4 py-2.5 text-slate-700 min-w-0">
+          {t.pnr ? (
+            <div className="font-mono text-[#0B1528] font-semibold text-[11px] mb-0.5">
+              {t.pnr}
+            </div>
+          ) : null}
+          <div className="font-medium text-slate-900 truncate max-w-[220px]" title={trainBrief.primary}>
+            {trainBrief.primary}
+          </div>
+          {trainBrief.secondary ? (
+            <span className="block text-[10px] text-slate-400 truncate max-w-[220px]" title={trainBrief.secondary}>
+              {trainBrief.secondary}
+            </span>
+          ) : null}
+        </td>
+        <td className="px-4 py-2.5 text-right whitespace-nowrap">
+          {canManage && (
+            <div className="inline-flex items-center justify-end gap-1">
+              {t.ticketStatus !== "CANCELLED" && (
+                <button
+                  type="button"
+                  onClick={() => handleEdit(t)}
+                  className="text-blue-600 hover:underline font-semibold text-[10px] px-1.5 py-0.5"
+                >
+                  Edit
+                </button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0 text-slate-500 hover:text-[#0B1528]"
+                    title="More actions"
+                  >
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {canApprove && approval === "SUBMITTED" ? (
+                    <>
+                      <DropdownMenuItem onClick={() => handleApproveTicket(t)}>
+                        <Check className="w-3.5 h-3.5 mr-2" /> Approve
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOpenReject(t)}>
+                        <Ban className="w-3.5 h-3.5 mr-2" /> Reject
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  ) : null}
+                  {(approval === "DRAFT" || !t.approvalStatus) && (
+                    <DropdownMenuItem onClick={() => handleSubmitTicket(t)}>
+                      <Send className="w-3.5 h-3.5 mr-2" /> Submit for approval
+                    </DropdownMenuItem>
+                  )}
+                  {approval === "REJECTED" && (
+                    <DropdownMenuItem onClick={() => handleReopenTicket(t)}>
+                      <RotateCcw className="w-3.5 h-3.5 mr-2" /> Reopen
+                    </DropdownMenuItem>
+                  )}
+                  {t.ticketStatus !== "CANCELLED" && (
+                    <>
+                      <DropdownMenuItem onClick={() => handleOpenReticket(t)}>
+                        Reticket
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleOpenCancel(t)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        Cancel ticket
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {t.ticketStatus === "CANCELLED" &&
+                    Number(t.refundAmount || 0) > 0 &&
+                    t.refundStatus !== "COMPLETED" && (
+                      <DropdownMenuItem onClick={() => handleOpenRefund(t)}>
+                        Record refund
+                      </DropdownMenuItem>
+                    )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleViewHistory(t.id)}>
+                    <History className="w-3.5 h-3.5 mr-2" /> History
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </td>
+      </tr>
+    );
+  };
+
+  const renderJourneySection = (
+    title: string,
+    icon: React.ReactNode,
+    journeyTickets: TrainTicket[],
+    onAdd: () => void,
+    addLabel: string,
+    emptyLabel: string,
+  ) => (
+    <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
+      <div className="px-4 py-3 border-b border-[#E8EEF4] flex flex-wrap justify-between items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          {icon}
+          <h4 className="font-semibold text-[#0B1528] text-xs truncate">
+            {title}
+          </h4>
+          <span className="text-[11px] text-slate-400 shrink-0">
+            {journeyTickets.length} tickets
+          </span>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onAdd}
+          className="h-8 text-xs font-semibold border-[#E8EEF4] text-[#0B1528] bg-white hover:bg-[#F4F7FB] gap-1.5"
+        >
+          <Plus className="w-3.5 h-3.5 text-slate-400" /> {addLabel}
+        </Button>
+      </div>
+
+      {journeyTickets.length === 0 ? (
+        <div className="px-4 py-6 text-center text-slate-400">{emptyLabel}</div>
+      ) : (
+        <div className="overflow-x-auto min-w-0">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="bg-[#F8FAFC] border-b border-[#E8EEF4] text-[11px] font-semibold text-slate-400 whitespace-nowrap">
+                <th className="px-4 py-2.5">Traveller</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Ticket</th>
+                <th className="px-4 py-2.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E8EEF4]">
+              {journeyTickets.map(renderTicketRow)}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-3 text-xs min-w-0">
       {/* ─── GROUP TICKET SUMMARY CARD (REQUIREMENT 4) ─── */}
       <div className="bg-white border border-[#E8EEF4] rounded-xl shadow-sm overflow-hidden min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#F8FAFC] border-b border-[#E8EEF4]">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#FF4D00]/10 shrink-0">
-              <Train className="w-3.5 h-3.5 text-[#FF4D00]" />
+            <span
+              className={cn(
+                "flex items-center justify-center w-7 h-7 rounded-lg shrink-0 border",
+                groupTicketingDone
+                  ? "bg-green-50 border-green-200"
+                  : "bg-red-50 border-red-200",
+              )}
+              title={
+                groupTicketingDone
+                  ? "Ticketing done / not required"
+                  : "Ticket is not done"
+              }
+            >
+              <Train
+                className={cn(
+                  "w-3.5 h-3.5",
+                  groupTicketingDone ? "text-green-600" : "text-red-600",
+                )}
+              />
             </span>
             <div className="min-w-0">
-              <h3 className="font-semibold text-xs text-[#0B1528]">
-                Group ticketing summary
-              </h3>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="font-semibold text-xs text-[#0B1528]">
+                  Group ticketing summary
+                </h3>
+                <RequirementPill booking={booking} />
+              </div>
               <p className="text-[11px] text-slate-500">
                 Group size:{" "}
                 <span className="font-semibold text-[#0B1528]">
                   {groupSize} travellers
                 </span>
+                {!groupTicketingDone && requirementLabel === "req" ? (
+                  <span className="text-red-600 font-medium">
+                    {" "}
+                    · ticket is not done
+                  </span>
+                ) : null}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-              className="h-8 text-xs font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-[#E8EEF4]/70 gap-1.5"
-            >
-              {isSummaryExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
-              {isSummaryExpanded
-                ? "Collapse matrix"
-                : "Expand passenger matrix"}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-[#E8EEF4]/70 gap-1.5"
+                >
+                  More
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem
+                  onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                >
+                  {isSummaryExpanded
+                    ? "Collapse passenger matrix"
+                    : "Expand passenger matrix"}
+                </DropdownMenuItem>
+                {canManage ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={actionBusy}
+                      onClick={handleSyncTemplate}
+                    >
+                      Sync trip template
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={actionBusy}
+                      onClick={handleAutoGenerate}
+                    >
+                      Auto-generate tickets
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {canManage && (
-              <>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleSyncTemplate}
-                  disabled={actionBusy}
-                  className="h-8 text-xs font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-[#E8EEF4]/70 gap-1.5 cursor-pointer"
-                >
-                  {actionBusy ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-3.5 h-3.5" />
-                  )}
-                  Sync trip template
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleAutoGenerate}
-                  disabled={actionBusy}
-                  className="h-8 text-xs font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-[#E8EEF4]/70 gap-1.5 cursor-pointer"
-                >
-                  {actionBusy ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-3.5 h-3.5" />
-                  )}
-                  Auto-generate
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingId(null);
-                    setForm(emptyForm("DEPARTURE"));
-                    setShowForm(true);
-                  }}
-                  className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white gap-1.5 cursor-pointer shadow-sm shadow-[#FF4D00]/20"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add ticket
-                </Button>
-              </>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm(emptyForm("DEPARTURE"));
+                  setShowForm(true);
+                }}
+                className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white gap-1.5 cursor-pointer shadow-sm shadow-[#FF4D00]/20"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add ticket
+              </Button>
             )}
           </div>
         </div>
@@ -936,30 +1265,42 @@ export default function TrainTicketsPanel({
                   return (
                     <tr key={idx} className="hover:bg-[#F8FAFC]">
                       <td className="py-2 px-2 font-semibold text-[#0B1528]">
-                        <div>{pName}</div>
-                        {(() => {
-                          const phone = getTravelerPhone(pName);
-                          if (!phone || phone === "N/A") return null;
-                          return (
-                            <span className="block text-[9.5px] font-normal font-mono text-slate-500">
-                              📞 {phone}
-                            </span>
-                          );
-                        })()}
+                        <div className="flex items-center gap-2">
+                          <Train
+                            className={cn(
+                              "w-3.5 h-3.5 shrink-0",
+                              requirementLabel === "non-req" ||
+                                (isTrainTicketDone(depT) &&
+                                  (!retT || isTrainTicketDone(retT)))
+                                ? "text-green-600"
+                                : "text-red-600",
+                            )}
+                          />
+                          <div>
+                            <div className="text-xs font-bold text-[#0B1528]">
+                              {pName}
+                            </div>
+                            {(() => {
+                              const phone = getTravelerPhone(pName);
+                              if (!phone || phone === "N/A") return null;
+                              return (
+                                <span className="block text-[9.5px] font-normal font-mono text-slate-500">
+                                  {phone}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        </div>
                       </td>
                       <td className="py-2 px-2">
                         {depT ? (
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusPill status={depT.ticketStatus} />
-                            <ApprovalPill status={depT.approvalStatus} />
-                            <span className="font-mono font-semibold text-[#0B1528]">
-                              {depT.pnr ? `PNR: ${depT.pnr}` : "No PNR"}
-                            </span>
-                            {depT.trainName && (
-                              <span className="text-slate-500 text-[10px] truncate max-w-[140px]" title={depT.trainName}>
-                                • {depT.trainName}
+                            {depT.pnr ? (
+                              <span className="font-mono font-semibold text-[#0B1528]">
+                                PNR {depT.pnr}
                               </span>
-                            )}
+                            ) : null}
                           </div>
                         ) : (
                           <span className="text-slate-400 italic">
@@ -971,15 +1312,11 @@ export default function TrainTicketsPanel({
                         {retT ? (
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusPill status={retT.ticketStatus} />
-                            <ApprovalPill status={retT.approvalStatus} />
-                            <span className="font-mono font-semibold text-[#0B1528]">
-                              {retT.pnr ? `PNR: ${retT.pnr}` : "No PNR"}
-                            </span>
-                            {retT.trainName && (
-                              <span className="text-slate-500 text-[10px] truncate max-w-[140px]" title={retT.trainName}>
-                                • {retT.trainName}
+                            {retT.pnr ? (
+                              <span className="font-mono font-semibold text-[#0B1528]">
+                                PNR {retT.pnr}
                               </span>
-                            )}
+                            ) : null}
                           </div>
                         ) : (
                           <span className="text-slate-400 italic">
@@ -1242,472 +1579,22 @@ export default function TrainTicketsPanel({
 
       {/* ─── TWO-WAY JOURNEY SECTIONS ─── */}
       <div className="space-y-3">
-        {/* Departure Journey Section */}
-        <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
-          <div className="px-4 py-3 border-b border-[#E8EEF4] flex flex-wrap justify-between items-center gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <h4 className="font-semibold text-[#0B1528] text-xs truncate">
-                Departure journey
-              </h4>
-              <span className="text-[11px] text-slate-400 shrink-0">
-                {departureTickets.length} tickets
-              </span>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleOpenAddDeparture}
-              className="h-8 text-xs font-semibold border-[#E8EEF4] text-[#0B1528] bg-white hover:bg-[#F4F7FB] gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5 text-slate-400" /> Add departure
-              ticket
-            </Button>
-          </div>
-
-          {departureTickets.length === 0 ? (
-            <div className="px-4 py-6 text-center text-slate-400">
-              No departure tickets created yet.
-            </div>
-          ) : (
-            <div className="overflow-x-auto min-w-0">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-[#F8FAFC] border-b border-[#E8EEF4] text-[11px] font-semibold text-slate-400 whitespace-nowrap">
-                    <th className="px-4 py-2.5">Traveller</th>
-                    <th className="px-4 py-2.5">Status</th>
-                    <th className="px-4 py-2.5">PNR</th>
-                    <th className="px-4 py-2.5">Train &amp; route</th>
-                    <th className="px-4 py-2.5">Internal cost</th>
-                    <th className="px-4 py-2.5">Approval</th>
-                    <th className="px-4 py-2.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E8EEF4]">
-                  {departureTickets.map((t) => (
-                    <tr key={t.id} className="hover:bg-[#F8FAFC]">
-                      <td className="px-4 py-2.5 font-semibold text-[#0B1528]">
-                        <div>{t.travelerName}</div>
-                        {(() => {
-                          const phone = getTravelerPhone(t.travelerName);
-                          if (!phone || phone === "N/A") return null;
-                          return (
-                            <a
-                              href={`tel:${phone}`}
-                              className="text-[10px] font-normal font-mono text-slate-500 hover:text-[#FF4D00] hover:underline flex items-center gap-1 mt-0.5"
-                            >
-                              <Phone className="w-3 h-3 text-slate-400 shrink-0 inline" />
-                              <span>{phone}</span>
-                            </a>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-4 py-2.5 space-y-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <StatusPill status={t.ticketStatus} />
-                          <span
-                            className={cn(
-                              "px-1.5 py-0.5 rounded text-[8px] font-semibold border",
-                              t.paidBy === "CUSTOMER"
-                                ? "bg-slate-50 text-slate-700 border-slate-200"
-                                : "bg-slate-100 text-slate-700 border-[#E8EEF4]",
-                            )}
-                          >
-                            {t.paidBy === "CUSTOMER" ? "Customer Paid" : "Company Paid"}
-                          </span>
-                        </div>
-                        {t.ticketStatus === "CANCELLED" && (
-                          <div className="text-[10px] text-red-600 font-semibold space-y-0.5">
-                            <div>Cancelled: {t.cancellationReason || "No reason"}</div>
-                            {Number(t.railwayCancellationCharge || 0) > 0 && (
-                              <div className="text-[9px] text-slate-500 font-normal">
-                                Railway Deduction: ₹{Number(t.railwayCancellationCharge)}
-                              </div>
-                            )}
-                            {Number(t.refundAmount || 0) > 0 && (
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <span className="font-semibold text-green-700">
-                                  Refund: ₹{Number(t.refundAmount)}
-                                </span>
-                                <span
-                                  className={cn(
-                                    "px-1 py-0.2 rounded text-[8px] font-semibold uppercase",
-                                    t.refundStatus === "COMPLETED"
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-amber-100 text-amber-800",
-                                  )}
-                                >
-                                  {t.refundStatus || "PENDING"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {t.supersedesTicketId && (
-                          <div className="text-[9px] font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded w-fit">
-                            ↳ Reticketed from #{t.supersedesTicketId.slice(-6)}
-                          </div>
-                        )}
-                        {t.supersededByTicketId && (
-                          <div className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
-                            ↳ Replaced by #{t.supersededByTicketId.slice(-6)}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-[#0B1528] font-semibold">
-                        {t.pnr ? (
-                          <span className="bg-slate-100 px-2 py-0.5 rounded border border-[#E8EEF4] text-slate-900 font-mono">
-                            {t.pnr}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">No PNR</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 text-slate-700 font-medium">
-                        <div className="font-semibold text-slate-900">
-                          {t.trainName || "—"} {t.trainNumber ? `(${t.trainNumber})` : ""}
-                        </div>
-                        {t.sourceStation && (
-                          <span className="block text-[10px] text-slate-400">
-                            {t.sourceStation} &rarr; {t.destinationStation}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 font-semibold text-[#0B1528]">
-                        ₹{Number(t.ticketAmount || 0).toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <ApprovalPill status={t.approvalStatus} />
-                          {canApprove && t.approvalStatus === "SUBMITTED" && (
-                            <div className="flex items-center gap-1">
-                              <Button
-                                size="sm"
-                                onClick={() => handleApproveTicket(t)}
-                                className="h-6 text-[9px] bg-green-600 hover:bg-green-700 text-white font-semibold px-2 py-0 gap-1 rounded"
-                                title="Approve Ticket"
-                              >
-                                <Check className="w-3 h-3" /> Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenReject(t)}
-                                className="h-6 text-[9px] text-red-600 border-red-200 hover:bg-red-50 font-semibold px-2 py-0 gap-1 rounded"
-                                title="Reject Ticket"
-                              >
-                                <Ban className="w-3 h-3" /> Reject
-                              </Button>
-                            </div>
-                          )}
-                          {canManage && (t.approvalStatus === "DRAFT" || !t.approvalStatus) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSubmitTicket(t)}
-                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-semibold px-2 py-0 gap-1 rounded"
-                              title="Submit for Manager Approval"
-                            >
-                              <Send className="w-2.5 h-2.5" /> Submit
-                            </Button>
-                          )}
-                          {canManage && t.approvalStatus === "REJECTED" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleReopenTicket(t)}
-                              className="h-6 text-[9px] text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 font-semibold px-2 py-0 gap-1 rounded"
-                              title="Reopen Ticket to Draft"
-                            >
-                              <RotateCcw className="w-2.5 h-2.5" /> Reopen
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
-                        {canManage && (
-                          <>
-                            {t.ticketStatus !== "CANCELLED" && (
-                              <>
-                                <button
-                                  onClick={() => handleEdit(t)}
-                                  className="text-blue-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleOpenReticket(t)}
-                                  className="text-slate-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
-                                  title="Reticket to different date/train"
-                                >
-                                  Reticket
-                                </button>
-                                <button
-                                  onClick={() => handleOpenCancel(t)}
-                                  className="text-red-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
-                                >
-                                  Cancel
-                                </button>
-                              </>
-                            )}
-                            {t.ticketStatus === "CANCELLED" && Number(t.refundAmount || 0) > 0 && t.refundStatus !== "COMPLETED" && (
-                              <button
-                                onClick={() => handleOpenRefund(t)}
-                                className="text-green-700 hover:underline font-semibold text-[10px] bg-green-50 px-1.5 py-0.5 rounded border border-green-200"
-                              >
-                                Record Refund
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleViewHistory(t.id)}
-                              className="text-slate-500 hover:text-[#0B1528] font-semibold text-[10px] px-1 py-0.5"
-                              title="Audit History"
-                            >
-                              History
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Return Journey Section */}
-        <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
-          <div className="px-4 py-3 border-b border-[#E8EEF4] flex flex-wrap justify-between items-center gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <h4 className="font-semibold text-[#0B1528] text-xs truncate">
-                Return journey
-              </h4>
-              <span className="text-[11px] text-slate-400 shrink-0">
-                {returnTickets.length} tickets
-              </span>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleOpenAddReturn}
-              className="h-8 text-xs font-semibold border-[#E8EEF4] text-[#0B1528] bg-white hover:bg-[#F4F7FB] gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5 text-slate-400" /> Add return ticket
-            </Button>
-          </div>
-
-          {returnTickets.length === 0 ? (
-            <div className="px-4 py-6 text-center text-slate-400">
-              No return tickets created yet.
-            </div>
-          ) : (
-            <div className="overflow-x-auto min-w-0">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-[#F8FAFC] border-b border-[#E8EEF4] text-[11px] font-semibold text-slate-400 whitespace-nowrap">
-                    <th className="px-4 py-2.5">Traveller</th>
-                    <th className="px-4 py-2.5">Status</th>
-                    <th className="px-4 py-2.5">PNR</th>
-                    <th className="px-4 py-2.5">Train &amp; route</th>
-                    <th className="px-4 py-2.5">Internal cost</th>
-                    <th className="px-4 py-2.5">Approval</th>
-                    <th className="px-4 py-2.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E8EEF4]">
-                  {returnTickets.map((t) => (
-                    <tr key={t.id} className="hover:bg-[#F8FAFC]">
-                      <td className="px-4 py-2.5 font-semibold text-[#0B1528]">
-                        <div>{t.travelerName}</div>
-                        {(() => {
-                          const phone = getTravelerPhone(t.travelerName);
-                          if (!phone || phone === "N/A") return null;
-                          return (
-                            <a
-                              href={`tel:${phone}`}
-                              className="text-[10px] font-normal font-mono text-slate-500 hover:text-[#FF4D00] hover:underline flex items-center gap-1 mt-0.5"
-                            >
-                              <Phone className="w-3 h-3 text-slate-400 shrink-0 inline" />
-                              <span>{phone}</span>
-                            </a>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-4 py-2.5 space-y-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <StatusPill status={t.ticketStatus} />
-                          <span
-                            className={cn(
-                              "px-1.5 py-0.5 rounded text-[8px] font-semibold border",
-                              t.paidBy === "CUSTOMER"
-                                ? "bg-slate-50 text-slate-700 border-slate-200"
-                                : "bg-slate-100 text-slate-700 border-[#E8EEF4]",
-                            )}
-                          >
-                            {t.paidBy === "CUSTOMER" ? "Customer Paid" : "Company Paid"}
-                          </span>
-                        </div>
-                        {t.ticketStatus === "CANCELLED" && (
-                          <div className="text-[10px] text-red-600 font-semibold space-y-0.5">
-                            <div>Cancelled: {t.cancellationReason || "No reason"}</div>
-                            {Number(t.railwayCancellationCharge || 0) > 0 && (
-                              <div className="text-[9px] text-slate-500 font-normal">
-                                Railway Deduction: ₹{Number(t.railwayCancellationCharge)}
-                              </div>
-                            )}
-                            {Number(t.refundAmount || 0) > 0 && (
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <span className="font-semibold text-green-700">
-                                  Refund: ₹{Number(t.refundAmount)}
-                                </span>
-                                <span
-                                  className={cn(
-                                    "px-1 py-0.2 rounded text-[8px] font-semibold uppercase",
-                                    t.refundStatus === "COMPLETED"
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-amber-100 text-amber-800",
-                                  )}
-                                >
-                                  {t.refundStatus || "PENDING"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {t.supersedesTicketId && (
-                          <div className="text-[9px] font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded w-fit">
-                            ↳ Reticketed from #{t.supersedesTicketId.slice(-6)}
-                          </div>
-                        )}
-                        {t.supersededByTicketId && (
-                          <div className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
-                            ↳ Replaced by #{t.supersededByTicketId.slice(-6)}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-[#0B1528] font-semibold">
-                        {t.pnr ? (
-                          <span className="bg-slate-100 px-2 py-0.5 rounded border border-[#E8EEF4] text-slate-900 font-mono">
-                            {t.pnr}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">No PNR</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 text-slate-700 font-medium">
-                        <div className="font-semibold text-slate-900">
-                          {t.trainName || "—"} {t.trainNumber ? `(${t.trainNumber})` : ""}
-                        </div>
-                        {t.sourceStation && (
-                          <span className="block text-[10px] text-slate-400">
-                            {t.sourceStation} &rarr; {t.destinationStation}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 font-semibold text-[#0B1528]">
-                        ₹{Number(t.ticketAmount || 0).toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <ApprovalPill status={t.approvalStatus} />
-                          {canApprove && t.approvalStatus === "SUBMITTED" && (
-                            <div className="flex items-center gap-1">
-                              <Button
-                                size="sm"
-                                onClick={() => handleApproveTicket(t)}
-                                className="h-6 text-[9px] bg-green-600 hover:bg-green-700 text-white font-semibold px-2 py-0 gap-1 rounded"
-                                title="Approve Ticket"
-                              >
-                                <Check className="w-3 h-3" /> Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenReject(t)}
-                                className="h-6 text-[9px] text-red-600 border-red-200 hover:bg-red-50 font-semibold px-2 py-0 gap-1 rounded"
-                                title="Reject Ticket"
-                              >
-                                <Ban className="w-3 h-3" /> Reject
-                              </Button>
-                            </div>
-                          )}
-                          {canManage && (t.approvalStatus === "DRAFT" || !t.approvalStatus) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSubmitTicket(t)}
-                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-semibold px-2 py-0 gap-1 rounded"
-                              title="Submit for Manager Approval"
-                            >
-                              <Send className="w-2.5 h-2.5" /> Submit
-                            </Button>
-                          )}
-                          {canManage && t.approvalStatus === "REJECTED" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleReopenTicket(t)}
-                              className="h-6 text-[9px] text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 font-semibold px-2 py-0 gap-1 rounded"
-                              title="Reopen Ticket to Draft"
-                            >
-                              <RotateCcw className="w-2.5 h-2.5" /> Reopen
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
-                        {canManage && (
-                          <>
-                            {t.ticketStatus !== "CANCELLED" && (
-                              <>
-                                <button
-                                  onClick={() => handleEdit(t)}
-                                  className="text-blue-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleOpenReticket(t)}
-                                  className="text-slate-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
-                                  title="Reticket to different date/train"
-                                >
-                                  Reticket
-                                </button>
-                                <button
-                                  onClick={() => handleOpenCancel(t)}
-                                  className="text-red-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
-                                >
-                                  Cancel
-                                </button>
-                              </>
-                            )}
-                            {t.ticketStatus === "CANCELLED" && Number(t.refundAmount || 0) > 0 && t.refundStatus !== "COMPLETED" && (
-                              <button
-                                onClick={() => handleOpenRefund(t)}
-                                className="text-green-700 hover:underline font-semibold text-[10px] bg-green-50 px-1.5 py-0.5 rounded border border-green-200"
-                              >
-                                Record Refund
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleViewHistory(t.id)}
-                              className="text-slate-500 hover:text-[#0B1528] font-semibold text-[10px] px-1 py-0.5"
-                              title="Audit History"
-                            >
-                              History
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {renderJourneySection(
+          "Departure journey",
+          <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />,
+          departureTickets,
+          handleOpenAddDeparture,
+          "Add departure ticket",
+          "No departure tickets created yet.",
+        )}
+        {renderJourneySection(
+          "Return journey",
+          <RotateCcw className="w-3.5 h-3.5 text-slate-400 shrink-0" />,
+          returnTickets,
+          handleOpenAddReturn,
+          "Add return ticket",
+          "No return tickets created yet.",
+        )}
       </div>
 
       {/* ─── CANCELLATION DIALOG ─── */}

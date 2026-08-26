@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { Phone, MessageSquare, CreditCard, Edit2, Search } from "lucide-react";
 import { cn, formatINR, formatBookingCreatedAt } from "@/lib/utils";
+import {
+  bookingListDueAmount,
+  bookingListPaidAmount,
+} from "@/utils/bookingListFinance";
 
 interface BookingItem {
   id: string;
@@ -33,11 +37,8 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
 
   const list: BookingItem[] = (bookings || []).map((b: any) => {
     const total = Number(b.totalAmount ?? b.amount ?? 0);
-    const paid = Number(b.advancePaid ?? 0);
-    const balance =
-      b.remainingAmount !== undefined && b.remainingAmount !== null
-        ? Number(b.remainingAmount)
-        : total - paid;
+    const paid = bookingListPaidAmount(b);
+    const balance = bookingListDueAmount(b);
     return {
       id: b.id,
       bookingId: b.bookingId || b.id,

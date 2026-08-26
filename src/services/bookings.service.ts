@@ -169,6 +169,7 @@ export const bookingsService = {
       paymentStatus: string;
       email?: string;
       trainTicketStatus?: string;
+      trainTicketRequired?: boolean;
       collectionAccountId?: string;
       transactionId?: string;
       notes?: string;

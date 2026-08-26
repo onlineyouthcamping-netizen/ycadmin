@@ -68,6 +68,7 @@ import { BookingsToolbar } from "@/components/bookings/BookingsToolbar";
 import { BookingsTable } from "@/components/bookings/BookingsTable";
 import { BookingsFilterSidebar } from "@/components/bookings/BookingsFilterSidebar";
 import { MobileBookingsView } from "@/components/mobile/MobileBookingsView";
+import { resolveBookingExecutiveName } from "@/utils/bookingExecutive";
 
 // Booking source helper with Sales Executive name resolution
 const getBookingMetaData = (
@@ -76,10 +77,6 @@ const getBookingMetaData = (
 ) => {
   if (!booking)
     return { bookedBy: "Website / Direct", source: "Website / Inquiry" };
-  const salesAdminId = (booking as any).salesAdminId as string | undefined;
-  const salesAdminObj = (booking as any).salesAdmin as
-    | { id?: string; name?: string; fullName?: string; email?: string }
-    | undefined;
   const link = (booking as any).sourceBookingLink as
     | {
         tokenPrefix?: string | null;
@@ -88,22 +85,9 @@ const getBookingMetaData = (
       }
     | undefined;
 
-  let bookedBy = "Website / Direct";
-
-  if (salesAdminObj?.name) {
-    bookedBy = salesAdminObj.name;
-  } else if (salesAdminObj?.fullName) {
-    bookedBy = salesAdminObj.fullName;
-  } else if ((booking as any).salesAdminName) {
-    bookedBy = (booking as any).salesAdminName;
-  } else if (salesAdminId && adminMap && adminMap[salesAdminId]) {
-    bookedBy = adminMap[salesAdminId];
-  } else if (salesAdminId) {
-    bookedBy =
-      salesAdminId.startsWith("cm") || salesAdminId.length > 20
-        ? "Sales Executive"
-        : salesAdminId;
-  }
+  let bookedBy = resolveBookingExecutiveName(booking, adminMap);
+  // Align list label with historical copy when no sales owner
+  if (bookedBy === "Web Direct") bookedBy = "Website / Direct";
 
   let source = link?.tokenPrefix
     ? `Booking Link #${link.tokenPrefix}`
@@ -113,7 +97,11 @@ const getBookingMetaData = (
     ((booking.notes as any) || "").toString().toLowerCase() +
     " " +
     ((booking.adminNotes as any) || "").toString().toLowerCase();
-  if (notesLower.includes("booked by:")) {
+  // Do not let free-text "booked by:" notes override a resolved salesAdmin name
+  if (
+    notesLower.includes("booked by:") &&
+    (bookedBy === "Website / Direct" || bookedBy === "Sales Executive")
+  ) {
     const match = notesLower.match(/booked by:\s*([a-zA-Z\s]+)/);
     if (match && match[1]) bookedBy = match[1].trim();
   }

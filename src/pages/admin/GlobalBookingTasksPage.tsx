@@ -19,6 +19,8 @@ import {
 import { Link } from "react-router-dom";
 import { bookingsService } from "@/services/bookings.service";
 import { useStaffUsers } from "@/hooks/useStaffUsers";
+import { useAuthStore } from "@/store/auth.store";
+import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,13 +34,21 @@ import {
 
 export default function GlobalBookingTasksPage() {
   const { staffUsers } = useStaffUsers();
+  const { admin } = useAuthStore();
+  const canViewAllTasks = hasPermission(
+    admin?.permissions || [],
+    PERMISSIONS.TASKS_VIEW_ALL,
+    admin?.role,
+  );
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Filters
+  // Filters — non-privileged staff are locked to their own assignee id
   const [typeFilter, setTypeFilter] = useState<"ALL" | "UNIVERSAL" | "BOOKING">("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [assigneeFilter, setAssigneeFilter] = useState("ALL");
+  const [assigneeFilter, setAssigneeFilter] = useState(
+    canViewAllTasks ? "ALL" : admin?.id || "ALL",
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   // Create Task Modal State
@@ -55,12 +65,18 @@ export default function GlobalBookingTasksPage() {
     bookingId: "",
   });
 
+  useEffect(() => {
+    if (!canViewAllTasks && admin?.id && assigneeFilter !== admin.id) {
+      setAssigneeFilter(admin.id);
+    }
+  }, [canViewAllTasks, admin?.id, assigneeFilter]);
+
   const fetchTasks = async () => {
     setLoading(true);
     try {
       const data = await bookingsService.getAllBookingTasks({
         status: statusFilter,
-        assignee: assigneeFilter,
+        assignee: canViewAllTasks ? assigneeFilter : admin?.id || assigneeFilter,
         type: typeFilter,
       });
       setTasks(data || []);
@@ -246,12 +262,19 @@ export default function GlobalBookingTasksPage() {
           <select
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="h-8 px-3 text-xs font-semibold rounded-md border border-slate-200 bg-white focus:outline-none focus:border-[#FF5A1F] max-w-[150px]"
+            disabled={!canViewAllTasks}
+            className="h-8 px-3 text-xs font-semibold rounded-md border border-slate-200 bg-white focus:outline-none focus:border-[#FF5A1F] max-w-[150px] disabled:opacity-60"
           >
-            <option value="ALL">All Assignees</option>
-            {staffUsers.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
+            {canViewAllTasks && <option value="ALL">All Assignees</option>}
+            {canViewAllTasks
+              ? staffUsers.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))
+              : (
+                  <option value={admin?.id || ""}>
+                    {admin?.name || "My tasks"}
+                  </option>
+                )}
           </select>
         </div>
       </div>

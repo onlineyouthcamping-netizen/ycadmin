@@ -14,6 +14,10 @@
 import { Button } from "@/components/ui/button";
 import { cn, safeFormatDate, formatBookingCreatedAt } from "@/lib/utils";
 import { normalizePassenger } from "@/utils/passengerUtils";
+import {
+  bookingListDueAmount,
+  bookingListPaidAmount,
+} from "@/utils/bookingListFinance";
 import type { Booking, Admin } from "@/types";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -119,13 +123,15 @@ export function BookingsTable({
                   const flowStatus = getFlowStatus(b);
                   const activityTime = getActivityTime(b);
                   const bookedBy = getBookedBy(b);
+                  const listDue = bookingListDueAmount(b);
+                  const listPaid = bookingListPaidAmount(b);
                   const dueSoon =
-                    Number(b.remainingAmount || 0) > 0 &&
+                    listDue > 0 &&
                     b.departureDate &&
                     (new Date(b.departureDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24) <= 3;
 
                   let paymentDot: "red" | "amber" | undefined;
-                  if (Number(b.remainingAmount || 0) > 0 && b.paymentStatus !== "Paid") {
+                  if (listDue > 0 && b.paymentStatus !== "Paid") {
                     paymentDot = dueSoon ? "red" : "amber";
                   }
                   const passengersDot = !b.numberOfTravelers ? "amber" : undefined;
@@ -212,14 +218,14 @@ export function BookingsTable({
                         <p
                           className={cn(
                             "font-semibold leading-tight",
-                            Number(b.remainingAmount || 0) > 0 ? "text-[#E04400]" : "text-green-600",
+                            listDue > 0 ? "text-[#E04400]" : "text-green-600",
                           )}
                         >
-                          ₹{Number(b.remainingAmount || 0).toLocaleString("en-IN")}
+                          ₹{listDue.toLocaleString("en-IN")}
                           <span className="ml-1 text-[10px] font-medium text-slate-400">due</span>
                         </p>
                         <p className="text-[11px] text-slate-400 mt-0.5">
-                          ₹{Number(b.advancePaid || 0).toLocaleString("en-IN")} in
+                          ₹{listPaid.toLocaleString("en-IN")} in
                         </p>
                       </td>
                       <td className="px-3 py-3 min-w-[140px]">

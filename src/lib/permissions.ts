@@ -7,6 +7,7 @@ export const PERMISSIONS = {
   ACCOUNTING_VIEW: "accounting.view",
   USERS_VIEW: "users.view",
   TASKS_VIEW: "tasks.view",
+  TASKS_VIEW_ALL: "tasks.view_all",
   VENDORS_VIEW: "vendors.view",
   TRIPS_VIEW: "trips.view",
   OPS_VIEW: "ops.view",
@@ -67,6 +68,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "accounting.view",
     "accounting.edit",
     "emails.manage_templates",
+    "tasks.view_all",
     "station_payments.view",
     "station_payments.collect",
     "station_payments.edit_before_handover",
@@ -127,6 +129,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "station_payments.reconcile",
     "station_payments.resend_receipt",
     "announcements.view",
+    "tasks.view_all",
   ],
 
   sales: [
@@ -247,6 +250,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "audit_logs.view",
     "customers.timeline.view",
     "announcements.view",
+    "tasks.view_all",
   ],
 
   FINANCE_CONTROLLER: [
@@ -302,6 +306,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "audit_logs.view",
     "customers.timeline.view",
     "announcements.view",
+    "tasks.view_all",
   ],
 
   guide: [
