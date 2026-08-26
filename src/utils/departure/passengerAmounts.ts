@@ -272,11 +272,27 @@ export function allocateBookingPassengerAmounts(params: {
   }
 
   const paidParts = splitEvenly(netPaidAmount, activeIdx.length);
-  const dueParts = splitEvenly(remainingAmount, activeIdx.length);
   activeIdx.forEach((i, j) => {
     result[i].paidAmount = paidParts[j];
-    result[i].balance = dueParts[j];
     result[i].paidIsBookingShare = true;
+  });
+
+  // Derive per-pax due from amount − paid. Even-splitting remainingAmount
+  // erases unequal package prices (Khushi Excel rem 18500/18500/15500).
+  const targetDue = Math.round(safeNum(remainingAmount));
+  const dueParts = activeIdx.map((i) => {
+    const amt = Math.round(safeNum(result[i].amount));
+    const paid = Math.round(safeNum(result[i].paidAmount));
+    return amt - paid;
+  });
+  let dueDrift = targetDue - dueParts.reduce((s, v) => s + v, 0);
+  for (let k = dueParts.length - 1; k >= 0 && dueDrift !== 0; k--) {
+    const step = dueDrift > 0 ? 1 : -1;
+    dueParts[k] += step;
+    dueDrift -= step;
+  }
+  activeIdx.forEach((i, j) => {
+    result[i].balance = dueParts[j];
   });
 
   return result;

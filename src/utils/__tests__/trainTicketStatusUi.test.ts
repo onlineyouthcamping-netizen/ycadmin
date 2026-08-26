@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dedupeActiveTicketsPerTraveler,
   isGroupTrainTicketingDone,
   isTrainTicketDone,
   isTrainTicketRequired,
@@ -120,5 +121,42 @@ describe("isGroupTrainTicketingDone", () => {
         ],
       ),
     ).toBe(true);
+  });
+});
+
+describe("dedupeActiveTicketsPerTraveler", () => {
+  it("collapses duplicate departure rows keeping Done", () => {
+    const tickets = [
+      {
+        id: "1",
+        travelerName: "Ayan Lakhani",
+        passengerReference: "DEPARTURE",
+        ticketStatus: "CONFIRMED",
+        createdAt: "2026-08-01T00:00:00.000Z",
+      },
+      {
+        id: "2",
+        travelerName: "Ayan Lakhani",
+        passengerReference: "DEPARTURE",
+        ticketStatus: "PENDING",
+        createdAt: "2026-08-20T00:00:00.000Z",
+      },
+      {
+        id: "3",
+        travelerName: "Ayan Lakhani",
+        passengerReference: "RETURN",
+        ticketStatus: "PENDING",
+      },
+      {
+        id: "4",
+        travelerName: "Ayan Lakhani",
+        passengerReference: "DEPARTURE",
+        ticketStatus: "CANCELLED",
+      },
+    ];
+    const out = dedupeActiveTicketsPerTraveler(tickets as any);
+    expect(out).toHaveLength(2);
+    expect(out.find((t) => t.passengerReference === "DEPARTURE")?.id).toBe("1");
+    expect(out.find((t) => t.passengerReference === "RETURN")?.id).toBe("3");
   });
 });

@@ -164,3 +164,84 @@ export function isGroupTrainTicketingDone(
   if (live.length === 0) return false;
   return live.every((t) => isTrainTicketDone(t));
 }
+
+export function normalizeTravelerName(name?: string | null): string {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+/** null / empty / DEPARTURE → DEPARTURE; RETURN stays RETURN. */
+export function normalizeJourneyRef(ref?: string | null): "DEPARTURE" | "RETURN" {
+  const r = String(ref || "")
+    .trim()
+    .toUpperCase();
+  return r === "RETURN" ? "RETURN" : "DEPARTURE";
+}
+
+function scoreTicketForDedupe(ticket: {
+  ticketStatus?: string | null;
+  status?: string | null;
+  pnr?: string | null;
+  trainNumber?: string | null;
+  trainName?: string | null;
+  seatNumber?: string | null;
+  coach?: string | null;
+  sourceStation?: string | null;
+  destinationStation?: string | null;
+  createdAt?: string | null;
+  supersededByTicketId?: string | null;
+}): number {
+  const st = normalizeTrainTicketStatus(
+    ticket.ticketStatus || (ticket as any).status,
+  );
+  if (st === "CANCELLED" || ticket.supersededByTicketId) return -1;
+
+  let score = 0;
+  if (DONE_STATUSES.has(st)) score += 1000;
+  if (ticket.pnr && String(ticket.pnr).trim()) score += 100;
+  if (ticket.trainNumber || ticket.trainName) score += 50;
+  if (ticket.seatNumber || ticket.coach) score += 20;
+  if (ticket.sourceStation || ticket.destinationStation) score += 10;
+  const created = ticket.createdAt ? new Date(ticket.createdAt).getTime() : 0;
+  score += Math.max(0, 1_000_000_000_000 - created) / 1_000_000_000_000;
+  return score;
+}
+
+/**
+ * One active ticket per traveler per journey. Drops cancelled / superseded.
+ * Belt-and-suspenders for Ticketing UI when API still returns ghosts.
+ */
+export function dedupeActiveTicketsPerTraveler<
+  T extends {
+    id?: string;
+    travelerName?: string | null;
+    passengerReference?: string | null;
+    ticketStatus?: string | null;
+    status?: string | null;
+    pnr?: string | null;
+    trainNumber?: string | null;
+    trainName?: string | null;
+    seatNumber?: string | null;
+    coach?: string | null;
+    sourceStation?: string | null;
+    destinationStation?: string | null;
+    createdAt?: string | null;
+    supersededByTicketId?: string | null;
+  },
+>(tickets: T[] = []): T[] {
+  const byKey = new Map<string, T>();
+  for (const t of tickets) {
+    const st = normalizeTrainTicketStatus(
+      t.ticketStatus || (t as any).status,
+    );
+    if (st === "CANCELLED" || t.supersededByTicketId) continue;
+    const key = `${normalizeTravelerName(t.travelerName)}|${normalizeJourneyRef(t.passengerReference)}`;
+    const existing = byKey.get(key);
+    if (!existing || scoreTicketForDedupe(t) > scoreTicketForDedupe(existing)) {
+      byKey.set(key, t);
+    }
+  }
+  return Array.from(byKey.values());
+}

@@ -171,4 +171,58 @@ describe("group → passenger amount distribution", () => {
     expect(shares[0].paidAmount! + shares[2].paidAmount!).toBe(10000);
     expect(shares[0].balance! + shares[2].balance!).toBe(42000);
   });
+
+  it("keeps unequal Excel rem when package prices differ (Khushi)", () => {
+    // Group advance ₹21,000 on first Excel row; rem 18500+18500+15500.
+    // Line items = rem + equal share of advance (7000) → 25500/25500/22500.
+    const items = [
+      {
+        name: "3 TIER AC TRAIN (Ahmedabad) [Khushi]",
+        rate: 25500,
+        qty: 1,
+        category: "transport",
+      },
+      {
+        name: "3 TIER AC TRAIN (Ahmedabad) [Rushvi]",
+        rate: 25500,
+        qty: 1,
+        category: "transport",
+      },
+      {
+        name: "3 TIER AC TRAIN (Ahmedabad) [Khushbuben]",
+        rate: 22500,
+        qty: 1,
+        category: "transport",
+      },
+    ];
+    const shares = allocateBookingPassengerAmounts({
+      totalAmount: 73500,
+      netPaidAmount: 21000,
+      remainingAmount: 52500,
+      passengers: [
+        { name: "Khushi" },
+        { name: "Rushvi" },
+        { name: "Umangiben", isCancelled: true },
+        { name: "Khushbuben" },
+      ],
+      bookingItems: items,
+    });
+
+    expect(shares[0].amount).toBe(25500);
+    expect(shares[1].amount).toBe(25500);
+    expect(shares[2].amount).toBeNull();
+    expect(shares[3].amount).toBe(22500);
+    expect(shares[0].paidAmount).toBe(7000);
+    expect(shares[1].paidAmount).toBe(7000);
+    expect(shares[3].paidAmount).toBe(7000);
+    // Must NOT even-split 52500 → 17500; rem follows amount − paid.
+    expect(shares[0].balance).toBe(18500);
+    expect(shares[1].balance).toBe(18500);
+    expect(shares[3].balance).toBe(15500);
+    expect(
+      (shares[0].balance || 0) +
+        (shares[1].balance || 0) +
+        (shares[3].balance || 0),
+    ).toBe(52500);
+  });
 });
