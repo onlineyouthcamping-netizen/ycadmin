@@ -20,6 +20,7 @@ import {
   Check,
   Phone,
   MoreHorizontal,
+  Receipt,
 } from "lucide-react";
 import { normalizePassenger } from "@/utils/passengerUtils";
 import { Button } from "@/components/ui/button";
