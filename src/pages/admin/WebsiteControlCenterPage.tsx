@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { settingsService } from "@/services/settings.service";
 import { useWebsitePages } from "@/hooks/admin/useWebsitePages";
 import { toast } from "sonner";
+import { ENV } from "@/config/environment";
 import {
   Loader2,
   Layout,
@@ -139,8 +140,7 @@ export default function WebsiteControlCenterPage() {
   const [newPageSlug, setNewPageSlug] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const frontendUrl =
-    import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
+  const frontendUrl = ENV.FRONTEND_URL;
 
   useEffect(() => {
     loadData();

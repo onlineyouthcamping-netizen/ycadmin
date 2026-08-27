@@ -44,9 +44,17 @@ const defaultApiUrl = IS_DEVELOPMENT
   ? "http://localhost:3001"
   : "https://api.youthcamping.online";
 
+const defaultFrontendUrl = IS_DEVELOPMENT
+  ? "http://localhost:3000"
+  : "https://youthcamping.online";
+
 const rawApiUrl = import.meta.env.VITE_API_URL || defaultApiUrl;
 
 const API_BASE_URL = normalizeUrl(rawApiUrl, defaultApiUrl);
+const FRONTEND_URL = normalizeUrl(
+  import.meta.env.VITE_FRONTEND_URL,
+  defaultFrontendUrl,
+);
 const API_TIMEOUT_MS = parseTimeout(import.meta.env.VITE_API_TIMEOUT_MS, 30000);
 const DOCUMENT_MAX_BYTES = parseMaxBytes(
   import.meta.env.VITE_DOCUMENT_MAX_MB,
@@ -56,6 +64,7 @@ const IMAGE_MAX_BYTES = parseMaxBytes(import.meta.env.VITE_IMAGE_MAX_MB, 100);
 
 export const ENV = Object.freeze({
   API_BASE_URL,
+  FRONTEND_URL,
   API_TIMEOUT_MS,
   DOCUMENT_MAX_BYTES,
   IMAGE_MAX_BYTES,

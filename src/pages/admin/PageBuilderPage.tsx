@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { usePageBuilderData } from "@/hooks/admin/usePageBuilderData";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ENV } from "@/config/environment";
 
 import { PageBuilderHeader } from "@/components/admin/page-builder/PageBuilderHeader";
 import {
@@ -121,8 +122,7 @@ export default function PageBuilderPage() {
   };
 
   const handlePreview = () => {
-    const frontendUrl =
-      import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
+    const frontendUrl = ENV.FRONTEND_URL;
     window.open(frontendUrl, "_blank");
   };
 

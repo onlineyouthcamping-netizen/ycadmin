@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { GlassCard } from "@/components/admin/GlassCard";
@@ -48,6 +48,7 @@ import { quotationsService } from "@/services/quotations.service";
 import { Quotation } from "@/types";
 import api from "@/services/api";
 import { cn } from "@/lib/utils";
+import { ENV } from "@/config/environment";
 
 const formatUrl = (url: any): string => {
   if (!url || typeof url !== "string") return "";
@@ -284,8 +285,7 @@ export default function QuotationFormPage() {
   };
 
   const getPublicQuoteUrl = () => {
-    let baseUrl =
-      import.meta.env.VITE_FRONTEND_URL || "https://youthcamping.online";
+    let baseUrl = ENV.FRONTEND_URL;
     if (
       typeof window !== "undefined" &&
       window.location.hostname.includes("localhost")

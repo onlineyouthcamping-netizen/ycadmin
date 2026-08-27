@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import {
   Save,
@@ -14,6 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { WebsitePage, UpdatePagePayload } from "@/services/website.service";
+import { ENV } from "@/config/environment";
 
 interface WebsiteEditorProps {
   page: WebsitePage;
@@ -47,8 +48,7 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
   const [isPreviewRefreshing, setIsPreviewRefreshing] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const frontendUrl =
-    import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
+  const frontendUrl = ENV.FRONTEND_URL;
 
   // Track unsaved changes
   useEffect(() => {

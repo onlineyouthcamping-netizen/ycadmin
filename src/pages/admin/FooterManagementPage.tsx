@@ -689,7 +689,7 @@ export default function FooterManagementPage() {
                       handleFieldChange("website", e.target.value)
                     }
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] bg-white h-9"
-                    placeholder="youthcamping.in"
+                    placeholder="youthcamping.online"
                   />
                 </div>
                 <div className="space-y-2">

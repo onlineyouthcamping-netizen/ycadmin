@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { ENV } from "@/config/environment";
 import { cn } from "@/lib/utils";
 
 export default function QuotationsPage() {
@@ -130,8 +131,7 @@ export default function QuotationsPage() {
   };
 
   const getPublicQuoteUrl = (q: any) => {
-    let baseUrl =
-      import.meta.env.VITE_FRONTEND_URL || "https://youthcamping.online";
+    let baseUrl = ENV.FRONTEND_URL;
     if (
       typeof window !== "undefined" &&
       window.location.hostname.includes("localhost")
